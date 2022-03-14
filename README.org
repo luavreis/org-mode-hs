@@ -1,0 +1,25 @@
+#+title: Org-parser
+
+* TODO Things that are planned be done
+** Useful Elisp variables
+We should support setting emacs variables related to parsing and export. These variables should be set either as a parameter to the parsing function or read from the file itself by parsing ~#+bind~ keywords. Here we keep a table of variables related to the export, their default values and purposes:
+
+| Variable                         | Default value            | Purpose            |
+|----------------------------------+--------------------------+--------------------|
+| ~user-full-name~                   | User name (getLoginName) | Default =AUTHOR=     |
+| ~org-export-creator-string~        | "Emacs". Leave empty?    | Default =CREATOR=    |
+| ~org-export-date-timestamp-format~ | nil                      | ​=DATE= format string |
+| ~user-mail-address~                | $EMAIL or user@host      | Default =MAIL=       |
+| ~org-export-default-language~      | "en"                     | Default =LANGUAGE=   |
+| ~org-export-select-tags~           | ("export")               |                    |
+| ~org-export-exclude-tags~          | ("noexport")             |                    |
+
+See https://orgmode.org/manual/Export-Settings.html @ compact forms for the rest.
+
+** Emacs queries in batch or client mode
+Query emacs for [[*Useful Elisp variables]] or evaluating lisp expressions. Can be done either way, but the second is much faster:
+
+- ~emacs --batch -l path/to/init.el --eval EXPR~
+- ~emacsclient -e EXPR~
+
+If using batch mode we should reuse an open emacs process open as long as possible. 
