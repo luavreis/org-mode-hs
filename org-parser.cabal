@@ -1,0 +1,73 @@
+cabal-version:       2.4
+Name:                org-parser
+version:             0.1
+Synopsis:            Types for representing a Org document
+Description:         TODO write description
+
+Maintainer:          lvr@s-viva.xyz
+Bug-Reports:         https://github.com/lucasvreis/org-parser/issues
+Copyright:           (c) 2022 lucasvreis
+Category:            Text
+Build-type:          Simple
+Tested-With:         GHC == 8.10.7
+Source-repository    head
+  type:              git
+  location:          git://github.com/lucasvreis/org-types.git
+
+Library
+  hs-source-dirs:    src
+  Exposed-modules:   Text.Org.Types
+                     Text.Org.Builder
+                     Text.Org.Parser.Definitions
+                     Text.Org.Parser.OrgDocument
+                     Text.Org.Parser.OrgElements
+                     Text.Org.Parser.OrgObjects
+                     -- Text.Org.Generic
+                     -- Text.Org.Walk
+  other-modules:     Text.Org.Parser.Common
+                     Text.Org.Parser.State
+                     Text.Org.Parser.ElementStarts
+  Build-depends:     base >= 4.5
+                   , relude
+                   , bytestring
+                   , containers
+                   , syb
+                   , megaparsec >= 9
+                   , pandoc-types
+                   , text >= 2.0
+                   , transformers >= 0.5
+                   , aeson >= 0.6.2
+  mixins:            base hiding (Prelude)
+                   , relude (Relude as Prelude)
+                   , relude
+  ghc-options:       -Wall -fno-warn-unused-do-bind
+  default-language:  Haskell2010
+  default-extensions:
+    TupleSections
+    OverloadedStrings
+    ViewPatterns
+    MultiWayIf
+    LambdaCase
+    ScopedTypeVariables
+
+test-suite test-org-parser
+  type:              exitcode-stdio-1.0
+  hs-source-dirs:    test
+  main-is:           test-org-parser.hs
+  build-depends:     base
+                   , relude
+                   , org-parser
+                   , tasty
+                   , tasty-hunit
+                   , megaparsec >= 9
+                   , pretty-simple
+  mixins:            base hiding (Prelude)
+                   , relude (Relude as Prelude)
+                   , relude
+  other-modules:     Tests.Elements
+                     Tests.Objects
+                     Tests.Helpers
+  ghc-options:      -threaded -rtsopts -with-rtsopts=-N -Wall -O2
+  default-language:  Haskell2010
+  default-extensions:
+    OverloadedStrings
