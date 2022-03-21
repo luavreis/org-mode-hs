@@ -28,19 +28,19 @@ Library
                      Text.Org.Parser.State
                      Text.Org.Parser.ElementStarts
   Build-depends:     base >= 4.5
-                   , relude
+                   , relude >= 1
                    , bytestring
                    , containers
                    , syb
                    , megaparsec >= 9
                    , pandoc-types
-                   , text >= 2.0
+                   , text >= 1.2
                    , transformers >= 0.5
                    , aeson >= 0.6.2
   mixins:            base hiding (Prelude)
                    , relude (Relude as Prelude)
                    , relude
-  ghc-options:       -Wall -fno-warn-unused-do-bind
+  ghc-options:      -Wall
   default-language:  Haskell2010
   default-extensions:
     TupleSections
@@ -50,12 +50,12 @@ Library
     LambdaCase
     ScopedTypeVariables
 
-test-suite test-org-parser
+test-suite test
   type:              exitcode-stdio-1.0
   hs-source-dirs:    test
   main-is:           test-org-parser.hs
   build-depends:     base
-                   , relude
+                   , relude >= 1
                    , org-parser
                    , tasty
                    , tasty-hunit
@@ -67,7 +67,11 @@ test-suite test-org-parser
   other-modules:     Tests.Elements
                      Tests.Objects
                      Tests.Helpers
-  ghc-options:      -threaded -rtsopts -with-rtsopts=-N -Wall -O2
+  ghc-options:      -threaded -rtsopts -with-rtsopts=-N -Wall
+                    -fprof-auto
+                    -prof
+                    "-with-rtsopts=-N -p -i0.1"
   default-language:  Haskell2010
   default-extensions:
     OverloadedStrings
+    LambdaCase

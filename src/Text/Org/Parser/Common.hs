@@ -1,8 +1,7 @@
-{-# LANGUAGE TypeFamilies #-}
 -- |
 
 module Text.Org.Parser.Common where
-import Prelude hiding (many)
+import Prelude hiding (many, State)
 import Text.Org.Parser.Definitions
 import Data.Char (digitToInt)
 
@@ -54,3 +53,22 @@ anyLine = takeWhileP (Just "rest of line") (/= '\n')
 -- | Parse a line with whitespace contents.
 blankline :: OrgParser m ()
 blankline = try $ hspace <* newline
+
+endPosOf_ :: MonadParsec e s m => m a -> m Int
+endPosOf_ p = lookAhead (p *> getOffset)
+
+endPosOf :: MonadParsec e s m => m a -> m (a, Int)
+endPosOf p = lookAhead (liftA2 (,) p getOffset)
+
+parseFromText :: OrgParser m a -> Maybe (State Text Void) -> Text -> OrgParser m a
+parseFromText parser mState txt = do
+  currentState <- getParserState
+  let previousState = fromMaybe currentState mState
+  setParserState previousState { stateInput = txt }
+  result <- parser
+  afterState <- getParserState
+  setParserState currentState
+    { stateParseErrors = stateParseErrors currentState
+                         ++ stateParseErrors afterState }
+  pure result
+

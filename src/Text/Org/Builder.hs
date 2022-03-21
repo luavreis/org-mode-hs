@@ -41,8 +41,8 @@ instance Semigroup OrgInlines where
         where
           meld =
             case (x, y) of
-              (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
-              (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
+              (Plain t1, Plain t2)   -> xs' |> Plain (t1 <> t2)
+              (Italic i1, Italic i2) -> xs' |> Italic (i1 <> i2)
               (Underline i1, Underline i2) -> xs' |> Underline (i1 <> i2)
               (Bold i1, Bold i2) -> xs' |> Bold (i1 <> i2)
               (Subscript i1, Subscript i2) -> xs' |> Subscript (i1 <> i2)
@@ -72,16 +72,16 @@ text = fromList . map conv . breakByNewline
   where breakByNewline = T.groupBy sameCategory
         sameCategory x y = is_newline x == is_newline y
         conv xs | T.any is_newline xs = SoftBreak
-        conv xs = Str xs
+        conv xs = Plain xs
         is_newline '\r' = True
         is_newline '\n' = True
         is_newline _    = False
 
-str :: Text -> OrgInlines
-str = one . Str
+plain :: Text -> OrgInlines
+plain = one . Plain
 
-emph :: OrgInlines -> OrgInlines
-emph = one . Emph . toList
+italic :: OrgInlines -> OrgInlines
+italic = one . Italic . toList
 
 underline :: OrgInlines -> OrgInlines
 underline = one . Underline . toList
@@ -139,12 +139,8 @@ note :: OrgElements -> OrgInlines
 note = one . Note . toList
 
 para :: OrgInlines -> OrgElements
-para = one . Para . toList
+para = one . Paragraph . toList
 
-plain :: OrgInlines -> OrgElements
-plain ils = if null ils
-               then mempty
-               else one . Plain . toList $ ils
 
 -- lineBlock :: [OrgInlines] -> OrgElements
 -- lineBlock = one . LineBlock . map toList

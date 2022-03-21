@@ -1,0 +1,12 @@
+#+TITLE: Comments on the Org spec
+
+There is no finished "specification" on exactly how an Org parser should behave, but it's generally accepted that a conformant parser is one that behaves just like the ~org-elements~ parser (including its possible bugs?). But this is a not very convenient specification: you either need to try to guess what it does (by calling ~org-element-parse-buffer~) or look at the source code and try to interpret the not-very-readable regex parsers.
+
+Some efforts are being done to compile a more human readable specification. As of today, the [[https://web.archive.org/web/20220321165301/https://orgmode.org/worg/dev/org-syntax-edited.html][Org syntax (v2\beta)]] page seems to be the most complete in this regard. Since I'm using it to develop the parser, Teco asked me to make notes on it.
+
+
+* General comments
+
+* Elements
+** 3.2.8 Properties drawer
+It's not noted that property drawers can appear at the beggining of the file, possibly after comments but not after empty lines.

@@ -22,7 +22,7 @@ orgDocument elements inlines = do
   -- At this point, the whole document was parsed.
   -- This means an state with keywords is available.
   finalState <- getState
-  return $ flip runReader finalState $ do
+  return $ flip runReader finalState . getAp $ do
     keywords' <- sequence $ orgStateKeywords finalState
     topLevel' <- topLevel
     sections' <- sequence sections
@@ -150,7 +150,7 @@ propertyDrawer = try $ do
      hspace *> string' ":end:" <* hspace <* newline
 
    nodeProperty :: OrgParser m (PropertyName, PropertyValue)
-   nodeProperty = try $ (,) <$> name <*> value
+   nodeProperty = try $ liftA2 (,) name value
 
    name :: OrgParser m PropertyName
    name =
