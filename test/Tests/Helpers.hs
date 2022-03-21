@@ -9,16 +9,19 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Text.Pretty.Simple
 import Text.Megaparsec
-import Text.Org.Parser.Definitions (OrgParser, Properties)
-import Text.Org.Parser.State
+import Text.Org.Parser.Definitions (OrgParser, Properties, defaultState, F)
 import Text.Org.Builder (Many)
 import qualified Text.Show
 
 type OrgParseError = ParseErrorBundle Text Void
+newtype PrettyError = PrettyError { unPrettyError :: String }
+
+instance Show PrettyError where
+  show = unPrettyError
 
 class PrettyParsable a where
   type Parsed a
-  prettyParse :: OrgParser Identity a -> Text -> Either OrgParseError (Pretty a)
+  prettyParse :: OrgParser Identity a -> Text -> Either PrettyError (Pretty a)
   prettyPrint :: Pretty a -> String
   prettyEq :: Pretty a -> Pretty a -> Bool
   default prettyEq :: (Eq (Parsed a)) => Pretty a -> Pretty a -> Bool
@@ -30,7 +33,7 @@ parse' p = parse (evalStateT p defaultState) ""
 parseMany :: OrgParser Identity (F (Many a)) -> Text -> Either OrgParseError [a]
 parseMany parser txt =
   parse (runStateT parser defaultState) "" txt
-  & second (toList . uncurry runReader)
+  & second (toList . uncurry (runReader . getAp))
 
 newtype Pretty a = Pretty { unPretty :: Parsed a }
 
@@ -42,12 +45,12 @@ instance PrettyParsable a => Show (Pretty a) where
 
 instance (Show a, Eq a) => PrettyParsable (F (Many a)) where
   type Parsed (F (Many a)) = [a]
-  prettyParse p = second Pretty . parseMany p
+  prettyParse p = bimap (PrettyError . errorBundlePretty) Pretty . parseMany p
   prettyPrint = toString . pShow . toList . unPretty
 
 instance PrettyParsable Properties where
   type Parsed Properties = Properties
-  prettyParse p = second Pretty . parse' p
+  prettyParse p = bimap (PrettyError . errorBundlePretty) Pretty . parse' p
   prettyPrint = toString . pShow . unPretty
 
 infix 5 =?>
@@ -67,7 +70,7 @@ infix 4 ~:
 (~:) name parser (txt, ref) =
   testCase name $
   case prettyParse parser txt of
-    Left e  -> assertFailure (errorBundlePretty e)
+    Left e  -> assertFailure $ unPrettyError e
     Right x -> x @?= Pretty ref
 
 infix 4 ~!:

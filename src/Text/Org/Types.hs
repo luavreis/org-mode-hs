@@ -122,10 +122,8 @@ data OrgElement
     -- | Table, with attributes, caption, column alignments and widths
     -- (required), table head, table bodies, and table foot.
     | Table Affiliated [OrgInline] [ColSpec] TableHead [TableBody] TableFoot
-    -- | Plain text, not a paragraph.
-    | Plain [OrgInline]
     -- | Paragraph.
-    | Para [OrgInline]
+    | Paragraph [OrgInline]
     deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 
@@ -184,10 +182,10 @@ data ClockData = ClockData
 
 -- | Inline elements. Derived from Pandoc's Inline.
 data OrgInline
-    = Str Text            -- ^ Text (string)
-    | Emph [OrgInline]         -- ^ Emphasized text (list of inlines)
+    = Plain Text            -- ^ Text (string)
+    | Italic [OrgInline]         -- ^ Emphasized text (list of inlines)
     | Underline [OrgInline]    -- ^  Underlined text (list of inlines)
-    | Bold [OrgInline]       -- ^ Strongly emphasized text (list of inlines)
+    | Bold [OrgInline]       -- ^ Bold text (list of inlines)
     | Strikethrough [OrgInline]    -- ^ Strikethrough text (list of inlines)
     | Superscript [OrgInline]  -- ^ Superscripted text (list of inlines)
     | Subscript [OrgInline]    -- ^ Subscripted text (list of inlines)
@@ -197,7 +195,6 @@ data OrgInline
     | Code Text           -- ^ Inline code (literal) TODO babel attributes
     | Verbatim Text
     | Src Text (Map Text Text) Text
-    -- | Space                 -- ^ Inter-word space
     | SoftBreak             -- ^ Soft line break
     | LineBreak             -- ^ Hard line break
     | Math MathType Text  -- ^ TeX math (literal) TODO

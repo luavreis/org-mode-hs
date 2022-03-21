@@ -2,15 +2,95 @@
 
 module Text.Org.Parser.OrgObjects where
 import Prelude hiding (many, some)
+import Relude.Extra (notMember)
 import Text.Org.Parser.Definitions
 import Text.Org.Parser.Common
 import Text.Org.Parser.ElementStarts
-import qualified Data.Text as T
 import qualified Text.Org.Builder as B
+import qualified Data.Text as T
 
-type InlineParser m = OrgParser m (F OrgInlines)
+data MarkupContext = MarkupContext
+    { endOffset :: Int
+    , endOfEndOffset :: Int
+    , lastChar :: Maybe Char
+    }
 
--- | This is used for inline elements that can have line breaks
+type WithMContext m = ReaderT MarkupContext (OrgParser m)
+
+contextEnd :: WithMContext m ()
+contextEnd = do
+  end <- endOffset <$> ask
+  endOfEnd <- endOfEndOffset <$> ask
+  here <- getOffset
+  guard (here == end)
+  void $ takeP (Just "end of context") (endOfEnd - here)
+
+runMContext ::
+  MOrgParser m ()
+  -> WithMContext m a
+  -> OrgParser m a
+runMContext end p = do
+  flip runReaderT (MarkupContext maxBound maxBound Nothing) $
+    withMContext (mapParser lift end) p
+
+withMContext ::
+  Marked (WithMContext m) ()
+  -> WithMContext m a
+  -> WithMContext m a
+withMContext end p = do
+  pEnd  <- endOffset <$> ask
+  let
+    marks = getMarks end
+    find' = do
+      str <- optional $ takeWhile1P
+             (Just $ "markup context without " ++ show (toList marks))
+             (`notMember` marks)
+      (guard . (< pEnd)) =<< getOffset
+      withLastChar (T.last <$> str) $
+        lookAhead (endPosOf_ $ getParser end)
+          <|> anySingle *> find'
+  (endP', endP) <- endPosOf (try find')
+  lchar <- lastChar  <$> ask
+  lift $ runReaderT p (MarkupContext endP endP' lchar)
+
+withLastChar ::
+  Maybe Char -- ^ End parser for new context
+  -> WithMContext m a -- ^ New context
+  -> WithMContext m a
+withLastChar lchar ctx = do
+  plchar <- lastChar <$> ask
+  endP <- endOffset <$> ask
+  endP' <- endOfEndOffset <$> ask
+  lift $ runReaderT ctx (MarkupContext endP endP' (lchar <|> plchar))
+
+markupContext :: Monoid k
+  => (Text -> k)
+  -> Marked (WithMContext m) k
+  -> WithMContext m k
+markupContext f elems = try $ do
+  let specials = getMarks elems
+  str <- optional $ takeWhile1P
+         (Just $ "chars not in " ++ show (toList specials))
+         (`notMember` specials)
+  let self = maybe mempty f str
+  (self <>) <$> withLastChar (T.last <$> str)
+    (finishSelf <|> anotherEl <|> nextChar)
+  where
+    finishSelf = do
+      contextEnd
+      pure mempty
+    anotherEl = do
+      el <- getParser elems
+      rest <- markupContext f elems
+      pure $ el <> rest
+    nextChar = do
+      el <- f . T.singleton <$> anySingle
+      rest <- markupContext f elems
+      pure $ el <> rest
+
+plainMarkupContext :: Marked (WithMContext m) (F OrgInlines) -> WithMContext m (F OrgInlines)
+plainMarkupContext = markupContext (pure . B.plain)
+
 -- inside, like citations and angle links. The priority is given to
 -- new blocks (hence @notFollowedBy endOfBlock@) and initial
 -- whitespace is ignored.
@@ -24,166 +104,109 @@ emphasisPreChars :: String
 emphasisPreChars = "-\t ('\"{"
 
 emphasisPostChars :: String
-emphasisPostChars = "-\t\n .,:!?;'\")}["
+emphasisPostChars = " ,.-\t\n:!?;'\")}["
 
-takeWithSpecial :: forall m. (Monad m) =>
-  (Text -> OrgInlines) -- ^ "Default" constructor
-  -> [Char] -- ^ Special characters
-  -> [InlineParser m] -- ^ Special parsers
-  -> [InlineParser m] -- ^ Pre-char parsers
-  -> Bool -- ^ Forbids space before end?
-  -> Maybe Char -- ^ Last char
-  -> OrgParser m () -- ^ End parser
-  -> InlineParser m
-takeWithSpecial f chars sP pP fS lC end = try $ do
-  str <- optional $ takeWhile1P (Just $ "none of " <> show chars) (`notElem` chars)
-  (maybe mempty B.str str <>) <<$>> withLast (T.last <$> str <|> lC)
-  where
-    withLast :: Maybe Char -> InlineParser m
-    withLast last' = do
-      (for_ last' (\c -> guard (not (fS && isSpace c)))
-       *> end
-       $> pure mempty) <|> do
-        el <- choice sP
-              <|> do for_ last' $ guard . (`elem` emphasisPreChars)
-                     choice pP
-              <|> do c <- anySingle
-                     pureF (f $ T.singleton c)
-        rest <- takeWithSpecial f chars sP pP fS last' end
-        return $ do
-          el' <- el
-          rest' <- rest
-          pure $ el' <> rest'
+emphasisPost :: Char -> Marked (WithMContext m) ()
+emphasisPost e = mark [e] $ do
+  lchar <- lastChar <$> ask
+  for_ lchar $ guard . not . isSpace
+  _ <- char e
+  lookAhead
+    (contextEnd <|> void (satisfy (`elem` emphasisPostChars)))
 
-
-emphasisPost :: Char -> OrgParser m ()
-emphasisPost e = try $ do
-  char e
-  notFollowedBy (satisfy (`notElem` emphasisPostChars))
-
-rawMarkup ::
-  (Text -> OrgInlines)
-  -> Char
-  -> InlineParser m
-rawMarkup f d = try $ do
-  char d
-  notFollowedBy spaceChar
-  str <- takeWhile1P (Just "raw markup") (\c -> c /= '\n' && c /= d)
-  guard (not . isSpace $ T.last str)
-  emphasisPost d
-  pureF $ f str
-
-code :: InlineParser m
-code = rawMarkup B.code '~'
-
-verbatim :: InlineParser m
-verbatim = rawMarkup B.verbatim '='
+guardPreChar :: WithMContext m ()
+guardPreChar = do
+  lchar <- lastChar <$> ask
+  for_ lchar $ guard . (`elem` emphasisPreChars)
 
 markup :: Monad m
   => (OrgInlines -> OrgInlines)
   -> Char
-  -> InlineParser m
-markup f c = try $ do
-  char c
+  -> Marked (WithMContext m) (F OrgInlines)
+markup f c = mark [c] $ try $ do
+  guardPreChar
+  _ <- char c
   notFollowedBy spaceChar
-  f <<$>>
-    takeWithSpecial
-      B.str
-      standardSpecial
-      standardP
-      minimalPCP
-      True
-      Nothing
-      (emphasisPost c)
+  f <<$>> withMContext (emphasisPost c)
+    (plainMarkupContext standardP)
 
-emph :: Monad m => InlineParser m
-emph = markup B.emph '/'
+rawMarkup ::
+  (Text -> OrgInlines)
+  -> Char
+  -> Marked (WithMContext m) (F OrgInlines)
+rawMarkup f d = mark [d] $ try $ do
+  guardPreChar
+  _ <- char d
+  notFollowedBy spaceChar
+  str <- withMContext (emphasisPost d)
+         (markupContext id (mark [d] empty))
+  pureF $ f str
 
-underline :: Monad m => InlineParser m
+code :: Marked (WithMContext m) (F OrgInlines)
+code = rawMarkup B.code '~'
+
+verbatim :: Marked (WithMContext m) (F OrgInlines)
+verbatim = rawMarkup B.verbatim '='
+
+italic :: Monad m => Marked (WithMContext m) (F OrgInlines)
+italic = markup B.italic '/'
+
+underline :: Monad m => Marked (WithMContext m) (F OrgInlines)
 underline = markup B.underline '_'
 
-bold :: Monad m => InlineParser m
+bold :: Monad m => Marked (WithMContext m) (F OrgInlines)
 bold = markup B.bold '*'
 
-striketrough :: Monad m => InlineParser m
+striketrough :: Monad m => Marked (WithMContext m) (F OrgInlines)
 striketrough = markup B.strikethrough '+'
 
-linebreak :: InlineParser m
-linebreak = try $ pure B.linebreak <$ string "\\\\" <* hspace <* newline <* hspace
+linebreak :: Marked (WithMContext m) (F OrgInlines)
+linebreak =  mark "\n" $ try $
+  pure B.linebreak <$ string "\\\\" <* hspace <* newline <* hspace
 
 -- | An endline character that can be treated as a space, not a line break.
-endline :: InlineParser m
-endline = try $
+endline :: Monad m => Marked (WithMContext m) (F OrgInlines)
+endline = mark "\n" $ lift . try $
   newline
   *> hspace
   *> notFollowedBy endOfBlock
   $> pure B.softbreak
 
--- treat these as potentially non-text when parsing inline:
-minimalSpecial :: [Char]
-minimalSpecial =
-  ['\n', '\'', '$', '"', '*', '/'
-  , '+', '=', '\\', '^', '_', '~'
-  ]
-
-minimalP :: [InlineParser m]
+minimalP :: Monad m => Marked (WithMContext m) (F OrgInlines)
 minimalP =
-  [ endline
-  ]
+  mconcat [ endline
+          , code
+          , verbatim
+          , italic
+          , underline
+          , bold
+          , striketrough
+          ]
 
-minimalPCP :: Monad m => [InlineParser m]
-minimalPCP =
-  [ code
-  , verbatim
-  , emph
-  , underline
-  , bold
-  , striketrough
-  ]
-
-standardSpecial :: [Char]
-standardSpecial = minimalSpecial ++
-  [ '@', '[', '{'
-  ]
-
-standardP :: Monad m => [InlineParser m]
-standardP = minimalP ++
-  [ timestamp
-  , cite
-  , linebreak
-  ]
-
-plain :: Monad m => InlineParser m
-plain =
-  takeWithSpecial
-    B.str
-    standardSpecial
-    standardP
-    minimalPCP
-    False
-    Nothing
-    (try $ space *> endOfBlock)
-
+standardP :: Monad m => Marked (WithMContext m) (F OrgInlines)
+standardP =
+  mconcat [ minimalP
+          ]
 
 -- * Citations
 
-cite :: Monad m => InlineParser m
-cite = fmap B.cite <$> orgCite
+citation :: Monad m => Marked (WithMContext m) (F OrgInlines)
+citation = fmap B.cite <$> orgCite
 
 -- | A citation in org-cite style
-orgCite :: Monad m => OrgParser m (F OrgCitation)
-orgCite = try $ do
-  string "[cite"
+orgCite :: Monad m => Marked (WithMContext m) (F OrgCitation)
+orgCite = mark "[" $ lift $ try $ do
+  _ <- string "[cite"
   (style, variant) <- citeStyle
-  char ':'
+  _ <- char ':'
   hspace
-  optional newlineInside
+  _ <- optional newlineInside
   globalPrefix <- option (pure mempty) (try (citePrefix <* char ';'))
   items <- citeItems
   globalSuffix <- option (pure mempty) (try (char ';' *> citeSuffix))
   hspace
-  optional newlineInside
-  char ']'
+  _ <- optional newlineInside
+  _ <- char ']'
   return $ do
     prefix' <- globalPrefix
     suffix' <- globalSuffix
@@ -226,45 +249,21 @@ citeItem = do
       , refSuffix = toList suf'
       }
 
-citeBracketed :: Monad m => InlineParser m
-citeBracketed = try $ do
-  char '['
-  (\e -> B.str "[" <> e <> B.str "]") <<$>>
-    takeWithSpecial
-      B.str
-      (minimalSpecial ++ [';', '@', '[', ']'])
-      (citeBracketed : minimalP)
-      minimalPCP
-      False
-      (Just '[')
-      (void $ lookAhead (oneOf [']', ';', '@']))
-    <* char ']'
-
 citePrefix :: Monad m => InlineParser m
 citePrefix =
-  takeWithSpecial
-    B.str
-    (minimalSpecial ++ [';', '@', '[', ']'])
-    (citeBracketed : minimalP)
-    minimalPCP
-    False
-    Nothing
-    (void . lookAhead $ oneOf [';', '@', ']'])
+   runMContext
+     (mark "@;" $ try $ hspace *> lookAhead (oneOf ['@', ';']) $> ())
+     (plainMarkupContext standardP)
 
 citeSuffix :: Monad m => InlineParser m
 citeSuffix =
-  takeWithSpecial
-    B.str
-    (minimalSpecial ++ [';', '[', ']'])
-    (citeBracketed : minimalP)
-    minimalPCP
-    False
-    Nothing
-    (void . lookAhead $ oneOf [';', ']'])
+   runMContext
+     (mark ";" $ try $ hspace *> lookAhead (oneOf [';']) $> ())
+     (plainMarkupContext standardP)
 
 orgCiteKey :: OrgParser m Text
 orgCiteKey = do
-  char '@'
+  _ <- char '@'
   takeWhile1P (Just "citation key allowed chars") orgCiteKeyChar
 
 orgCiteKeyChar :: Char -> Bool
@@ -298,7 +297,7 @@ parseTimestamp = try $ do
         pure $ TimestampData isActive (d1, fst <$> t1, r1)
   where
     component delims = do
-      char (fst delims)
+      _ <- char (fst delims)
       date <- parseDate
       time <- optional . try $ do
         hspace1
@@ -307,7 +306,7 @@ parseTimestamp = try $ do
         pure (startTime, endTime)
       rods <- many (try $ hspace1 *> repeaterOrDelay)
       hspace
-      char (snd delims)
+      _ <- char (snd delims)
       pure (date, time, rods)
 
     parseDate :: OrgParser m Date

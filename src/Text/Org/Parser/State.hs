@@ -4,13 +4,12 @@ module Text.Org.Parser.State where
 import Text.Org.Types
 import Text.Org.Builder (OrgElements)
 
-type F = Reader OrgParserState
+type F = Ap (Reader OrgParserState)
 
 -- | Org-mode parser state
 data OrgParserState = OrgParserState
   { orgStateAnchorIds            :: [Text]
-  , orgStateEmphasisCharStack    :: [Char]
-  -- , orgStateLastChar             :: Char
+  , orgStateLastChar             :: Maybe Char
   , orgStateExcludeTags          :: Set Tag
   , orgStateExcludeTagsChanged   :: Bool
   , orgStateIdentifiers          :: Set Text
@@ -55,19 +54,3 @@ activeTodoSequences st =
 
 activeTodoMarkers :: OrgParserState -> TodoSequence
 activeTodoMarkers = concat . activeTodoSequences
-
-defaultState :: OrgParserState
-defaultState =  OrgParserState
-  { orgStateAnchorIds            = []
-  , orgStateEmphasisCharStack    = []
-  , orgStateExcludeTags          = mempty
-  , orgStateExcludeTagsChanged   = False
-  , orgStateIdentifiers          = mempty
-  , orgStateKeywords             = []
-  , orgStateLinkFormatters       = mempty
-  , orgStateMacros               = mempty
-  , orgStateMacroDepth           = 1
-  , orgStateNotes'               = []
-  , orgStateTodoSequences        = []
-  , orgStateTrimLeadBlkIndent    = False
-  }
