@@ -18,16 +18,16 @@ import Text.Megaparsec.Debug
 import Text.Org.Parser.State
 import Data.Char (isSpace, isAlphaNum, isLetter, isDigit)
 
-type Parser m = ParsecT Void Text m
+type Parser = ParsecT Void Text Identity
 
-type OrgParser m = StateT OrgParserState (Parser m)
+type OrgParser = StateT OrgParserState Parser
 
-getState :: OrgParser m OrgParserState
+getState :: OrgParser OrgParserState
 getState = get
 
 updateState
   :: (OrgParserState -> OrgParserState)
-  -> OrgParser m ()
+  -> OrgParser ()
 updateState = modify
 
 pureF :: Monad m => a -> m (F a)
@@ -49,7 +49,7 @@ defaultState =  OrgParserState
   , orgStateTrimLeadBlkIndent    = False
   }
 
-type InlineParser m = OrgParser m (F OrgInlines)
+type InlineParser m = OrgParser (F OrgInlines)
 
 data Marked m a = Marked
   { getMarks :: Set Char -- TODO use (Pred {toPred :: Char -> Bool})
@@ -73,4 +73,4 @@ instance Alternative m => Monoid (Marked m a) where
   mempty = Marked mempty empty
   mconcat xs = Marked (foldMap getMarks xs) (choice $ map getParser xs)
 
-type MOrgParser m = Marked (OrgParser m)
+type MOrgParser m = Marked OrgParser

@@ -1,2 +1,2 @@
 packages: org-parser.cabal
-optimization: 2
+optimization: False

@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, FlexibleInstances, FlexibleContexts, DefaultSignatures, ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies, FlexibleInstances, MultiParamTypeClasses, FlexibleContexts, ScopedTypeVariables #-}
 -- |
 
 module Tests.Helpers
@@ -9,49 +9,53 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Text.Pretty.Simple
 import Text.Megaparsec
-import Text.Org.Parser.Definitions (OrgParser, Properties, defaultState, F)
+import Text.Org.Parser.Definitions
 import Text.Org.Builder (Many)
-import qualified Text.Show
+import Text.Org.Parser.MarkupContexts
 
 type OrgParseError = ParseErrorBundle Text Void
-newtype PrettyError = PrettyError { unPrettyError :: String }
 
-instance Show PrettyError where
-  show = unPrettyError
+class Parsable m a where
+  type Parsed m a
+  parse' :: m a -> Text -> Either OrgParseError (Parsed m a)
 
-class PrettyParsable a where
-  type Parsed a
-  prettyParse :: OrgParser Identity a -> Text -> Either PrettyError (Pretty a)
-  prettyPrint :: Pretty a -> String
-  prettyEq :: Pretty a -> Pretty a -> Bool
-  default prettyEq :: (Eq (Parsed a)) => Pretty a -> Pretty a -> Bool
-  prettyEq x y = unPretty x == unPretty y
+instance Parsable OrgParser (F a) where
+  type Parsed OrgParser (F a) = (F a, OrgParserState)
+  parse' p = parse (runStateT p defaultState) ""
 
-parse' :: OrgParser Identity a -> Text -> Either OrgParseError a
-parse' p = parse (evalStateT p defaultState) ""
+instance Parsable OrgParser Properties where
+  type Parsed OrgParser Properties = Properties
+  parse' p = parse (evalStateT p defaultState) ""
 
-parseMany :: OrgParser Identity (F (Many a)) -> Text -> Either OrgParseError [a]
-parseMany parser txt =
-  parse (runStateT parser defaultState) "" txt
-  & second (toList . uncurry (runReader . getAp))
+instance Parsable WithMContext (F a) where
+  type Parsed WithMContext (F a) = (F a, OrgParserState)
+  parse' p = parse (runStateT (evalStateT p (MarkupContext Nothing)) defaultState) ""
 
-newtype Pretty a = Pretty { unPretty :: Parsed a }
+instance Parsable (Marked WithMContext) (F a) where
+  type Parsed (Marked WithMContext) (F a) = (F a, OrgParserState)
+  parse' p = parse (runStateT (evalStateT (getParser p) (MarkupContext Nothing)) defaultState) ""
 
-instance PrettyParsable a => Eq (Pretty a) where
-  (==) = prettyEq
+class PrettyFormable a where
+  type PrettyForm a
+  prettyForm :: a -> PrettyForm a
 
-instance PrettyParsable a => Show (Pretty a) where
-  show = prettyPrint
+instance PrettyFormable Properties where
+  type PrettyForm Properties = Properties
+  prettyForm = id
 
-instance (Show a, Eq a) => PrettyParsable (F (Many a)) where
-  type Parsed (F (Many a)) = [a]
-  prettyParse p = bimap (PrettyError . errorBundlePretty) Pretty . parseMany p
-  prettyPrint = toString . pShow . toList . unPretty
+instance PrettyFormable (Many a) where
+  type PrettyForm (Many a) = [a]
+  prettyForm = toList
 
-instance PrettyParsable Properties where
-  type Parsed Properties = Properties
-  prettyParse p = bimap (PrettyError . errorBundlePretty) Pretty . parse' p
-  prettyPrint = toString . pShow . unPretty
+instance PrettyFormable a => PrettyFormable (F a, OrgParserState) where
+  type PrettyForm (F a, OrgParserState) = PrettyForm a
+  prettyForm = prettyForm . uncurry (runReader . getAp)
+
+prettyParse :: (Parsable m a, PrettyFormable (Parsed m a), Show (PrettyForm (Parsed m a))) => m a -> Text -> IO ()
+prettyParse parser txt =
+  case parse' parser txt of
+    Left e -> putStrLn $ errorBundlePretty e
+    Right x -> pPrint $ prettyForm x
 
 infix 5 =?>
 (=?>) :: a -> b -> (a,b)
@@ -62,26 +66,26 @@ infix 4 =:
 (=:) name (x, y) = testCase name (x @?= y)
 
 infix 4 ~:
-(~:) :: PrettyParsable a
+(~:) :: (Parsable m a, PrettyFormable (Parsed m a), Eq (PrettyForm (Parsed m a)), Show (PrettyForm (Parsed m a)))
   => TestName
-  -> OrgParser Identity a
-  -> (Text, Parsed a)
+  -> m a
+  -> (Text, PrettyForm (Parsed m a))
   -> TestTree
 (~:) name parser (txt, ref) =
   testCase name $
-  case prettyParse parser txt of
-    Left e  -> assertFailure $ unPrettyError e
-    Right x -> x @?= Pretty ref
+  case parse' parser txt of
+    Left e  -> assertFailure $ errorBundlePretty e
+    Right x -> prettyForm x @?= ref
 
-infix 4 ~!:
-(~!:) :: PrettyParsable a
-  => TestName
-  -> OrgParser Identity a
-  -> Text
-  -> TestTree
-(~!:) name parser txt =
-  testCase name $
-  case prettyParse parser txt of
-    Left _  -> pure ()
-    Right x ->
-      assertFailure ("Should not parse, but was parsed as: \n" ++ show x)
+-- infix 4 ~!:
+-- (~!:) :: PrettyParsable a
+--   => TestName
+--   -> OrgParser a
+--   -> Text
+--   -> TestTree
+-- (~!:) name parser txt =
+--   testCase name $
+--   case prettyParse parser txt of
+--     Left _  -> pure ()
+--     Right x ->
+--       assertFailure ("Should not parse, but was parsed as: \n" ++ show x)
