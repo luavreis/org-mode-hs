@@ -10,11 +10,11 @@ import qualified Data.Text as T
 
 -- | Parse input as org document tree.
 orgDocument
-  :: OrgParser m (F OrgElements)
-  -> OrgParser m (F OrgInlines)
-  -> OrgParser m OrgDocument
+  :: OrgParser (F OrgElements)
+  -> OrgParser (F OrgInlines)
+  -> OrgParser OrgDocument
 orgDocument elements inlines = do
-  many commentLine
+  _ <- many commentLine
   properties <- option mempty propertyDrawer
   topLevel <- elements
   sections <- many (section elements inlines 1)
@@ -33,16 +33,16 @@ orgDocument elements inlines = do
       , documentChildren = sections'
       }
   where
-    commentLine :: OrgParser m ()
+    commentLine :: OrgParser ()
     commentLine = commentLineStart <* anyLine
 
 -- | Read an Org mode section and its contents. @lvl@
 -- gives the minimum acceptable level of the heading.
 section
-  :: OrgParser m (F OrgElements)
-  -> OrgParser m (F OrgInlines)
+  :: OrgParser (F OrgElements)
+  -> OrgParser (F OrgInlines)
   -> Int
-  -> OrgParser m (F OrgSection)
+  -> OrgParser (F OrgSection)
 section elements inlines lvl = try $ do
   level <- headingStart
   guard (lvl <= level)
@@ -69,21 +69,21 @@ section elements inlines lvl = try $ do
       , sectionChildren = children'
       }
  where
-   endOfTitle :: OrgParser m Tags
+   endOfTitle :: OrgParser Tags
    endOfTitle = try $ do
      skipSpaces
      tags <- option [] (headerTags <* skipSpaces)
-     newline
+     _ <- newline
      return tags
 
-   headerTags :: OrgParser m Tags
+   headerTags :: OrgParser Tags
    headerTags = try $ do
-     char ':'
+     _ <- char ':'
      endBy1 orgTagWord (char ':')
 
-   manyThen :: OrgParser m a
-            -> OrgParser m b
-            -> OrgParser m ([a], b)
+   manyThen :: OrgParser a
+            -> OrgParser b
+            -> OrgParser ([a], b)
    manyThen p end = ([],) <$> try end <|> do
      x <- p
      first (x:) <$> manyThen p end
@@ -92,29 +92,29 @@ section elements inlines lvl = try $ do
 -- * Heading and document "subelements"
 
 -- | Parse a to-do keyword that is registered in the state.
-todoKeyword :: OrgParser m TodoKeyword
+todoKeyword :: OrgParser TodoKeyword
 todoKeyword = try $ do
   taskStates <- activeTodoMarkers <$> getState
   choice (map kwParser taskStates)
   where
-    kwParser :: TodoKeyword -> OrgParser m TodoKeyword
+    kwParser :: TodoKeyword -> OrgParser TodoKeyword
     kwParser tdm =
       -- NOTE to self: space placement - "TO" is subset of "TODOKEY"
       try (string (todoName tdm) *> space $> tdm)
 
 -- | Parse a priority cookie like @[#A]@.
-priorityCookie :: OrgParser m Priority
+priorityCookie :: OrgParser Priority
 priorityCookie = try $
   string "[#"
   *> priorityFromChar
   <* char ']'
   where
-    priorityFromChar :: OrgParser m Priority
+    priorityFromChar :: OrgParser Priority
     priorityFromChar =
       NumericPriority <$> digitIntChar <|>
       LetterPriority <$> uppercaseAZ
 
-orgTagWord :: OrgParser m Text
+orgTagWord :: OrgParser Text
 orgTagWord = takeWhile1P (Just "tag characters (alphanumeric, @, %, # or _)")
              (\c -> isAlphaNum c || c `elem` ['@', '%', '#', '_'])
 
@@ -123,7 +123,7 @@ emptyPlanning :: PlanningInfo
 emptyPlanning = PlanningInfo Nothing Nothing Nothing
 
 -- | Read a single planning-related and timestamped line. TODO
-planningInfo :: OrgParser m PlanningInfo
+planningInfo :: OrgParser PlanningInfo
 planningInfo = try $ do
   updaters <- some planningDatum <* skipSpaces <* newline
   return $ foldr ($) emptyPlanning updaters
@@ -137,7 +137,7 @@ planningInfo = try $ do
 
 -- | Read a :PROPERTIES: drawer and return the key/value pairs contained
 -- within.
-propertyDrawer :: OrgParser m Properties
+propertyDrawer :: OrgParser Properties
 propertyDrawer = try $ do
   skipSpaces
   _ <- string' ":properties:"
@@ -145,14 +145,14 @@ propertyDrawer = try $ do
   _ <- newline
   manyTill nodeProperty (try endOfDrawer)
   where
-   endOfDrawer :: OrgParser m Text
+   endOfDrawer :: OrgParser Text
    endOfDrawer = try $
      hspace *> string' ":end:" <* hspace <* newline
 
-   nodeProperty :: OrgParser m (PropertyName, PropertyValue)
+   nodeProperty :: OrgParser (PropertyName, PropertyValue)
    nodeProperty = try $ liftA2 (,) name value
 
-   name :: OrgParser m PropertyName
+   name :: OrgParser PropertyName
    name =
      skipSpaces
      *> char ':'
@@ -160,7 +160,7 @@ propertyDrawer = try $ do
         <&> T.stripSuffix ":"
         >>= guardMaybe "expecting ':' at end of node property name"
 
-   value :: OrgParser m PropertyValue
+   value :: OrgParser PropertyValue
    value =
      skipSpaces
      *> (takeWhileP (Just "node property value") (/= '\n')

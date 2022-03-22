@@ -22,6 +22,7 @@ Library
                      Text.Org.Parser.OrgDocument
                      Text.Org.Parser.OrgElements
                      Text.Org.Parser.OrgObjects
+                     Text.Org.Parser.MarkupContexts
                      -- Text.Org.Generic
                      -- Text.Org.Walk
   other-modules:     Text.Org.Parser.Common

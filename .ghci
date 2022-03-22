@@ -1,2 +1,3 @@
 import Text.Org.Parser.OrgElements
+import Text.Org.Parser.OrgObjects
 :set prompt ">"
