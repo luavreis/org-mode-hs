@@ -107,8 +107,11 @@ doubleQuoted = quoted DoubleQuote
 quoted :: QuoteType -> OrgInlines -> OrgInlines
 quoted qt = one . Quoted qt . toList
 
-cite :: OrgCitation -> OrgInlines
-cite = one . Cite
+citation :: Citation -> OrgInlines
+citation = one . Cite
+
+citation' :: Text -> Text -> OrgInlines -> OrgInlines -> [CiteReference] -> OrgInlines
+citation' style variant prefix suffix = one . Cite . Citation style variant (toList prefix) (toList suffix)
 
 timestamp :: TimestampData -> OrgInlines
 timestamp = one . Timestamp

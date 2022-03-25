@@ -12,44 +12,56 @@ import Text.Megaparsec
 import Text.Org.Parser.Definitions
 import Text.Org.Builder (Many)
 import Text.Org.Parser.MarkupContexts
+import qualified Text.Show
 
 type OrgParseError = ParseErrorBundle Text Void
 
+-- | This class is mainly used for the tests cases.
+-- @Parsed m a@ is the "monad-stripped" version of parse
+-- tree with which we can compare in the test cases.
 class Parsable m a where
   type Parsed m a
   parse' :: m a -> Text -> Either OrgParseError (Parsed m a)
 
+applyFuture :: (F a, OrgParserState) -> a
+applyFuture = uncurry (runReader . getAp)
+
 instance Parsable OrgParser (F a) where
-  type Parsed OrgParser (F a) = (F a, OrgParserState)
-  parse' p = parse (runStateT p defaultState) ""
+  type Parsed OrgParser (F a) = a
+  parse' p = second applyFuture .
+    parse (runStateT p defaultState) ""
+
+instance Parsable WithMContext (F a) where
+  type Parsed WithMContext (F a) = a
+  parse' p = parse' (evalStateT p defaultMCtx)
+
+instance Parsable (Marked WithMContext) (F a) where
+  type Parsed (Marked WithMContext) (F a) = a
+  parse' p = parse' (getParser p)
 
 instance Parsable OrgParser Properties where
   type Parsed OrgParser Properties = Properties
   parse' p = parse (evalStateT p defaultState) ""
 
-instance Parsable WithMContext (F a) where
-  type Parsed WithMContext (F a) = (F a, OrgParserState)
-  parse' p = parse (runStateT (evalStateT p (MarkupContext Nothing)) defaultState) ""
+instance PrettyFormable Properties where
+  type PrettyForm Properties = Properties
+  prettyForm = id
 
-instance Parsable (Marked WithMContext) (F a) where
-  type Parsed (Marked WithMContext) (F a) = (F a, OrgParserState)
-  parse' p = parse (runStateT (evalStateT (getParser p) (MarkupContext Nothing)) defaultState) ""
+instance Parsable OrgParser OrgDocument where
+  type Parsed OrgParser OrgDocument = OrgDocument
+  parse' p = parse (evalStateT p defaultState) ""
+
+instance PrettyFormable OrgDocument where
+  type PrettyForm OrgDocument = OrgDocument
+  prettyForm = id
 
 class PrettyFormable a where
   type PrettyForm a
   prettyForm :: a -> PrettyForm a
 
-instance PrettyFormable Properties where
-  type PrettyForm Properties = Properties
-  prettyForm = id
-
 instance PrettyFormable (Many a) where
   type PrettyForm (Many a) = [a]
   prettyForm = toList
-
-instance PrettyFormable a => PrettyFormable (F a, OrgParserState) where
-  type PrettyForm (F a, OrgParserState) = PrettyForm a
-  prettyForm = prettyForm . uncurry (runReader . getAp)
 
 prettyParse :: (Parsable m a, PrettyFormable (Parsed m a), Show (PrettyForm (Parsed m a))) => m a -> Text -> IO ()
 prettyParse parser txt =
@@ -57,7 +69,15 @@ prettyParse parser txt =
     Left e -> putStrLn $ errorBundlePretty e
     Right x -> pPrint $ prettyForm x
 
-infix 5 =?>
+newtype Pretty a = Pretty { unPretty :: a }
+
+instance Eq a => Eq (Pretty a) where
+  x == y = unPretty x == unPretty y
+
+instance Show a => Show (Pretty a) where
+  show = toString . pShow . unPretty
+
+infix 1 =?>
 (=?>) :: a -> b -> (a,b)
 x =?> y = (x, y)
 
@@ -66,16 +86,17 @@ infix 4 =:
 (=:) name (x, y) = testCase name (x @?= y)
 
 infix 4 ~:
-(~:) :: (Parsable m a, PrettyFormable (Parsed m a), Eq (PrettyForm (Parsed m a)), Show (PrettyForm (Parsed m a)))
+(~:) :: (Parsable m a, PrettyFormable (Parsed m a), Eq (Parsed m a), Show (Parsed m a))
   => TestName
   -> m a
-  -> (Text, PrettyForm (Parsed m a))
+  -> [(Text, Parsed m a)]
   -> TestTree
-(~:) name parser (txt, ref) =
-  testCase name $
-  case parse' parser txt of
-    Left e  -> assertFailure $ errorBundlePretty e
-    Right x -> prettyForm x @?= ref
+(~:) name parser cases =
+  testGroup name $ flip (`zipWith` [0..]) cases $ \ (i :: Int) (txt, ref) ->
+    testCase (name <> " " <> show i) $
+      case parse' parser txt of
+        Left e  -> assertFailure $ errorBundlePretty e
+        Right x -> Pretty x @?= Pretty ref
 
 -- infix 4 ~!:
 -- (~!:) :: PrettyParsable a

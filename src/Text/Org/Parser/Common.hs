@@ -24,15 +24,31 @@ number n | n > 1 = try $ do
              (10 ^ (n - 1) * d +) <$> number (n - 1)
 number _ = error "Number of digits to parse must be positive!"
 
+-- * ASCII alphabet character classes
+
+isUpperAZ :: Char -> Bool
+isUpperAZ c = 'A' <= c && c <= 'Z'
+
+isLowerAZ :: Char -> Bool
+isLowerAZ c = 'a' <= c && c <= 'z'
+
 uppercaseAZ :: OrgParser Char
-uppercaseAZ = satisfy (\c -> 'A' <= c && c <= 'Z')
-              <?> "uppercase letter character"
+uppercaseAZ = satisfy isUpperAZ
+              <?> "uppercase A-Z character"
+
+manyAlphaAZ :: OrgParser Text
+manyAlphaAZ = takeWhileP (Just "a-z or A-Z characters")
+            (\c -> isLowerAZ c || isUpperAZ c)
 
 isSpaceOrTab :: Char -> Bool
 isSpaceOrTab c = c == ' ' || c == '\t'
 
 spaceOrTab :: OrgParser Char
 spaceOrTab = satisfy isSpaceOrTab <?> "space or tab character"
+
+-- | Skips one or more spaces or tabs.
+skipSpaces1 :: OrgParser ()
+skipSpaces1 = void $ takeWhile1P (Just "at least one space or tab whitespace") isSpaceOrTab
 
 -- | Skips zero or more spaces or tabs.
 skipSpaces :: OrgParser ()

@@ -191,7 +191,7 @@ data OrgInline
     | Subscript [OrgInline]    -- ^ Subscripted text (list of inlines)
     | Timestamp TimestampData
     | Quoted QuoteType [OrgInline] -- ^ Quoted text (list of inlines) TODO
-    | Cite OrgCitation         -- ^ Citation
+    | Cite Citation         -- ^ Citation
     | Code Text           -- ^ Inline code (literal) TODO babel attributes
     | Verbatim Text
     | Src Text (Map Text Text) Text
@@ -205,16 +205,16 @@ data OrgInline
     | Span [OrgInline]    -- ^ Generic Inline container with attributes TODO
     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
-data OrgCitation = OrgCitation
+data Citation = Citation
   { citationStyle      :: Text
   , citationVariant    :: Text
   , citationPrefix     :: [OrgInline]
   , citationSuffix     :: [OrgInline]
-  , citationReferences :: [OrgReference]
+  , citationReferences :: [CiteReference]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
-data OrgReference = OrgReference
+data CiteReference = CiteReference
   { refId      :: Text
   , refPrefix  :: [OrgInline]
   , refSuffix  :: [OrgInline]

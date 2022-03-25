@@ -1,6 +1,6 @@
 -- |
 
-module Text.Org.Parser.OrgObjects where
+module Text.Org.Parser.Objects where
 import Prelude hiding (many, some)
 import Text.Org.Parser.Common
 import Text.Org.Parser.Definitions
@@ -8,14 +8,34 @@ import Text.Org.Parser.ElementStarts
 import Text.Org.Parser.MarkupContexts
 import qualified Text.Org.Builder as B
 
+-- * Sets of objects
+
+minimalSet :: Marked WithMContext (F OrgInlines)
+minimalSet =
+  mconcat [ endline
+          , code
+          , verbatim
+          , italic
+          , underline
+          , bold
+          , striketrough
+          ]
+
+standardSet ::  Marked WithMContext (F OrgInlines)
+standardSet =
+  mconcat [ minimalSet -- TODO optimize with ordering? in minimal too
+          , citation
+          , timestamp
+          ]
+
 plainMarkupContext :: Marked WithMContext (F OrgInlines) -> WithMContext (F OrgInlines)
 plainMarkupContext = markupContext (pure . B.plain)
 
 -- inside, like citations and angle links. The priority is given to
 -- new blocks (hence @notFollowedBy endOfBlock@) and initial
 -- whitespace is ignored.
-newlineInside :: OrgParser ()
-newlineInside = try $
+newlineInside :: WithMContext ()
+newlineInside = lift $ try $
   newline
   *> notFollowedBy endOfBlock
   *> hspace
@@ -27,7 +47,7 @@ emphasisPostChars :: String
 emphasisPostChars = " ,.-\t\n:!?;'\")}["
 
 emphasisPost :: Char -> Marked WithMContext ()
-emphasisPost e = mark [e] $ do
+emphasisPost e = mark [e] $ try $ do
   lchar <- lastChar <$> get
   for_ lchar $ guard . not . isSpace
   _ <- char e
@@ -36,11 +56,11 @@ emphasisPost e = mark [e] $ do
     (eof <|> void (satisfy (`elem` emphasisPostChars)))
 
 emphasisPre :: Char -> WithMContext ()
-emphasisPre s = do
+emphasisPre s = try $ do
   lchar <- lastChar <$> get
   for_ lchar $ guard . (`elem` emphasisPreChars)
   _ <- char s
-  setLastChar (Just s)
+  putLastChar Nothing
   notFollowedBy spaceChar
 
 markup ::
@@ -50,7 +70,7 @@ markup ::
 markup f c = mark [c] $ try $ do
   emphasisPre c
   f <<$>> withMContext (emphasisPost c)
-    (plainMarkupContext standardP)
+    (plainMarkupContext standardSet)
 
 rawMarkup ::
   (Text -> OrgInlines)
@@ -92,46 +112,38 @@ endline = mark "\n" $ lift . try $
   *> notFollowedBy endOfBlock
   $> pure B.softbreak
 
-minimalP :: Marked WithMContext (F OrgInlines)
-minimalP =
-  mconcat [ endline
-          , code
-          , verbatim
-          , italic
-          , underline
-          , bold
-          , striketrough
-          ]
+-- * Entities and LaTeX fragments
 
-standardP ::  Marked WithMContext (F OrgInlines)
-standardP =
-  mconcat [ minimalP
-          ]
+entityOrFragment :: Marked WithMContext (F OrgInlines)
+entityOrFragment = mark "\\" $ do
+  _ <- char '\\'
+  name <- manyAlphaAZ
 
 -- * Citations
 
 citation :: Marked WithMContext (F OrgInlines)
 citation = mark "[" $
-  B.cite <<$>> withBalancedContext ('[', ']') orgCite
+  B.citation <<$>> withBalancedContext ('[', ']') orgCite
 
 -- | A citation in org-cite style
-orgCite :: WithMContext (F OrgCitation)
-orgCite = lift $ do
+orgCite :: WithMContext (F Citation)
+orgCite = try $ do
   _ <- string "cite"
   (style, variant) <- citeStyle
   _ <- char ':'
   hspace
   _ <- optional newlineInside
-  globalPrefix <- option (pure mempty) (try (citePrefix <* char ';'))
+  globalPrefix <- option mempty (try (citePrefix <* char ';'))
   items <- citeItems
-  globalSuffix <- option (pure mempty) (try (char ';' *> citeSuffix))
+  globalSuffix <- option mempty (try (char ';' *> citeSuffix))
   hspace
   _ <- optional newlineInside
+  eof
   return $ do
     prefix' <- globalPrefix
     suffix' <- globalSuffix
     refs' <- items
-    return OrgCitation
+    return Citation
       { citationStyle = style
       , citationVariant = variant
       , citationPrefix = toList prefix'
@@ -139,7 +151,7 @@ orgCite = lift $ do
       , citationReferences = refs'
       }
 
-citeStyle :: OrgParser (Text, Text)
+citeStyle :: WithMContext (Tokens Text, Tokens Text)
 citeStyle = do
   sty <- option "" $ try style
   vars <- option "" $ try variants
@@ -152,40 +164,42 @@ citeStyle = do
                takeWhileP (Just "alphaNum, '_', '-' or '/' characters")
                (\c -> isAlphaNum c || c == '_' || c == '-' || c == '/')
 
-citeItems :: OrgParser (F [OrgReference])
-citeItems = sequence <$> citeItem `sepBy1` char ';'
+citeItems :: WithMContext (F [CiteReference])
+citeItems = sequence <$> (citeItem `sepBy1'` char ';')
+  where
+    sepBy1' p sep = (:) <$> p <*> many (try $ sep >> p)
 
-citeItem :: OrgParser (F OrgReference)
-citeItem = try $ do
-  pref <- citePrefix
+citeItem :: WithMContext (F CiteReference)
+citeItem = do
+  pref <- option mempty citePrefix
   itemKey <- orgCiteKey
-  suff <- citeSuffix
+  suff <- option mempty citeSuffix
   return $ do
     pre' <- pref
     suf' <- suff
-    return OrgReference
+    return CiteReference
       { refId     = itemKey
       , refPrefix = toList pre'
       , refSuffix = toList suf'
       }
 
-citePrefix ::  InlineParser m
-citePrefix =
-   runMContext
-     (mark "@;" $ try $
-      hspace
-      *> (eof <|> void (lookAhead $ oneOf ['@', ';'])))
-     (plainMarkupContext standardP)
+citePrefix :: WithMContext (F OrgInlines)
+citePrefix = try $ do
+  clearLastChar
+  withMContext
+    (mark "@;" $ try $
+      eof <|> void (lookAhead $ oneOf ['@', ';']))
+    (plainMarkupContext minimalSet)
 
-citeSuffix :: InlineParser m
-citeSuffix =
-   runMContext
-     (mark ";" $ try $
-      hspace
-      *> (eof <|> void (lookAhead $ single ';')))
-     (plainMarkupContext standardP)
+citeSuffix :: WithMContext (F OrgInlines)
+citeSuffix = try $ do
+  clearLastChar
+  withMContext
+    (mark ";" $ try $
+      eof <|> void (lookAhead $ single ';'))
+    (plainMarkupContext minimalSet)
 
-orgCiteKey :: OrgParser Text
+orgCiteKey :: WithMContext Text
 orgCiteKey = do
   _ <- char '@'
   takeWhile1P (Just "citation key allowed chars") orgCiteKeyChar
@@ -199,8 +213,8 @@ orgCiteKeyChar c =
 
 -- * Timestamps
 
-timestamp :: InlineParser m
-timestamp = pure . B.timestamp <$> parseTimestamp
+timestamp :: Marked WithMContext (F OrgInlines)
+timestamp = mark "<[" $ lift $ pure . B.timestamp <$> parseTimestamp
 
 -- | Read a timestamp.
 parseTimestamp :: OrgParser TimestampData

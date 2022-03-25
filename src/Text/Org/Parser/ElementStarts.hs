@@ -26,4 +26,5 @@ endOfBlock = lookAhead . try $
    anyBlockStart :: OrgParser ()
    anyBlockStart = try . choice $
      [ commentLineStart
+     , void headingStart
      ]
