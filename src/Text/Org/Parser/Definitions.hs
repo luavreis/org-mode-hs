@@ -49,8 +49,6 @@ defaultState =  OrgParserState
   , orgStateTrimLeadBlkIndent    = False
   }
 
-type InlineParser m = OrgParser (F OrgInlines)
-
 data Marked m a = Marked
   { getMarks :: Set Char -- TODO use (Pred {toPred :: Char -> Bool})
   , getParser :: m a
@@ -72,5 +70,3 @@ instance Alternative m => Semigroup (Marked m a) where
 instance Alternative m => Monoid (Marked m a) where
   mempty = Marked mempty empty
   mconcat xs = Marked (foldMap getMarks xs) (choice $ map getParser xs)
-
-type MOrgParser m = Marked OrgParser

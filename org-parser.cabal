@@ -19,9 +19,9 @@ Library
   Exposed-modules:   Text.Org.Types
                      Text.Org.Builder
                      Text.Org.Parser.Definitions
-                     Text.Org.Parser.OrgDocument
-                     Text.Org.Parser.OrgElements
-                     Text.Org.Parser.OrgObjects
+                     Text.Org.Parser.Document
+                     Text.Org.Parser.Elements
+                     Text.Org.Parser.Objects
                      Text.Org.Parser.MarkupContexts
                      -- Text.Org.Generic
                      -- Text.Org.Walk
@@ -61,18 +61,18 @@ test-suite test
                    , tasty
                    , tasty-hunit
                    , megaparsec >= 9
+                   , neat-interpolation
                    , pretty-simple
   mixins:            base hiding (Prelude)
                    , relude (Relude as Prelude)
                    , relude
-  other-modules:     Tests.Elements
+  other-modules:     Tests.Document
                      Tests.Objects
+                     Tests.Elements
                      Tests.Helpers
   ghc-options:      -threaded -rtsopts -with-rtsopts=-N -Wall
-                    -fprof-auto
-                    -prof
-                    "-with-rtsopts=-N -p -i0.1"
   default-language:  Haskell2010
   default-extensions:
     OverloadedStrings
     LambdaCase
+    QuasiQuotes

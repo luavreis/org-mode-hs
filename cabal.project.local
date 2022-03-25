@@ -1,5 +1,3 @@
 ignore-project: False
-library-profiling: True
-executable-profiling: True
-tests: True
-benchmarks: True
+library-profiling: False
+executable-profiling: False

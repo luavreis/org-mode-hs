@@ -7,11 +7,13 @@ module Main
 
 import Test.Tasty
 import Tests.Helpers
-import qualified Tests.Elements as Elements
+import Tests.Document
+import Tests.Objects
 
 tests :: TestTree
 tests = testGroup "Org parser tests"
-        [ testGroup "Elements" Elements.tests
+        [ testObjects
+        , testDocument
         ]
 
 main :: IO ()

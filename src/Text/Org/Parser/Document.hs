@@ -1,23 +1,22 @@
 -- |
 
-module Text.Org.Parser.OrgDocument where
+module Text.Org.Parser.Document where
 import Prelude hiding (many, some)
 import Text.Org.Parser.Definitions
 import Text.Org.Parser.Common
 import Text.Org.Parser.ElementStarts
-import Text.Org.Parser.OrgObjects
+import Text.Org.Parser.Elements
+import Text.Org.Parser.Objects
+import Text.Org.Parser.MarkupContexts
 import qualified Data.Text as T
 
 -- | Parse input as org document tree.
-orgDocument
-  :: OrgParser (F OrgElements)
-  -> OrgParser (F OrgInlines)
-  -> OrgParser OrgDocument
-orgDocument elements inlines = do
+orgDocument :: OrgParser OrgDocument
+orgDocument = do
   _ <- many commentLine
   properties <- option mempty propertyDrawer
   topLevel <- elements
-  sections <- many (section elements inlines 1)
+  sections <- many (section 1)
   eof
   -- At this point, the whole document was parsed.
   -- This means an state with keywords is available.
@@ -39,22 +38,20 @@ orgDocument elements inlines = do
 -- | Read an Org mode section and its contents. @lvl@
 -- gives the minimum acceptable level of the heading.
 section
-  :: OrgParser (F OrgElements)
-  -> OrgParser (F OrgInlines)
-  -> Int
+  :: Int
   -> OrgParser (F OrgSection)
-section elements inlines lvl = try $ do
+section lvl = try $ do
   level <- headingStart
   guard (lvl <= level)
   todoKw <- optional todoKeyword
   priority <- optional priorityCookie
-  (title, tags) <- manyThen inlines endOfTitle
+  (title, tags) <- titleObjects
   planning   <- option emptyPlanning planningInfo
   properties <- option mempty propertyDrawer
   contents   <- elements
-  children   <- many (section elements inlines (level + 1))
+  children   <- many (section (level + 1))
   return $ do
-    title'    <- mconcat <$> sequence title
+    title'    <- title
     contents' <- contents
     children' <- sequence children
     return OrgSection
@@ -69,24 +66,22 @@ section elements inlines lvl = try $ do
       , sectionChildren = children'
       }
  where
+   titleObjects :: OrgParser (F OrgInlines, Tags)
+   titleObjects = runMContext_
+                  (mark " \n" endOfTitle)
+                  (plainMarkupContext standardSet)
+
    endOfTitle :: OrgParser Tags
    endOfTitle = try $ do
      skipSpaces
      tags <- option [] (headerTags <* skipSpaces)
-     _ <- newline
+     void newline <|> eof
      return tags
 
    headerTags :: OrgParser Tags
    headerTags = try $ do
      _ <- char ':'
      endBy1 orgTagWord (char ':')
-
-   manyThen :: OrgParser a
-            -> OrgParser b
-            -> OrgParser ([a], b)
-   manyThen p end = ([],) <$> try end <|> do
-     x <- p
-     first (x:) <$> manyThen p end
 
 
 -- * Heading and document "subelements"
@@ -147,7 +142,7 @@ propertyDrawer = try $ do
   where
    endOfDrawer :: OrgParser Text
    endOfDrawer = try $
-     hspace *> string' ":end:" <* hspace <* newline
+     hspace *> string' ":end:" <* space
 
    nodeProperty :: OrgParser (PropertyName, PropertyValue)
    nodeProperty = try $ liftA2 (,) name value

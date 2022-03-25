@@ -6,6 +6,12 @@ Some efforts are being done to compile a more human readable specification. As o
 
 
 * General comments
+** Character classes
+Many times it's not clear in the spec what the meaning of things like "whitespace", "alphabetic", etc. is. Many times I had to check if things like non-breaking or zero-width space were really spaces, if alphabetic included letters from other scripts etc. I propose to have a table with the character classes that are used so they are also easier to implement at once.
+
+One instance of such problem: in "Text Markup", it says PRE and POST may be whitespace. This includes "special" spaces like zero-width and tab. But in other occurrences of "whitespace" this is not always the case.
+
+Also, common understanding of "alphabetic" usually includes many alphabetic characters from languages other than English. For instance, á, é etc. are characters from the latin alphabet. But this is not what is meant by "alphabetic" in many of its occurrences in the spec, when it usually means a-z,A-Z.
 
 * Elements
 ** 3.2.8 Properties drawer
