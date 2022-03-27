@@ -12,7 +12,63 @@ Many times it's not clear in the spec what the meaning of things like "whitespac
 One instance of such problem: in "Text Markup", it says PRE and POST may be whitespace. This includes "special" spaces like zero-width and tab. But in other occurrences of "whitespace" this is not always the case.
 
 Also, common understanding of "alphabetic" usually includes many alphabetic characters from languages other than English. For instance, á, é etc. are characters from the latin alphabet. But this is not what is meant by "alphabetic" in many of its occurrences in the spec, when it usually means a-z,A-Z.
-
 * Elements
-** 3.2.8 Properties drawer
-It's not noted that property drawers can appear at the beggining of the file, possibly after comments but not after empty lines.
+** Greater blocks
+Countrary to what the spec says it's not possible to quote lines inside.
+** List Items
+It says "not counting lines inside other elements" although lines inside paragraphs do count when they are not indented.
+* Objects
+** Entities
+If the entity ends in ={}=, this is not really part of "POST" as it is parsed as part of the entity.
+
+Also, a big inconsistency related to braces: =\alpha{}= is parsed entirely as an entity while =\_  {}= does not include the final ={}= as part of the entity. For consistency I will not follow this behavior in =org-parser=.
+** Export snippets
+In =BACKEND=: "zero or more alphanumeric..." should be ONE or more.
+
+There is something broken in Org. The following is parsed as an export snippet AND two nonempty paragraphs!
+
+#+begin_src org
+@@html:fo aksjdaksjd ajs d
+
+askdjas aksj daj sao@@
+#+end_src
+
+** Inline Babel Calls
+=ARGUMENTS= is NOT optional, and in "Opening and closing square brackets must be balanced", for arguments parenthesis should be balanced not square brackets.
+
+** Inline Source Blocks
+=LANG=: says "A string consisting of any non-whitespace characters", but should not include '{' or '['.
+
+=BODY= is NOT optional, and in "Opening and closing square brackets must be balanced", for body curly braces should be balanced not square brackets.
+
+** Radio links
+Is it safe to assume that radio targets match the same /parsed/ data instead of the same raw text? This would make things so much simpler for parsers, and I imagine that's what Org.jl does (since Teco said it was a post-processing step).
+
+For instance, it's confusing to say it matches the raw text when you can have things like =<<<radio/>>>= that do not match =/radio/=. I really have zero idea how emacs figures out radio links just by looking at the spec.
+
+Confusing radio links:
+
+- Nested
+  #+begin_src org
+<<<abc>>>
+<<</abc/ one two three>>>
+
+/abc/ one two three
+  #+end_src
+
+** Plain links
+It's written that plain links can't contain =()= but they /can/, given that =()= are balanced or something more complex:
+
+#+begin_src org
+https://orgmode.(o)rg
+#+end_src
+
+** Angle links
+=PATHANGLE=: "A string containing any character but ], <, > or \n". But it /can/ contain /all/ these characters except '>'. Newlines are ignored in a particular way.
+** Regular links
+=PATHREG=: square brackets can appear but escaped.
+
+=DESCRIPTION=: it's not about the balancement of square brackets. You can't balance =[[= with =]]= inside, try it. Brakets can appear freely as long as they don't appear together as =]]=.
+
+** Markup
+

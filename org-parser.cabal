@@ -16,18 +16,19 @@ Source-repository    head
 
 Library
   hs-source-dirs:    src
-  Exposed-modules:   Text.Org.Types
-                     Text.Org.Builder
-                     Text.Org.Parser.Definitions
-                     Text.Org.Parser.Document
-                     Text.Org.Parser.Elements
-                     Text.Org.Parser.Objects
-                     Text.Org.Parser.MarkupContexts
+  Exposed-modules:   Org.Types
+                     Org.Builder
+                     Org.Parser.Definitions
+                     Org.Parser.Document
+                     Org.Parser.Elements
+                     Org.Parser.Objects
+                     Org.Parser.Data.Entities
+                     Org.Parser.MarkupContexts
                      -- Text.Org.Generic
                      -- Text.Org.Walk
-  other-modules:     Text.Org.Parser.Common
-                     Text.Org.Parser.State
-                     Text.Org.Parser.ElementStarts
+  other-modules:     Org.Parser.Common
+                     Org.Parser.State
+                     Org.Parser.ElementStarts
   Build-depends:     base >= 4.5
                    , relude >= 1
                    , bytestring
@@ -50,6 +51,7 @@ Library
     MultiWayIf
     LambdaCase
     ScopedTypeVariables
+    FlexibleContexts
 
 test-suite test
   type:              exitcode-stdio-1.0

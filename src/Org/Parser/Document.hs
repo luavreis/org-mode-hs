@@ -1,14 +1,16 @@
 -- |
 
-module Text.Org.Parser.Document where
+module Org.Parser.Document where
+
 import Prelude hiding (many, some)
-import Text.Org.Parser.Definitions
-import Text.Org.Parser.Common
-import Text.Org.Parser.ElementStarts
-import Text.Org.Parser.Elements
-import Text.Org.Parser.Objects
-import Text.Org.Parser.MarkupContexts
+import Org.Parser.Definitions
+import Org.Parser.Common
+import Org.Parser.ElementStarts
+import Org.Parser.Elements
+import Org.Parser.Objects
+import Org.Parser.MarkupContexts
 import qualified Data.Text as T
+import qualified Data.Map as M
 
 -- | Parse input as org document tree.
 orgDocument :: OrgParser OrgDocument
@@ -23,6 +25,7 @@ orgDocument = do
   finalState <- getState
   return $ flip runReader finalState . getAp $ do
     keywords' <- sequence $ orgStateKeywords finalState
+    footnotes' <- sequence $ orgStateFootnotes finalState
     topLevel' <- topLevel
     sections' <- sequence sections
     return OrgDocument
@@ -30,6 +33,7 @@ orgDocument = do
       , documentKeywords = keywords'
       , topLevelContents = toList topLevel'
       , documentChildren = sections'
+      , documentFootnotes = M.map toList footnotes'
       }
   where
     commentLine :: OrgParser ()

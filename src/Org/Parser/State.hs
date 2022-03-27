@@ -1,26 +1,46 @@
 -- |
 
-module Text.Org.Parser.State where
-import Text.Org.Types
-import Text.Org.Builder (OrgElements)
+module Org.Parser.State where
+
+import Org.Types
+import Org.Builder (OrgElements, OrgInlines)
 
 type F = Ap (Reader OrgParserState)
 
 -- | Org-mode parser state
 data OrgParserState = OrgParserState
-  { orgStateAnchorIds            :: [Text]
+  { orgStateInternalTargets      :: Map Text (Id, InternalLinkType, F OrgInlines) -- ^ Key is target name and value is (type, default alias)
+  , orgStatePendingAffiliated    :: Affiliated
+  , orgStateIdStack              :: [Id]
   , orgStateLastChar             :: Maybe Char
   , orgStateExcludeTags          :: Set Tag
   , orgStateExcludeTagsChanged   :: Bool
-  , orgStateIdentifiers          :: Set Text
   , orgStateKeywords             :: [F KeywordPair]
   , orgStateLinkFormatters       :: OrgLinkFormatters
   , orgStateMacros               :: Map Text MacroExpander
-  , orgStateMacroDepth           :: Int
+  , orgStateSrcLineNumber        :: Int
   , orgStateNotes'               :: OrgNoteTable
   , orgStateTodoSequences        :: [TodoSequence]
-  , orgStateTrimLeadBlkIndent    :: Bool
+  , orgStateFootnotes            :: Map Text (F OrgElements)
   }
+
+defaultState :: OrgParserState
+defaultState =  OrgParserState
+  { orgStateInternalTargets      = mempty
+  , orgStatePendingAffiliated    = mempty
+  , orgStateIdStack              = fmap show [0::Int ..]
+  , orgStateLastChar             = Nothing
+  , orgStateExcludeTags          = mempty
+  , orgStateExcludeTagsChanged   = False
+  , orgStateKeywords             = []
+  , orgStateLinkFormatters       = mempty
+  , orgStateMacros               = mempty
+  , orgStateSrcLineNumber        = 1
+  , orgStateNotes'               = []
+  , orgStateTodoSequences        = []
+  , orgStateFootnotes            = mempty
+  }
+
 
 -- | Map of functions for link transformations.  The map key is refers to the
 -- link-type, the corresponding function transforms the given link string.

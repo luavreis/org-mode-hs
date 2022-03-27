@@ -1,19 +1,14 @@
 {-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts #-}
 
-
-module Text.Org.Types where
+module Org.Types where
 
 import Data.Generics (Data)
 import Text.Pandoc.Definition
-  ( Alignment
-  , ColSpec
-  , ColSpan
-  , RowSpan
-  , TableHead
+  ( TableHead
   , TableBody
   , TableFoot
+  , ColSpec
   , QuoteType
-  , MathType
   )
 
 
@@ -22,6 +17,7 @@ import Text.Pandoc.Definition
 data OrgDocument = OrgDocument
   { documentProperties :: Properties
   , documentKeywords :: [KeywordPair]
+  , documentFootnotes :: Map Text [OrgElement]
   , topLevelContents :: [OrgElement]
   , documentChildren :: [OrgSection]
   } deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -57,7 +53,6 @@ data Priority
   | NumericPriority Int
   deriving (Show, Eq, Ord, Read, Data)
 
--- | TODO improve
 type Date = (Int, Int, Int, Maybe Text)
 
 type Time = (Int, Int)
@@ -93,41 +88,44 @@ type Properties = [(PropertyName, PropertyValue)]
 
 -- | Org element. Like a Pandoc Block.
 data OrgElement
-    -- | Greater block. Greater element.
-    = GreaterBlock Affiliated GreaterBlockType [OrgElement] -- Block parameters are silenced by org-element in this case
-    -- | Drawer block.
-    | Drawer [OrgElement]
-    -- | Verse block. Argument is a list of lines.
-    | VerseBlock Affiliated [[OrgInline]]
-    -- | Example block with attributes.
-    | ExampleBlock Affiliated Text
-    -- | Export block with attributes and language.
-    | ExportBlock Affiliated Text Text
-    -- | Src block. First argument is language. TODO see babel spec.
-    | SrcBlock Affiliated Text (Map Text Text) Text
-    -- | Dynamic block with block name, block parameters and insides.
-    | DynamicBlock Affiliated Text (Map Text Text) [OrgElement]
-    -- | Plain list with attributes, type and items.
-    | PlainList Affiliated ListType [ListItem]
-    -- | Clock.
-    | Clock ClockData
-    -- | "Fixed-width" lines
-    | FixedWidth Affiliated [[Text]]
-    -- | Horizontal rule.
-    | HorizontalRule
-    -- | Keyword.
-    | Keyword KeywordPair
-    -- | LaTeX environment.
-    | LaTeXEnvironment Affiliated Text Text
-    -- | Table, with attributes, caption, column alignments and widths
-    -- (required), table head, table bodies, and table foot.
-    | Table Affiliated [OrgInline] [ColSpec] TableHead [TableBody] TableFoot
-    -- | Paragraph.
-    | Paragraph [OrgInline]
-    deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  = GreaterBlock Affiliated GreaterBlockType [OrgElement]
+  | Drawer [OrgElement]
+  | DynamicBlock Affiliated Text (Map Text Text) [OrgElement]
+  | FootnoteDef Text
+  | PlainList Affiliated ListType [ListItem]
+  | Table Affiliated [OrgInline] [ColSpec] TableHead [TableBody] TableFoot
+  | CommentBlock Text
+  | ExportBlock
+      Affiliated -- ^ Affiliated keywords
+      Text -- ^ Format
+      [SrcLine] -- ^ Contents
+  | ExampleBlock
+      Affiliated -- ^ Affiliated keywords
+      (Map Text Text) -- ^ Switches
+      [SrcLine] -- ^ Contents
+  | SrcBlock Affiliated
+      Affiliated -- ^ Affiliated keywords
+      (Map Text Text) -- ^ Switches
+      (Map Text Text) -- ^ Header arguments
+      Text -- ^ Contents
+  | VerseBlock Affiliated [[OrgInline]]
+  | Clock ClockData
+  | CommentLine Text
+  | FixedWidth Affiliated Text
+  | HorizontalRule
+  | Keyword KeywordPair
+  | LaTeXEnvironment Affiliated Text Text
+  | Paragraph [OrgInline]
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
+data SrcLine
+  = SrcLine Text
+  | RefLine
+      Text -- ^ Reference name
+      Text -- ^ Line contents
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
--- * Keywords and affiliated keywords
+-- Keywords and affiliated keywords
 
 type KeywordKey = Text
 
@@ -144,13 +142,13 @@ type KeywordPair = (KeywordKey, KeywordValue)
 type Affiliated = Map KeywordKey (NonEmpty KeywordValue)
 
 
--- * Blocks
+-- Greater Blocks
 
 data GreaterBlockType = Center | Quote | Special Text
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 
--- * Lists
+-- Lists
 
 data ListType = Ordered | Descriptive | Unordered
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -172,38 +170,82 @@ listItemType (ListItem (Bullet '-') _ _ (_:_) _) = Descriptive
 listItemType _ = Unordered
 
 
--- * Clock
+-- Clock
 
-data ClockData = ClockData
+data ClockData
+  = ClockSimple DateTime
+  | ClockRange DateTime DateTime Time
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 
--- * Inline elements
+-- Babel call
 
--- | Inline elements. Derived from Pandoc's Inline.
-data OrgInline
-    = Plain Text            -- ^ Text (string)
-    | Italic [OrgInline]         -- ^ Emphasized text (list of inlines)
-    | Underline [OrgInline]    -- ^  Underlined text (list of inlines)
-    | Bold [OrgInline]       -- ^ Bold text (list of inlines)
-    | Strikethrough [OrgInline]    -- ^ Strikethrough text (list of inlines)
-    | Superscript [OrgInline]  -- ^ Superscripted text (list of inlines)
-    | Subscript [OrgInline]    -- ^ Subscripted text (list of inlines)
-    | Timestamp TimestampData
-    | Quoted QuoteType [OrgInline] -- ^ Quoted text (list of inlines) TODO
-    | Cite Citation         -- ^ Citation
-    | Code Text           -- ^ Inline code (literal) TODO babel attributes
-    | Verbatim Text
-    | Src Text (Map Text Text) Text
-    | SoftBreak             -- ^ Soft line break
-    | LineBreak             -- ^ Hard line break
-    | Math MathType Text  -- ^ TeX math (literal) TODO
-    | RawInline Text Text -- ^ Raw Inline TODO
-    | Link [OrgInline] Text  -- ^ Hyperlink: alt text (list of inlines), target TODO
-    | Image Text          -- ^ Image:  alt text (list of inlines), target TODO
-    | Note [OrgElement]          -- ^ Footnote or endnote
-    | Span [OrgInline]    -- ^ Generic Inline container with attributes TODO
-    deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+data BabelCall = BabelCall
+  { babelCallName :: Text
+  , babelCallHeader1 :: Text
+  , babelCallHeader2 :: Text
+  , babelCallArguments :: Text
+  }
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+
+-- * Objects (inline elements)
+
+-- | Objects (inline elements). Derived from Pandoc's Inline.
+data OrgInline -- TODO rename to OrgObject
+  = Plain Text
+  | Italic [OrgInline]
+  | Underline [OrgInline]
+  | Bold [OrgInline]
+  | Strikethrough [OrgInline]
+  | Superscript [OrgInline]
+  | Subscript [OrgInline]
+  | Timestamp TimestampData
+  | Quoted QuoteType [OrgInline]
+  | Code Text
+  | Verbatim Text
+  | SoftBreak
+  | Entity -- ^ Replacement commands (e.g. @\alpha{}@)
+      Text -- ^ Entity name (e.g. @"alpha"@)
+  | LaTeXFragment FragmentType Text
+  | ExportSnippet Text Text
+  | FootnoteRef Footnote
+  | Cite Citation
+  | InlBabelCall BabelCall
+  | Src Text Text Text
+  | LineBreak
+  | Link LinkTarget [OrgInline]
+  | Image LinkTarget
+  | Macro -- ^ Org inline macro (e.g. @{{{poem(red,blue)}}}@)
+      Text -- ^ Macro name (e.g. @"poem"@)
+      [Text] -- ^ Arguments (e.g. @["red", "blue"]@)
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+
+type Protocol = Text
+
+type Id = Text
+
+data LinkTarget
+  = URILink Protocol Text
+  | InternalLink InternalLinkType Id
+  | UnresolvedLink Text
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+
+data InternalLinkType
+  = Coderef
+  | Anchor
+  | Radio
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+
+data FragmentType
+  = RawFragment
+  | InlMathFragment
+  | DispMathFragment
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+
+data Footnote
+  = FootnoteLabeled Text
+  | FootnoteUnlabeled [OrgInline]
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 data Citation = Citation
   { citationStyle      :: Text
@@ -220,14 +262,3 @@ data CiteReference = CiteReference
   , refSuffix  :: [OrgInline]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
-
--- | A short caption, for use in, for instance, lists of figures.
-type ShortCaption = [OrgInline]
-
--- | The caption of a table, with an optional short caption.
-data Caption = Caption (Maybe ShortCaption) [OrgElement]
-  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
-
--- | A table cell.
-data Cell = Cell Alignment RowSpan ColSpan [OrgElement]
-  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)

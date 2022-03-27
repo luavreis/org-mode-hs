@@ -3,7 +3,7 @@
 module Tests.Document where
 import Tests.Helpers
 import NeatInterpolation
-import Text.Org.Parser.Document (propertyDrawer)
+import Org.Parser.Document (propertyDrawer)
 
 testDocument :: TestTree
 testDocument = testGroup "Document"

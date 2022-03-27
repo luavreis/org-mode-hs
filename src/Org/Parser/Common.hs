@@ -1,14 +1,16 @@
 -- |
 
-module Text.Org.Parser.Common where
-import Prelude hiding (many, State)
-import Text.Org.Parser.Definitions
-import Data.Char (digitToInt)
+module Org.Parser.Common where
 
-digitIntChar :: OrgParser Int
+import Prelude hiding (many, State)
+import Org.Parser.Definitions
+import Data.Char (digitToInt)
+import qualified Data.Text as T
+
+digitIntChar :: MonadParser m => m Int
 digitIntChar = digitToInt <$> digitChar
 
-integer :: OrgParser Int
+integer :: MonadParser m => m Int
 integer = try $ do
   digits <- reverse <$> many digitIntChar
   let toInt (x:xs) = 10 * toInt xs + x
@@ -32,46 +34,64 @@ isUpperAZ c = 'A' <= c && c <= 'Z'
 isLowerAZ :: Char -> Bool
 isLowerAZ c = 'a' <= c && c <= 'z'
 
-uppercaseAZ :: OrgParser Char
+isAlphaAZ :: Char -> Bool
+isAlphaAZ c = isLowerAZ c || isUpperAZ c
+
+uppercaseAZ :: MonadParser m => m Char
 uppercaseAZ = satisfy isUpperAZ
               <?> "uppercase A-Z character"
 
-manyAlphaAZ :: OrgParser Text
+lowercaseAZ :: MonadParser m => m Char
+lowercaseAZ = satisfy isLowerAZ
+              <?> "lowercase a-z character"
+
+alphaAZ :: MonadParser m => m Char
+alphaAZ = satisfy isAlphaAZ
+              <?> "a-z or A-Z character"
+
+manyAlphaAZ :: MonadParser m => m Text
 manyAlphaAZ = takeWhileP (Just "a-z or A-Z characters")
-            (\c -> isLowerAZ c || isUpperAZ c)
+              isAlphaAZ
 
 isSpaceOrTab :: Char -> Bool
 isSpaceOrTab c = c == ' ' || c == '\t'
 
-spaceOrTab :: OrgParser Char
+spaceOrTab :: MonadParser m => m Char
 spaceOrTab = satisfy isSpaceOrTab <?> "space or tab character"
 
 -- | Skips one or more spaces or tabs.
-skipSpaces1 :: OrgParser ()
+skipSpaces1 :: MonadParser m => m ()
 skipSpaces1 = void $ takeWhile1P (Just "at least one space or tab whitespace") isSpaceOrTab
 
 -- | Skips zero or more spaces or tabs.
-skipSpaces :: OrgParser ()
+skipSpaces :: MonadParser m => m ()
 skipSpaces = void $ takeWhileP (Just "space or tab whitespace") isSpaceOrTab
 
 -- | Makes sure a value is Just, else fail with a custom
 -- error message.
-guardMaybe :: String -> Maybe a -> OrgParser a
+guardMaybe :: (MonadFail m, MonadParser m) => String -> Maybe a -> m a
 guardMaybe _ (Just x) = pure x
 guardMaybe err _      = fail err
 
--- | Parse any line of text, returning the contents without the
--- final newline.
-anyLine :: OrgParser (Tokens Text)
+-- | Parse the rest of line, returning the contents without the final newline.
+anyLine :: MonadParser m => m (Tokens Text)
 anyLine = takeWhileP (Just "rest of line") (/= '\n')
-          <* void anySingle
+          <* (eof <|> void newline)
 
 -- | Parse a line with whitespace contents.
-blankline :: OrgParser ()
+blankline :: MonadParser m => m ()
 blankline = try $ hspace <* newline
 
-parseFromText :: MonadParsec e s m => Maybe (State s e) -> m b -> s -> m b
-parseFromText mState parser txt = do
+findChars2 :: MonadParser m => Char -> Char -> Maybe String -> m Text
+findChars2 needle post descr =
+  fix $ \search -> do
+    partial <- takeWhileP descr (/= needle)
+    _ <- char needle
+    char post $> partial
+      <|> (partial `T.snoc` needle <>) <$> search
+
+parseFromText :: MonadParser m => Maybe (State Text Void) -> Text -> m b -> m b
+parseFromText mState txt parser = do
   currentState <- getParserState
   let previousState = fromMaybe currentState mState
   setParserState previousState { stateInput = txt }

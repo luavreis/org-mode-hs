@@ -9,9 +9,9 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Text.Pretty.Simple
 import Text.Megaparsec
-import Text.Org.Parser.Definitions
-import Text.Org.Builder (Many)
-import Text.Org.Parser.MarkupContexts
+import Org.Parser.Definitions
+import Org.Builder (Many)
+import Org.Parser.MarkupContexts
 import qualified Text.Show
 
 type OrgParseError = ParseErrorBundle Text Void
