@@ -2,9 +2,9 @@
 
 module Tests.Objects where
 import Tests.Helpers
-import Text.Org.Parser.Objects
-import Text.Org.Types
-import qualified Text.Org.Builder as B
+import Org.Parser.Objects
+import Org.Types
+import qualified Org.Builder as B
 
 testObjects :: TestTree
 testObjects = testGroup "Objects"

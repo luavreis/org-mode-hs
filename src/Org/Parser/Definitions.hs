@@ -1,24 +1,29 @@
+{-# LANGUAGE ConstraintKinds, FlexibleContexts #-}
 -- |
 
-module Text.Org.Parser.Definitions
-  ( module Text.Org.Parser.Definitions
-  , module Text.Org.Types
-  , module Text.Org.Builder
+module Org.Parser.Definitions
+  ( module Org.Parser.Definitions
+  , module Org.Types
+  , module Org.Builder
+  , module Org.Parser.State
   , module Text.Megaparsec
   , module Text.Megaparsec.Char
   , module Text.Megaparsec.Debug
-  , module Text.Org.Parser.State
   , module Data.Char
   ) where
-import Text.Org.Types
-import Text.Org.Builder (OrgElements, OrgInlines)
+
+import Org.Types
+import Org.Parser.State
+import Org.Builder (OrgElements, OrgInlines)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Debug
-import Text.Org.Parser.State
-import Data.Char (isSpace, isAlphaNum, isLetter, isDigit)
+import Data.Char (isSpace, isPunctuation, isAlphaNum, isLetter, isDigit, isAscii)
+import Relude.Extra (insert)
 
 type Parser = ParsecT Void Text Identity
+
+type MonadParser m = MonadParsec Void Text m
 
 type OrgParser = StateT OrgParserState Parser
 
@@ -30,24 +35,30 @@ updateState
   -> OrgParser ()
 updateState = modify
 
+popUniqueId :: OrgParser Text
+popUniqueId = do
+  ids <- gets orgStateIdStack
+  case ids of
+    (x:xs) -> x <$ updateState (\s -> s {orgStateIdStack = xs})
+    [] -> error "something's wrong. out of unique ids"
+
+registerTarget :: Text -> InternalLinkType -> F OrgInlines -> OrgParser ()
+registerTarget name kind alias = do
+  targets <- gets orgStateInternalTargets
+  uid <- popUniqueId
+  updateState $ \s -> s { orgStateInternalTargets = insert name (uid, kind, alias) targets }
+
+withAffiliated :: (Affiliated -> a) -> OrgParser a
+withAffiliated f = f <$> gets orgStatePendingAffiliated
+
+askF :: F OrgParserState
+askF = Ap ask
+
+asksF :: (OrgParserState -> a) -> F a
+asksF f = Ap $ asks f
+
 pureF :: Monad m => a -> m (F a)
 pureF = pure . pure
-
-defaultState :: OrgParserState
-defaultState =  OrgParserState
-  { orgStateAnchorIds            = []
-  , orgStateLastChar             = Nothing
-  , orgStateExcludeTags          = mempty
-  , orgStateExcludeTagsChanged   = False
-  , orgStateIdentifiers          = mempty
-  , orgStateKeywords             = []
-  , orgStateLinkFormatters       = mempty
-  , orgStateMacros               = mempty
-  , orgStateMacroDepth           = 1
-  , orgStateNotes'               = []
-  , orgStateTodoSequences        = []
-  , orgStateTrimLeadBlkIndent    = False
-  }
 
 data Marked m a = Marked
   { getMarks :: Set Char -- TODO use (Pred {toPred :: Char -> Bool})
@@ -59,6 +70,9 @@ mapParser f (Marked marks parser) = Marked marks (f parser)
 
 mark :: String -> m a -> Marked m a
 mark = Marked . fromList
+
+unmarked :: m a -> Marked m a
+unmarked = Marked mempty
 
 instance Functor m => Functor (Marked m) where
   fmap f x@(Marked _ p) = x { getParser = fmap f p }

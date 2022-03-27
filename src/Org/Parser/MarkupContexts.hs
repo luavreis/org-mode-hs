@@ -1,9 +1,10 @@
 -- |
 
-module Text.Org.Parser.MarkupContexts where
+module Org.Parser.MarkupContexts where
+
+import Org.Parser.Common
+import Org.Parser.Definitions
 import Data.Set (notMember)
-import Text.Org.Parser.Common
-import Text.Org.Parser.Definitions
 import qualified Data.Text as T
 
 newtype MarkupContext = MarkupContext
@@ -66,7 +67,7 @@ withMContext_ end p = do
   -- traceM $ "parsing in substring: " ++ show str
   -- traceM $ "with last char: " ++ show ctx
   -- traceM $ "with last char after substring: " ++ show ctx'
-  (, final) <$> parseFromText (Just st) p str
+  (, final) <$> parseFromText (Just st) str p
     <* put ctx'
 
 withMContext ::
@@ -76,10 +77,11 @@ withMContext ::
 withMContext end = fmap fst . withMContext_ end
 
 withBalancedContext ::
-  (Char, Char)
+  Char
+  -> Char
   -> WithMContext a
   -> WithMContext a
-withBalancedContext (lchar, rchar) p = try $ do
+withBalancedContext lchar rchar p = try $ do
   _ <- char lchar
   let
     find' :: StateT Int WithMContext Text
@@ -98,7 +100,7 @@ withBalancedContext (lchar, rchar) p = try $ do
   str <- evalStateT find' 1
   -- traceM $ "balanced parsing in substring: " ++ show str
   setLastChar (snd <$> T.unsnoc str)
-  parseFromText (Just st) p str
+  parseFromText (Just st) str p
     <* setLastChar (Just rchar)
 
 markupContext :: Monoid k
