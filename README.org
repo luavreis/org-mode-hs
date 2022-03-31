@@ -1,23 +1,30 @@
-#+title: Org-parser
+#+title: org-parser
 
-* TODO Things that are planned be done
-** Useful Elisp variables
-We should support setting emacs variables related to parsing and export. These variables should be set either as a parameter to the parsing function or read from the file itself by parsing ~#+bind~ keywords. Here we keep a table of variables related to the export, their default values and purposes:
+* Comparasion to Pandoc
+The main difference between this parser and the Org Reader from Pandoc is that this one parses into a specialized Org-element-like AST, while the reader parses directly into the =Pandoc= AST, which is much less expressive. This has the effect that some Org features are either unsupported by the reader or "projected" onto Pandoc in ways that bundle less information about the Org source. In contrast, this reader aims to represent Org documents more faithfully before "projecting" them into formats like HTML or even the Pandoc AST itself. So you can expect more org-specific features to be parsed, and a hopefully more accurate parsing in general.
 
-| Variable                         | Default value            | Purpose            |
-|----------------------------------+--------------------------+--------------------|
-| ~user-full-name~                   | User name (getLoginName) | Default =AUTHOR=     |
-| ~org-export-creator-string~        | "Emacs". Leave empty?    | Default =CREATOR=    |
-| ~org-export-date-timestamp-format~ | nil                      | ​=DATE= format string |
-| ~user-mail-address~                | $EMAIL or user@host      | Default =MAIL=       |
-| ~org-export-default-language~      | "en"                     | Default =LANGUAGE=   |
-| ~org-export-select-tags~           | ("export")               |                    |
-| ~org-export-exclude-tags~          | ("noexport")             |                    |
+My initial plan was to fork the Org Reader and make it a standalone package, but this quickly proved infeasible as the reader is heavily tangled with the rest of Pandoc. Also, some accuracy improvements to the reader were impossible to make without deep changes to the parser design. For example, consider the following Org snippet:
+#+begin_src org
+This is a single paragraph. Because this single paragraph
+,#+should not be ended by this funny line, because this funny
+line is not a keyword. Not even this incomplete
+\begin{LaTeX}
+environment should break this paragraph apart.
+#+end_src
+This single paragraph is broken into three by Pandoc, because due the way it works it looks for a new "block start" (the start of a new org element) in each line. If there is a block start, then it aborts the current element (block) and starts the new one. Only later the parser decides if the started block actually parses correctly until its end, which is not the case for the =\begin{LaTeX}= in this example.
 
-See https://orgmode.org/manual/Export-Settings.html @ compact forms for the rest.
+Also, for some reason the Org Reader implements a more complex inline markup logic than the one that is used by Org Mode, and allow for nested markup like =/italic /inside/ italic/=. This is done via a stack in the parser state and implementing it right can be a bit error-prone and tricky. The implementation also has the effect that conflicting markup is right-biased, in the sense that the string =/foo *ba/ r*= is parsed with no italics and with =bar/ r= bold, while I believe left bias would make more sense for this. Indeed, at first I thought this nested parsing could be good, and tried to implement it in a more clear way using recursion. But in the end I was worried this would deviate too much from Org Mode and decided to stick to the Org Mode way.
+
+Another noteworth difference is that =haskell-org-parser= uses a different parsing library, ~megaparsec~, and I'm also experimenting with the faster ~attoparsec~. Pandoc uses ~parsec~, which is an older parsing library with less features and I think worse overall performance (TODO: confirm).
+
+Concisely, while the parser design is inspired by Pandoc, some important overall differences are present and most functions were written from scratch.
+
+* Ideas for things to be done
+** Elisp variables
+Support for setting emacs variables related to parsing and export. These variables should be set either as a parameter to the parsing function or read from the file itself by parsing ~#+bind~ keywords.
 
 ** Emacs queries in batch or client mode
-Query emacs for [[*Useful Elisp variables]] or evaluating lisp expressions. Can be done either way, but the second is much faster:
+Query emacs for [[*Elisp variables]] or evaluating lisp expressions. Can be done either way, but the second is much faster:
 
 - ~emacs --batch -l path/to/init.el --eval EXPR~
 - ~emacsclient -e EXPR~

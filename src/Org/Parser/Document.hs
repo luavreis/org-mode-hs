@@ -5,7 +5,6 @@ module Org.Parser.Document where
 import Prelude hiding (many, some)
 import Org.Parser.Definitions
 import Org.Parser.Common
-import Org.Parser.ElementStarts
 import Org.Parser.Elements
 import Org.Parser.Objects
 import Org.Parser.MarkupContexts
@@ -35,9 +34,6 @@ orgDocument = do
       , documentChildren = sections'
       , documentFootnotes = M.map toList footnotes'
       }
-  where
-    commentLine :: OrgParser ()
-    commentLine = commentLineStart <* anyLine
 
 -- | Read an Org mode section and its contents. @lvl@
 -- gives the minimum acceptable level of the heading.

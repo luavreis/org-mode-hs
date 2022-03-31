@@ -26,6 +26,7 @@ number n | n > 1 = try $ do
              (10 ^ (n - 1) * d +) <$> number (n - 1)
 number _ = error "Number of digits to parse must be positive!"
 
+
 -- * ASCII alphabet character classes
 
 isUpperAZ :: Char -> Bool
@@ -53,6 +54,9 @@ manyAlphaAZ :: MonadParser m => m Text
 manyAlphaAZ = takeWhileP (Just "a-z or A-Z characters")
               isAlphaAZ
 
+someNonSpace :: MonadParser m => m Text
+someNonSpace = takeWhile1P Nothing (not . isSpace)
+
 isSpaceOrTab :: Char -> Bool
 isSpaceOrTab c = c == ' ' || c == '\t'
 
@@ -76,11 +80,15 @@ guardMaybe err _      = fail err
 -- | Parse the rest of line, returning the contents without the final newline.
 anyLine :: MonadParser m => m (Tokens Text)
 anyLine = takeWhileP (Just "rest of line") (/= '\n')
-          <* (eof <|> void newline)
+          <* newline
+
+-- | Consumes the rest of input
+takeInput :: MonadParser m => m Text
+takeInput = takeWhileP Nothing (const True)
 
 -- | Parse a line with whitespace contents.
 blankline :: MonadParser m => m ()
-blankline = try $ hspace <* newline
+blankline = try $ hspace <* (eof <|> void newline)
 
 findChars2 :: MonadParser m => Char -> Char -> Maybe String -> m Text
 findChars2 needle post descr =

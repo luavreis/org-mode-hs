@@ -42,17 +42,32 @@ popUniqueId = do
     (x:xs) -> x <$ updateState (\s -> s {orgStateIdStack = xs})
     [] -> error "something's wrong. out of unique ids"
 
-registerTarget :: Text -> InternalLinkType -> F OrgInlines -> OrgParser ()
+setSrcLineNum :: Int -> OrgParser ()
+setSrcLineNum n = updateState $ \s ->
+  s { orgStateSrcLineNumber = n }
+
+incSrcLineNum :: Int -> OrgParser ()
+incSrcLineNum n = updateState $ \s ->
+  s { orgStateSrcLineNumber = orgStateSrcLineNumber s + n }
+
+getSrcLineNum :: OrgParser Int
+getSrcLineNum = gets orgStateSrcLineNumber
+
+registerTarget :: Text -> InternalLinkType -> F OrgInlines -> OrgParser Text
 registerTarget name kind alias = do
   targets <- gets orgStateInternalTargets
   uid <- popUniqueId
-  updateState $ \s -> s { orgStateInternalTargets = insert name (uid, kind, alias) targets }
+  updateState \s -> s { orgStateInternalTargets = insert name (uid, kind, alias) targets }
+  pure uid
 
 withAffiliated :: (Affiliated -> a) -> OrgParser a
 withAffiliated f = f <$> gets orgStatePendingAffiliated
 
 askF :: F OrgParserState
 askF = Ap ask
+
+asksO :: (OrgOptions -> a) -> OrgParser a
+asksO f = f <$> gets orgStateOptions
 
 asksF :: (OrgParserState -> a) -> F a
 asksF f = Ap $ asks f
