@@ -68,8 +68,26 @@ instance IsString OrgInlines where
 para :: OrgInlines -> OrgElements
 para = one . Paragraph . toList
 
-example :: Affiliated -> Map Text Text -> [SrcLine] -> OrgElements
-example aff switches = one . ExampleBlock aff switches
+export :: Affiliated -> Text -> Text -> OrgElements
+export aff format = one . ExportBlock aff format
+
+example ::
+  Affiliated ->
+  Maybe Int ->
+  Map Text Text ->
+  [SrcLine] ->
+  OrgElements
+example aff nums swi = one . ExampleBlock aff nums swi
+
+srcBlock ::
+  Affiliated ->
+  Text ->
+  Maybe Int ->
+  Map Text Text ->
+  Map Text Text ->
+  [SrcLine] ->
+  OrgElements
+srcBlock aff lang nums swi args = one . SrcBlock aff lang nums swi args
 
 -- * Object builders
 

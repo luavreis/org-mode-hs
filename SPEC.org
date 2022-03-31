@@ -1,6 +1,6 @@
 #+TITLE: Comments on the Org spec
 
-There is no finished "specification" on exactly how an Org parser should behave, but it's generally accepted that a conformant parser is one that behaves just like the ~org-elements~ parser (including its possible bugs?). But this is a not very convenient specification: you either need to try to guess what it does (by calling ~org-element-parse-buffer~) or look at the source code and try to interpret the not-very-readable regex parsers.
+There is no finished "specification" on exactly how an Org parser should behave, but it's generally accepted that a conformant parser is one that behaves just like the ~org-elements~ parser (including its [[bugs]]?). But this is a not very convenient specification: you either need to guess what it does (by calling ~org-element-parse-buffer~), or look at the source code and interpret the not-very-readable regex parsers.
 
 Some efforts are being done to compile a more human readable specification. As of today, the [[https://web.archive.org/web/20220321165301/https://orgmode.org/worg/dev/org-syntax-edited.html][Org syntax (v2\beta)]] page seems to be the most complete in this regard. Since I'm using it to develop the parser, Teco asked me to make notes on it.
 
@@ -25,7 +25,7 @@ Also, a big inconsistency related to braces: =\alpha{}= is parsed entirely as an
 ** Export snippets
 In =BACKEND=: "zero or more alphanumeric..." should be ONE or more.
 
-There is something broken in Org. The following is parsed as an export snippet AND two nonempty paragraphs!
+There is something broken in Org. <<bugs>> The following is parsed as an export snippet AND two nonempty paragraphs!
 
 #+begin_src org
 @@html:fo aksjdaksjd ajs d

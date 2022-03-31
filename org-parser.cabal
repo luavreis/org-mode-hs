@@ -28,7 +28,6 @@ Library
                      -- Text.Org.Walk
   other-modules:     Org.Parser.Common
                      Org.Parser.State
-                     Org.Parser.ElementStarts
   Build-depends:     base >= 4.5
                    , relude >= 1
                    , bytestring
@@ -52,6 +51,7 @@ Library
     LambdaCase
     ScopedTypeVariables
     FlexibleContexts
+    BlockArguments
 
 test-suite test
   type:              exitcode-stdio-1.0

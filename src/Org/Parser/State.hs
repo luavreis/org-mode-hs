@@ -7,10 +7,20 @@ import Org.Builder (OrgElements, OrgInlines)
 
 type F = Ap (Reader OrgParserState)
 
+data OrgOptions = OrgOptions
+  { orgSrcPreserveIndentation :: Bool
+  }
+
+defaultOrgOptions :: OrgOptions
+defaultOrgOptions = OrgOptions
+  { orgSrcPreserveIndentation = False
+  }
+
 -- | Org-mode parser state
 data OrgParserState = OrgParserState
   { orgStateInternalTargets      :: Map Text (Id, InternalLinkType, F OrgInlines) -- ^ Key is target name and value is (type, default alias)
   , orgStatePendingAffiliated    :: Affiliated
+  , orgStateOptions              :: OrgOptions
   , orgStateIdStack              :: [Id]
   , orgStateLastChar             :: Maybe Char
   , orgStateExcludeTags          :: Set Tag
@@ -28,6 +38,7 @@ defaultState :: OrgParserState
 defaultState =  OrgParserState
   { orgStateInternalTargets      = mempty
   , orgStatePendingAffiliated    = mempty
+  , orgStateOptions              = defaultOrgOptions
   , orgStateIdStack              = fmap show [0::Int ..]
   , orgStateLastChar             = Nothing
   , orgStateExcludeTags          = mempty

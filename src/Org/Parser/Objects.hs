@@ -7,9 +7,9 @@ import Org.Parser.Common
 import Org.Parser.Definitions
 import Org.Parser.MarkupContexts
 import Org.Parser.Data.Entities (defaultEntitiesNames)
+import Relude.Extra
 import qualified Org.Builder as B
 import qualified Data.Text as T
-import Relude.Extra (notMember, lookup, member)
 
 -- * Sets of objects
 
@@ -22,6 +22,9 @@ minimalSet =
           , underline
           , bold
           , striketrough
+          , entityOrFragment
+          , mathFragment
+          , texMathFragment
           ]
 
 standardSet ::  Marked WithMContext (F OrgInlines)
@@ -29,6 +32,12 @@ standardSet =
   mconcat [ minimalSet -- TODO optimize with ordering? in minimal too
           , citation
           , timestamp
+          , exportSnippet
+          , inlBabel
+          , inlSrc
+          , linebreak
+          , angleLink
+          , regularLinkOrImage
           ]
 
 plainMarkupContext :: Marked WithMContext (F OrgInlines) -> WithMContext (F OrgInlines)
@@ -38,10 +47,10 @@ newline' :: WithMContext Char
 newline' = newline <* clearLastChar
 
 emphasisPreChars :: String
-emphasisPreChars = "-\t ('\"{"
+emphasisPreChars = "-\t ('\"{\8203"
 
 emphasisPostChars :: String
-emphasisPostChars = " ,.-\t\n:!?;'\")}["
+emphasisPostChars = " ,.-\t\n:!?;'\")}[\8203"
 
 emphasisPost :: Char -> Marked WithMContext ()
 emphasisPost e = mark [e] $ try $ do
@@ -336,14 +345,14 @@ regularLinkOrImage = mark "[" . try $ do
   _ <- string "[["
   str <- linkTarget
   optional linkDescr >>= \case
-    Just descr -> pure $ liftA2 B.link (linkToTarget str) descr
+    Just descr -> pure $ liftA2 B.link (fst <$> linkToTarget str) descr
     Nothing -> do
       _ <- char ']'
       return $ do
-        target <- linkToTarget str
+        (target, alias) <- linkToTarget str
         pure $ if isImgTarget target
                then B.image target
-               else B.link target (B.plain str)
+               else B.link target alias
   <* setLastChar (Just ']')
   where
     linkTarget :: MonadParser m => m Text
@@ -362,30 +371,25 @@ regularLinkOrImage = mark "[" . try $ do
       parsed <- parseFromText (Just st) str $
                 plainMarkupContext standardSet -- FIXME this is not the right set but... whatever
       return $ do
-        tgt' <- linkToTarget str
+        (tgt', _) <- linkToTarget str
         if isImgTarget tgt'
         then pure $ B.image tgt'
         else parsed
 
-linkToTarget :: Text -> F LinkTarget
-linkToTarget (T.stripPrefix  "/" -> Just fp) = pure $ URILink "file" ("//" <> fp)
-linkToTarget (T.stripPrefix "./" -> Just fp) = pure $ URILink "file" fp
-linkToTarget fp | "../" `T.isPrefixOf` fp    = pure $ URILink "file" fp
-linkToTarget link@(T.stripPrefix "#" -> Just anchor) = do
-  docAnchors <- asksF orgStateAnchors
-  if anchor `member` docAnchors
-  then pure $ InternalLink anchor
-  else pure $ UnresolvedLink link
-linkToTarget (second T.uncons . T.break (== ':') -> (protocol, Just (_, uri))) = do
+linkToTarget :: Text -> F (LinkTarget, OrgInlines)
+linkToTarget l@(T.stripPrefix  "/" -> Just fp) = pure (URILink "file" ("//" <> fp), B.plain l)
+linkToTarget l@(T.stripPrefix "./" -> Just fp) = pure (URILink "file" fp, B.plain l)
+linkToTarget fp | "../" `T.isPrefixOf` fp      = pure (URILink "file" fp, B.plain fp)
+linkToTarget l@(second T.uncons . T.break (== ':') -> (protocol, Just (_, uri))) = do
   formatters <- asksF orgStateLinkFormatters
   case lookup protocol formatters of
     Just f -> linkToTarget (f uri)
-    Nothing -> pure $ URILink protocol uri
+    Nothing -> pure (URILink protocol uri, B.plain l)
 linkToTarget link = do
-  docTargets <- asksF orgStateTargetIds
+  docTargets <- asksF orgStateInternalTargets
   case lookup link docTargets of
-    Just li -> pure $ InternalLink li
-    Nothing -> pure $ UnresolvedLink link
+    Just (li, kind, alias) -> (InternalLink kind li,) <$> alias
+    Nothing -> pure (UnresolvedLink link, B.plain link)
 
 -- | FIXME This is not exactly how org figures out if a link is an image. But
 -- for simplicity I may leave it like this anyway.

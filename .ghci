@@ -1,7 +1,7 @@
-import Text.Org.Parser.Document
-import Text.Org.Parser.Elements
-import Text.Org.Parser.Objects
+import Org.Parser.Document
+import Org.Parser.Elements
+import Org.Parser.Objects
 import NeatInterpolation
-:set prompt      λ:
-:set prompt-cont λ|
+:set prompt      "λ: "
+:set prompt-cont "λ| "
 :set +m

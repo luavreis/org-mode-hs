@@ -94,23 +94,24 @@ data OrgElement
   | FootnoteDef Text
   | PlainList Affiliated ListType [ListItem]
   | Table Affiliated [OrgInline] [ColSpec] TableHead [TableBody] TableFoot
-  | CommentBlock Text
   | ExportBlock
       Affiliated -- ^ Affiliated keywords
       Text -- ^ Format
-      [SrcLine] -- ^ Contents
+      Text -- ^ Contents
   | ExampleBlock
       Affiliated -- ^ Affiliated keywords
+      (Maybe Int) -- ^ Starting line number
       (Map Text Text) -- ^ Switches
       [SrcLine] -- ^ Contents
-  | SrcBlock Affiliated
+  | SrcBlock
       Affiliated -- ^ Affiliated keywords
+      Text -- ^ Language
+      (Maybe Int) -- ^ Starting line number
       (Map Text Text) -- ^ Switches
       (Map Text Text) -- ^ Header arguments
-      Text -- ^ Contents
+      [SrcLine] -- ^ Contents
   | VerseBlock Affiliated [[OrgInline]]
   | Clock ClockData
-  | CommentLine Text
   | FixedWidth Affiliated Text
   | HorizontalRule
   | Keyword KeywordPair
@@ -124,6 +125,14 @@ data SrcLine
       Text -- ^ Reference name
       Text -- ^ Line contents
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+
+srcLineContent :: SrcLine -> Text
+srcLineContent (SrcLine c) = c
+srcLineContent (RefLine _ c) = c
+
+srcLineMap :: (Text -> Text) -> SrcLine -> SrcLine
+srcLineMap f (SrcLine c) = SrcLine (f c)
+srcLineMap f (RefLine t c) = RefLine t (f c)
 
 -- Keywords and affiliated keywords
 

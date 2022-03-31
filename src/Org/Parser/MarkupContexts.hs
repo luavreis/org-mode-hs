@@ -47,7 +47,7 @@ withMContext_ :: forall a b.
   Marked WithMContext b
   -> WithMContext a
   -> WithMContext (a, b)
-withMContext_ end p = do
+withMContext_ end p = try do
   let
     marks = getMarks end
     find' :: WithMContext (Text, b)
@@ -81,7 +81,7 @@ withBalancedContext ::
   -> Char
   -> WithMContext a
   -> WithMContext a
-withBalancedContext lchar rchar p = try $ do
+withBalancedContext lchar rchar p = try do
   _ <- char lchar
   let
     find' :: StateT Int WithMContext Text
