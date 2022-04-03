@@ -16,7 +16,7 @@ digits = takeWhileP (Just "digits") isDigit
 
 integer :: MonadParser m => m Int
 integer = try $ do
-  digits' <- reverse <$> many digitIntChar
+  digits' <- reverse <$> some digitIntChar
   let toInt (x:xs) = 10 * toInt xs + x
       toInt [] = 0
   pure $ toInt digits'
@@ -39,22 +39,22 @@ isAsciiAlpha c = isAsciiLower c || isAsciiUpper c
 upperAscii' :: MonadParser m => m Int
 upperAscii' = do
   c <- upperAscii
-  pure $ ord c - ord 'A'
+  pure $ ord c - ord 'A' + 1
 
 lowerAscii' :: MonadParser m => m Int
 lowerAscii' = do
   c <- lowerAscii
-  pure $ ord c - ord 'a'
+  pure $ ord c - ord 'a' + 1
 
 asciiAlpha' :: MonadParser m => m Int
 asciiAlpha' = lowerAscii' <|> upperAscii'
 
 upperAscii :: MonadParser m => m Char
-upperAscii = satisfy isAsciiLower
+upperAscii = satisfy isAsciiUpper
              <?> "uppercase A-Z character"
 
 lowerAscii :: MonadParser m => m Char
-lowerAscii = satisfy isAsciiUpper
+lowerAscii = satisfy isAsciiLower
              <?> "lowercase a-z character"
 
 asciiAlpha :: MonadParser m => m Char
@@ -63,6 +63,10 @@ asciiAlpha = satisfy isAsciiAlpha
 
 manyAsciiAlpha :: MonadParser m => m Text
 manyAsciiAlpha = takeWhileP (Just "a-z or A-Z characters")
+                 isAsciiAlpha
+
+someAsciiAlpha :: MonadParser m => m Text
+someAsciiAlpha = takeWhile1P (Just "a-z or A-Z characters")
                  isAsciiAlpha
 
 someNonSpace :: MonadParser m => m Text

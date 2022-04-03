@@ -9,7 +9,6 @@ module Org.Parser.Definitions
   , module Text.Megaparsec
   , module Text.Megaparsec.Char
   , module Text.Megaparsec.Debug
-  , module Control.Monad.Combinators.NonEmpty
   , module Data.Char
   ) where
 
@@ -17,10 +16,9 @@ import Prelude hiding (State)
 import Org.Types
 import Org.Parser.State
 import Org.Builder (OrgElements, OrgInlines)
-import Text.Megaparsec hiding (some)
+import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Debug
-import Control.Monad.Combinators.NonEmpty (some)
 import Data.Char (isSpace, isPunctuation, isAlphaNum, isLetter, isDigit, isAscii)
 import Relude.Extra (insert)
 
@@ -48,15 +46,24 @@ incSrcLineNum n = updateState $ \s ->
 getSrcLineNum :: OrgParser Int
 getSrcLineNum = gets orgStateSrcLineNumber
 
-registerTarget :: Text -> InternalLinkType -> F OrgInlines -> OrgParser Text
-registerTarget name kind alias = do
+registerTarget :: Text -> F OrgInlines -> OrgParser Text
+registerTarget name alias = do
   targets <- gets orgStateInternalTargets
   uid <- popUniqueId
-  updateState \s -> s { orgStateInternalTargets = insert name (uid, kind, alias) targets }
+  updateState \s -> s { orgStateInternalTargets = insert name (uid, alias) targets }
   pure uid
+
+registerAnchorTarget :: Text -> Text -> F OrgInlines -> OrgParser ()
+registerAnchorTarget name anchor alias = do
+  targets <- gets orgStateInternalTargets
+  updateState \s -> s { orgStateInternalTargets = insert name (anchor, alias) targets }
+
+clearPendingAffiliated :: OrgParser ()
+clearPendingAffiliated = modify (\s -> s { orgStatePendingAffiliated = mempty })
 
 withAffiliated :: (Affiliated -> a) -> OrgParser a
 withAffiliated f = f <$> gets orgStatePendingAffiliated
+                   <* clearPendingAffiliated
 
 
 -- * Last char

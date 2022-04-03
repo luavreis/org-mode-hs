@@ -1,3 +1,38 @@
+#+begin_verse
+   Foobar [[./][testing for
+         foo]] here is a an attempt
+#+end_verse
+
+- 中午
+  吃啥
+
+:foobar:
+asdasd kjasd jaks dj
+:end:
+
+#+begin_center
+fooobar
+#+end_center
+
+#+begin_special
+foo
+#+end_special
+
+- aa sad
+  #+begin_example
+  afoo
+  #+end_example
+- saldkal
+
+this is a "test" with let's’
+- test
+  #+begin_verse
+     aasa /asda/ afooo test
+      this is testing moreee
+   and lesssss
+  #+end_verse
+
+
 prettyParse elements [text|
 - list with
  - sublist
@@ -64,10 +99,6 @@ abc \* \/
 a. [@b] a b c d
 b. e fgh
 
-   //fuck foo// aha
+   //test foo// aha
 
 *劉邵* 等襲蘄春
-
-prettyParse elements [text|
-- will it work? u.u
-|]

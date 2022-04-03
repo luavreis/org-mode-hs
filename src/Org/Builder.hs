@@ -7,9 +7,6 @@ import Org.Types
 import Data.Sequence ((|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified GHC.Exts
 import qualified Data.Text as T
-import Text.Pandoc.Builder
-  ( QuoteType (..)
-  )
 
 newtype Many a = Many { unMany :: Seq a }
   deriving (Ord, Eq, Typeable, Foldable, Traversable, Functor, Show, Read)
@@ -65,29 +62,27 @@ instance IsString OrgInlines where
 
 -- * Element builders
 
-para :: OrgInlines -> OrgElements
-para = one . Paragraph . toList
+para :: Affiliated -> OrgInlines -> OrgElements
+para aff = one . Paragraph aff . toList
 
-export :: Affiliated -> Text -> Text -> OrgElements
-export aff format = one . ExportBlock aff format
+export :: Text -> Text -> OrgElements
+export format = one . ExportBlock format
 
 example ::
   Affiliated ->
   Maybe Int ->
-  Map Text Text ->
   [SrcLine] ->
   OrgElements
-example aff nums swi = one . ExampleBlock aff nums swi
+example aff nums = one . ExampleBlock aff nums
 
 srcBlock ::
   Affiliated ->
   Text ->
   Maybe Int ->
   Map Text Text ->
-  Map Text Text ->
   [SrcLine] ->
   OrgElements
-srcBlock aff lang nums swi args = one . SrcBlock aff lang nums swi args
+srcBlock aff lang nums args = one . SrcBlock aff lang nums args
 
 list ::
   Affiliated ->
@@ -98,9 +93,6 @@ list aff kind = one . PlainList aff kind
 
 -- * Object builders
 
--- | Convert a 'Text' to 'OrgInlines', treating interword spaces as
--- 'Space's or 'SoftBreak's. If you want a 'Str' with literal spaces,
--- use 'str'.
 text :: Text -> OrgInlines
 text = fromList . map conv . breakByNewline
   where breakByNewline = T.groupBy sameCategory
@@ -196,3 +188,6 @@ image = one . Image
 
 horizontalRule :: OrgElements
 horizontalRule = one HorizontalRule
+
+special :: Text -> OrgInlines -> OrgInlines
+special s = one . SpanSpecial s . toList

@@ -3,35 +3,31 @@
 module Org.Types where
 
 import Data.Generics (Data)
-import Text.Pandoc.Definition
-  ( TableHead
-  , TableBody
-  , TableFoot
-  , ColSpec
-  , QuoteType
-  )
+import Data.Char (isDigit)
+import qualified Data.Text as T
 
 
 -- * Document, Sections and Headings
 
 data OrgDocument = OrgDocument
   { documentProperties :: Properties
-  , documentKeywords :: [KeywordPair]
-  , documentFootnotes :: Map Text [OrgElement]
-  , topLevelContents :: [OrgElement]
-  , documentChildren :: [OrgSection]
+  , documentKeywords   :: Keywords
+  , documentFootnotes  :: Map Text [OrgElement]
+  , topLevelContents   :: [OrgElement]
+  , documentChildren   :: [OrgSection]
   } deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 data OrgSection = OrgSection
-  { sectionLevel :: Int
+  { sectionLevel      :: Int
   , sectionProperties :: Properties
-  , sectionTodo :: Maybe TodoKeyword
-  , sectionPriority :: Maybe Priority
-  , sectionTitle :: [OrgInline]
-  , sectionTags :: Tags
-  , sectionPlanning :: PlanningInfo
-  , sectionContents :: [OrgElement]
-  , sectionChildren :: [OrgSection]
+  , sectionTodo       :: Maybe TodoKeyword
+  , sectionPriority   :: Maybe Priority
+  , sectionTitle      :: [OrgInline]
+  , sectionTags       :: Tags
+  , sectionPlanning   :: PlanningInfo
+  , sectionAnchor     :: Id
+  , sectionContents   :: [OrgElement]
+  , sectionChildren   :: [OrgSection]
   } deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 type Tag = Text
@@ -57,12 +53,9 @@ type Date = (Int, Int, Int, Maybe Text)
 
 type Time = (Int, Int)
 
-data RepeaterOrDelay
-  = Repeater Text Int Char
-  | Delay Text Int Char
-  deriving (Show, Eq, Ord, Read, Data)
+type TimestampMark = (Text, Int, Char)
 
-type DateTime = (Date, Maybe Time, [RepeaterOrDelay])
+type DateTime = (Date, Maybe Time, Maybe TimestampMark, Maybe TimestampMark)
 
 -- | An Org timestamp, including repetition marks.
 data TimestampData
@@ -72,8 +65,8 @@ data TimestampData
 
 -- | Planning information for a subtree/headline.
 data PlanningInfo = PlanningInfo
-  { planningClosed :: Maybe TimestampData
-  , planningDeadline :: Maybe TimestampData
+  { planningClosed    :: Maybe TimestampData
+  , planningDeadline  :: Maybe TimestampData
   , planningScheduled :: Maybe TimestampData
   }
   deriving (Show, Eq, Ord, Read, Data)
@@ -81,7 +74,7 @@ data PlanningInfo = PlanningInfo
 type PropertyName = Text
 type PropertyValue = Text
 
-type Properties = [(PropertyName, PropertyValue)]
+type Properties = Map PropertyName PropertyValue
 
 
 -- * Elements
@@ -90,49 +83,48 @@ type Properties = [(PropertyName, PropertyValue)]
 data OrgElement
   = GreaterBlock Affiliated GreaterBlockType [OrgElement]
   | Drawer [OrgElement]
-  | DynamicBlock Affiliated Text (Map Text Text) [OrgElement]
-  | FootnoteDef Text
+  | DynamicBlock Text (Map Text Text) [OrgElement]
   | PlainList Affiliated ListType [ListItem]
-  | Table Affiliated [OrgInline] [ColSpec] TableHead [TableBody] TableFoot
+  -- | Table Affiliated [OrgInline] [ColSpec] TableHead [TableBody] TableFoot
   | ExportBlock
-      Affiliated -- ^ Affiliated keywords
       Text -- ^ Format
       Text -- ^ Contents
   | ExampleBlock
       Affiliated -- ^ Affiliated keywords
       (Maybe Int) -- ^ Starting line number
-      (Map Text Text) -- ^ Switches
       [SrcLine] -- ^ Contents
   | SrcBlock
       Affiliated -- ^ Affiliated keywords
       Text -- ^ Language
       (Maybe Int) -- ^ Starting line number
-      (Map Text Text) -- ^ Switches
       (Map Text Text) -- ^ Header arguments
       [SrcLine] -- ^ Contents
   | VerseBlock Affiliated [[OrgInline]]
   | Clock ClockData
-  | FixedWidth Affiliated Text
   | HorizontalRule
-  | Keyword KeywordPair
+  | Keyword KeywordKey KeywordValue
   | LaTeXEnvironment Affiliated Text Text
-  | Paragraph [OrgInline]
+  | Paragraph Affiliated [OrgInline]
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+
+data QuoteType = SingleQuote | DoubleQuote
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 data SrcLine
   = SrcLine Text
   | RefLine
-      Text -- ^ Reference name
+      Id -- ^ Reference id (its anchor)
+      Text -- ^ Reference name (how it appears)
       Text -- ^ Line contents
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 srcLineContent :: SrcLine -> Text
 srcLineContent (SrcLine c) = c
-srcLineContent (RefLine _ c) = c
+srcLineContent (RefLine _ _ c) = c
 
 srcLineMap :: (Text -> Text) -> SrcLine -> SrcLine
 srcLineMap f (SrcLine c) = SrcLine (f c)
-srcLineMap f (RefLine t c) = RefLine t (f c)
+srcLineMap f (RefLine i t c) = RefLine i t (f c)
 
 -- Keywords and affiliated keywords
 
@@ -143,12 +135,12 @@ data KeywordValue
   | DualKeyword Text Text -- results
   | ParsedKeyword [OrgInline] -- title, date
   | ParsedDualKeyword [OrgInline] [OrgInline] -- caption
-  | BackendKeyword Text Text -- attr_backend
+  | BackendKeyword [(Text, Text)] -- attr_backend
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
-type KeywordPair = (KeywordKey, KeywordValue)
+type Keywords = Map KeywordKey KeywordValue
 
-type Affiliated = Map KeywordKey (NonEmpty KeywordValue)
+type Affiliated = Keywords
 
 
 -- Greater Blocks
@@ -159,8 +151,15 @@ data GreaterBlockType = Center | Quote | Special Text
 
 -- Lists
 
-data ListType = Ordered | Descriptive | Unordered
+data ListType = Ordered OrderedStyle | Descriptive | Unordered Char
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+
+data OrderedStyle = OrderedNum | OrderedAlpha
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+
+orderedStyle :: Text -> OrderedStyle
+orderedStyle (T.any isDigit -> True) = OrderedNum
+orderedStyle _ = OrderedAlpha
 
 -- | One item of a list. Parameters are bullet, counter cookie, checkbox and
 -- tag.
@@ -174,9 +173,9 @@ data Checkbox = BoolBox Bool | PartialBox
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 listItemType :: ListItem -> ListType
-listItemType (ListItem (Counter _ _) _ _ _ _) = Ordered
+listItemType (ListItem (Counter t _) _ _ _ _) = Ordered (orderedStyle t)
 listItemType (ListItem (Bullet '-') _ _ (_:_) _) = Descriptive
-listItemType _ = Unordered
+listItemType (ListItem (Bullet c) _ _ _ _) = Unordered c
 
 
 -- Clock
@@ -202,31 +201,34 @@ data BabelCall = BabelCall
 -- | Objects (inline elements). Derived from Pandoc's Inline.
 data OrgInline -- TODO rename to OrgObject
   = Plain Text
+  | SoftBreak
+  | LineBreak
+  | NBSpace Int
   | Italic [OrgInline]
   | Underline [OrgInline]
   | Bold [OrgInline]
   | Strikethrough [OrgInline]
   | Superscript [OrgInline]
   | Subscript [OrgInline]
-  | Timestamp TimestampData
   | Quoted QuoteType [OrgInline]
   | Code Text
   | Verbatim Text
-  | SoftBreak
+  | Timestamp TimestampData
   | Entity -- ^ Replacement commands (e.g. @\alpha{}@)
       Text -- ^ Entity name (e.g. @"alpha"@)
   | LaTeXFragment FragmentType Text
   | ExportSnippet Text Text
-  | FootnoteRef Footnote
+  | FootnoteRef -- ^ Footnote reference.
+      Text -- ^ Label, or autogenerated id (for unlabeled footnotes).
   | Cite Citation
   | InlBabelCall BabelCall
   | Src Text Text Text
-  | LineBreak
   | Link LinkTarget [OrgInline]
   | Image LinkTarget
   | Macro -- ^ Org inline macro (e.g. @{{{poem(red,blue)}}}@)
       Text -- ^ Macro name (e.g. @"poem"@)
       [Text] -- ^ Arguments (e.g. @["red", "blue"]@)
+  | SpanSpecial Text [OrgInline] -- ^ Hack to represent some particular data in the AST (useful for citations)
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 type Protocol = Text
@@ -235,25 +237,14 @@ type Id = Text
 
 data LinkTarget
   = URILink Protocol Text
-  | InternalLink InternalLinkType Id
+  | InternalLink Id
   | UnresolvedLink Text
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
-
-data InternalLinkType
-  = Coderef
-  | Anchor
-  | Radio
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 data FragmentType
   = RawFragment
   | InlMathFragment
   | DispMathFragment
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
-
-data Footnote
-  = FootnoteLabeled Text
-  | FootnoteUnlabeled [OrgInline]
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 data Citation = Citation

@@ -1,4 +1,5 @@
--- |
+-- | This module used to define a "subparsing" monad but this was later
+-- absorbed into OrgState. Maybe I should move its contents elsewhere.
 
 module Org.Parser.MarkupContexts where
 
@@ -7,18 +8,26 @@ import Org.Parser.Definitions
 import Data.Set (notMember)
 import qualified Data.Text as T
 
-withMContext_ :: forall a b.
+withMContext__ :: forall a b.
   Marked OrgParser b
   -> OrgParser a
-  -> OrgParser (a, b)
-withMContext_ end p = try do
+  -> OrgParser (a, b, Text)
+withMContext__ end p = try do
   st <- getFullState
   (str, final) <- findMarked end
   guard (not $ T.null str)
   -- traceM $ "parsing in substring: " ++ show str
   -- traceM $ "with last char: " ++ show ctx
   -- traceM $ "with last char after substring: " ++ show ctx'
-  (, final) <$> parseFromText st str p
+  (, final, str) <$> parseFromText st str p
+
+withMContext_ :: forall a b.
+  Marked OrgParser b
+  -> OrgParser a
+  -> OrgParser (a, b)
+withMContext_ end p =
+  withMContext__ end p
+  <&> \ ~(x,y,_) -> (x,y)
 
 withMContext ::
   Marked OrgParser b

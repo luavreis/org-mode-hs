@@ -20,14 +20,14 @@ defaultOrgOptions = OrgOptions
 
 -- | Org-mode parser state
 data OrgParserState = OrgParserState
-  { orgStateInternalTargets      :: Map Text (Id, InternalLinkType, F OrgInlines) -- ^ Key is target name and value is (type, default alias)
+  { orgStateInternalTargets      :: Map Text (Id, F OrgInlines) -- ^ Key is target name and value is (type, default alias)
   , orgStatePendingAffiliated    :: Affiliated
   , orgStateOptions              :: OrgOptions
   , orgStateIdStack              :: [Id]
   , orgStateLastChar             :: Maybe Char
   , orgStateExcludeTags          :: Set Tag
   , orgStateExcludeTagsChanged   :: Bool
-  , orgStateKeywords             :: [F KeywordPair]
+  , orgStateKeywords             :: F Keywords
   , orgStateLinkFormatters       :: OrgLinkFormatters
   , orgStateMacros               :: Map Text MacroExpander
   , orgStateSrcLineNumber        :: Int
@@ -45,7 +45,7 @@ defaultState =  OrgParserState
   , orgStateLastChar             = Nothing
   , orgStateExcludeTags          = mempty
   , orgStateExcludeTagsChanged   = False
-  , orgStateKeywords             = []
+  , orgStateKeywords             = pure mempty
   , orgStateLinkFormatters       = mempty
   , orgStateMacros               = mempty
   , orgStateSrcLineNumber        = 1

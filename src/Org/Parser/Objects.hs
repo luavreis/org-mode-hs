@@ -6,7 +6,7 @@ import Prelude hiding (many, some)
 import Org.Parser.Common
 import Org.Parser.Definitions
 import Org.Parser.MarkupContexts
-import Org.Parser.Data.Entities (defaultEntitiesNames)
+import Org.Data.Entities (defaultEntitiesNames)
 import Relude.Extra
 import qualified Org.Builder as B
 import qualified Data.Text as T
@@ -25,6 +25,8 @@ minimalSet =
           , entityOrFragment
           , mathFragment
           , texMathFragment
+          , singleQuoted
+          , doubleQuoted
           ]
 
 standardSet ::  Marked OrgParser (F OrgInlines)
@@ -106,6 +108,12 @@ bold = markup B.bold '*'
 striketrough :: Marked OrgParser (F OrgInlines)
 striketrough = markup B.strikethrough '+'
 
+singleQuoted :: Marked OrgParser (F OrgInlines)
+singleQuoted = markup B.singleQuoted '\''
+
+doubleQuoted :: Marked OrgParser (F OrgInlines)
+doubleQuoted = markup B.doubleQuoted '"'
+
 -- | An endline character that can be treated as a space, not a line break.
 endline ::  Marked OrgParser (F OrgInlines)
 endline = mark "\n" $ try $
@@ -128,7 +136,7 @@ entityOrFragment = mark "\\" $ try $ do
 
     fragment :: MonadParser m => m (F OrgInlines)
     fragment = try $ do
-      name <- manyAsciiAlpha
+      name <- someAsciiAlpha
       text <- (name <>) <$> option "" brackets
       pureF $ B.fragment text
 
@@ -388,7 +396,7 @@ linkToTarget l@(second T.uncons . T.break (== ':') -> (protocol, Just (_, uri)))
 linkToTarget link = do
   docTargets <- asksF orgStateInternalTargets
   case lookup link docTargets of
-    Just (li, kind, alias) -> (InternalLink kind li,) <$> alias
+    Just (li, alias) -> (InternalLink li,) <$> alias
     Nothing -> pure (UnresolvedLink link, B.plain link)
 
 -- | FIXME This is not exactly how org figures out if a link is an image. But
@@ -418,16 +426,16 @@ parseTimestamp = try $ do
   let isActive = openChar == '<'
       closeChar = if isActive then '>' else ']'
       delims = (openChar, closeChar)
-  (d1, t1, r1) <- component delims
+  (d1, t1, r1, w1) <- component delims
   optional (try $ string "--" *> component delims)
     >>= \case
-    Just (d2, t2, r2) ->
-      pure $ TimestampRange isActive (d1, fst <$> t1, r1) (d2, fst <$> t2, r2)
+    Just (d2, t2, r2, w2) ->
+      pure $ TimestampRange isActive (d1, fst <$> t1, r1, w1) (d2, fst <$> t2, r2, w2)
     Nothing -> case t1 of
       Just (t1', Just t1'') ->
-        pure $ TimestampRange isActive (d1, Just t1', r1) (d1, Just t1'', r1)
+        pure $ TimestampRange isActive (d1, Just t1', r1, w1) (d1, Just t1'', r1, w1)
       _ ->
-        pure $ TimestampData isActive (d1, fst <$> t1, r1)
+        pure $ TimestampData isActive (d1, fst <$> t1, r1, w1)
   where
     component delims = do
       _ <- char (fst delims)
@@ -437,10 +445,11 @@ parseTimestamp = try $ do
         startTime <- parseTime
         endTime <- optional . try $ char '-' *> parseTime
         pure (startTime, endTime)
-      rods <- many (try $ hspace1 *> repeaterOrDelay)
+      repeater <- optional (try $ hspace1 *> repeaterMark)
+      warning <- optional (try $ hspace1 *> warningMark)
       hspace
       _ <- char (snd delims)
-      pure (date, time, rods)
+      pure (date, time, repeater, warning)
 
     parseDate :: OrgParser Date
     parseDate = do
@@ -458,8 +467,11 @@ parseTimestamp = try $ do
       minute <- number 2
       pure (hour, minute)
 
-    repeaterOrDelay :: OrgParser RepeaterOrDelay
-    repeaterOrDelay = do
-      mtype <- Repeater <$> choice (map string ["++", ".+", "+"]) <|>
-               Delay <$> choice (map string ["--", "-"])
+    repeaterMark = tsmark ["++", ".+", "+"]
+
+    warningMark = tsmark ["--", "-"]
+
+    tsmark :: [Text] -> OrgParser TimestampMark
+    tsmark marks = do
+      mtype <- (,,) <$> choice (map string marks)
       mtype <$> integer <*> oneOf ['h', 'm', 'd', 'w']

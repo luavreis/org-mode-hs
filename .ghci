@@ -1,6 +1,3 @@
-import Org.Parser.Document
-import Org.Parser.Elements
-import Org.Parser.Objects
 import NeatInterpolation
 :set prompt      "λ: "
 :set prompt-cont "λ| "
