@@ -9,11 +9,13 @@ type F = Ap (Reader OrgParserState)
 
 data OrgOptions = OrgOptions
   { orgSrcPreserveIndentation :: Bool
+  , orgTabWidth :: Int
   }
 
 defaultOrgOptions :: OrgOptions
 defaultOrgOptions = OrgOptions
   { orgSrcPreserveIndentation = False
+  , orgTabWidth               = 4
   }
 
 -- | Org-mode parser state

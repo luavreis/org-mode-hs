@@ -13,7 +13,7 @@ import qualified Data.Text as T
 
 -- * Sets of objects
 
-minimalSet :: Marked WithMContext (F OrgInlines)
+minimalSet :: Marked OrgParser (F OrgInlines)
 minimalSet =
   mconcat [ endline
           , code
@@ -27,7 +27,7 @@ minimalSet =
           , texMathFragment
           ]
 
-standardSet ::  Marked WithMContext (F OrgInlines)
+standardSet ::  Marked OrgParser (F OrgInlines)
 standardSet =
   mconcat [ minimalSet -- TODO optimize with ordering? in minimal too
           , citation
@@ -40,10 +40,10 @@ standardSet =
           , regularLinkOrImage
           ]
 
-plainMarkupContext :: Marked WithMContext (F OrgInlines) -> WithMContext (F OrgInlines)
+plainMarkupContext :: Marked OrgParser (F OrgInlines) -> OrgParser (F OrgInlines)
 plainMarkupContext = markupContext (pure . B.plain)
 
-newline' :: WithMContext Char
+newline' :: OrgParser Char
 newline' = newline <* clearLastChar
 
 emphasisPreChars :: String
@@ -52,18 +52,18 @@ emphasisPreChars = "-\t ('\"{\8203"
 emphasisPostChars :: String
 emphasisPostChars = " ,.-\t\n:!?;'\")}[\8203"
 
-emphasisPost :: Char -> Marked WithMContext ()
+emphasisPost :: Char -> Marked OrgParser ()
 emphasisPost e = mark [e] $ try $ do
-  lchar <- lastChar <$> get
+  lchar <- gets orgStateLastChar
   for_ lchar $ guard . not . isSpace
   _ <- char e
   setLastChar (Just e)
   lookAhead
     (eof <|> void (satisfy (`elem` emphasisPostChars)))
 
-emphasisPre :: Char -> WithMContext ()
+emphasisPre :: Char -> OrgParser ()
 emphasisPre s = try $ do
-  lchar <- lastChar <$> get
+  lchar <- gets orgStateLastChar
   for_ lchar $ guard . (`elem` emphasisPreChars)
   _ <- char s
   putLastChar Nothing
@@ -72,7 +72,7 @@ emphasisPre s = try $ do
 markup ::
   (OrgInlines -> OrgInlines)
   -> Char
-  -> Marked WithMContext (F OrgInlines)
+  -> Marked OrgParser (F OrgInlines)
 markup f c = mark [c] $ try $ do
   emphasisPre c
   f <<$>> withMContext (emphasisPost c)
@@ -81,33 +81,33 @@ markup f c = mark [c] $ try $ do
 rawMarkup ::
   (Text -> OrgInlines)
   -> Char
-  -> Marked WithMContext (F OrgInlines)
+  -> Marked OrgParser (F OrgInlines)
 rawMarkup f d = mark [d] $ try $ do
   emphasisPre d
   str <- withMContext (emphasisPost d)
          getInput
   pureF $ f str
 
-code :: Marked WithMContext (F OrgInlines)
+code :: Marked OrgParser (F OrgInlines)
 code = rawMarkup B.code '~'
 
-verbatim :: Marked WithMContext (F OrgInlines)
+verbatim :: Marked OrgParser (F OrgInlines)
 verbatim = rawMarkup B.verbatim '='
 
-italic :: Marked WithMContext (F OrgInlines)
+italic :: Marked OrgParser (F OrgInlines)
 italic = markup B.italic '/'
 
-underline :: Marked WithMContext (F OrgInlines)
+underline :: Marked OrgParser (F OrgInlines)
 underline = markup B.underline '_'
 
-bold :: Marked WithMContext (F OrgInlines)
+bold :: Marked OrgParser (F OrgInlines)
 bold = markup B.bold '*'
 
-striketrough :: Marked WithMContext (F OrgInlines)
+striketrough :: Marked OrgParser (F OrgInlines)
 striketrough = markup B.strikethrough '+'
 
 -- | An endline character that can be treated as a space, not a line break.
-endline ::  Marked WithMContext (F OrgInlines)
+endline ::  Marked OrgParser (F OrgInlines)
 endline = mark "\n" $ try $
   newline'
   *> hspace
@@ -115,7 +115,7 @@ endline = mark "\n" $ try $
 
 -- * Entities and LaTeX fragments
 
-entityOrFragment :: Marked WithMContext (F OrgInlines)
+entityOrFragment :: Marked OrgParser (F OrgInlines)
 entityOrFragment = mark "\\" $ try $ do
   _ <- char '\\'
   entity <|> fragment
@@ -123,12 +123,12 @@ entityOrFragment = mark "\\" $ try $ do
     entity :: MonadParser m => m (F OrgInlines)
     entity = try $ do
       name <- choice (map string defaultEntitiesNames)
-      void (string "{}") <|> notFollowedBy alphaAZ
+      void (string "{}") <|> notFollowedBy asciiAlpha
       pureF $ B.entity name
 
     fragment :: MonadParser m => m (F OrgInlines)
     fragment = try $ do
-      name <- manyAlphaAZ
+      name <- manyAsciiAlpha
       text <- (name <>) <$> option "" brackets
       pureF $ B.fragment text
 
@@ -139,7 +139,7 @@ entityOrFragment = mark "\\" $ try $ do
       close <- char (if open == '{' then '}' else ']')
       pure $ open `T.cons` str `T.snoc` close
 
-mathFragment :: Marked WithMContext (F OrgInlines)
+mathFragment :: Marked OrgParser (F OrgInlines)
 mathFragment = mark "\\" $ try $ do
   _ <- char '\\'
   open <- satisfy (\c -> c == '(' || c == '[')
@@ -149,7 +149,7 @@ mathFragment = mark "\\" $ try $ do
     then B.inlMath str
     else B.dispMath str
 
-texMathFragment :: Marked WithMContext (F OrgInlines)
+texMathFragment :: Marked OrgParser (F OrgInlines)
 texMathFragment = mark "$" $ try $ do
   display <|> inline
   where
@@ -165,7 +165,7 @@ texMathFragment = mark "$" $ try $ do
         satisfy (\x -> isPunctuation x || isSpace x || x == '"')
 
     inline = try $ do
-      lchar <- lastChar <$> get
+      lchar <- gets orgStateLastChar
       for_ lchar $ guard . (/= '$')
       str <- singleChar <|> moreChars
       pureF $ B.inlMath str
@@ -189,23 +189,23 @@ texMathFragment = mark "$" $ try $ do
 
 -- * Export snippets
 
-exportSnippet :: Marked WithMContext (F OrgInlines)
+exportSnippet :: Marked OrgParser (F OrgInlines)
 exportSnippet = mark "@" . try $ do
   _ <- string "@@"
   backend <- takeWhile1P (Just "export snippet backend")
-             (\c -> isAlphaAZ c || isDigit c || c == '-')
+             (\c -> isAsciiAlpha c || isDigit c || c == '-')
   _ <- char ':'
   pure . B.exportSnippet backend <$>
     findChars2 '@' '@' (Just "export snippet contents")
 
 -- * Citations
 
-citation :: Marked WithMContext (F OrgInlines)
+citation :: Marked OrgParser (F OrgInlines)
 citation = mark "[" $
   B.citation <<$>> withBalancedContext '[' ']' orgCite
 
 -- | A citation in org-cite style
-orgCite :: WithMContext (F Citation)
+orgCite :: OrgParser (F Citation)
 orgCite = try $ do
   _ <- string "cite"
   (style, variant) <- citeStyle
@@ -228,7 +228,7 @@ orgCite = try $ do
       , citationReferences = refs'
       }
 
-citeStyle :: WithMContext (Tokens Text, Tokens Text)
+citeStyle :: OrgParser (Tokens Text, Tokens Text)
 citeStyle = do
   sty <- option "" $ try style
   vars <- option "" $ try variants
@@ -241,12 +241,12 @@ citeStyle = do
                takeWhileP (Just "alphaNum, '_', '-' or '/' characters")
                (\c -> isAlphaNum c || c == '_' || c == '-' || c == '/')
 
-citeItems :: WithMContext (F [CiteReference])
+citeItems :: OrgParser (F [CiteReference])
 citeItems = sequence <$> (citeItem `sepBy1'` char ';')
   where
     sepBy1' p sep = (:) <$> p <*> many (try $ sep >> p)
 
-citeItem :: WithMContext (F CiteReference)
+citeItem :: OrgParser (F CiteReference)
 citeItem = do
   pref <- option mempty citePrefix
   itemKey <- orgCiteKey
@@ -260,7 +260,7 @@ citeItem = do
       , refSuffix = toList suf'
       }
 
-citePrefix :: WithMContext (F OrgInlines)
+citePrefix :: OrgParser (F OrgInlines)
 citePrefix = try $ do
   clearLastChar
   withMContext
@@ -268,7 +268,7 @@ citePrefix = try $ do
       eof <|> void (lookAhead $ oneOf ['@', ';']))
     (plainMarkupContext minimalSet)
 
-citeSuffix :: WithMContext (F OrgInlines)
+citeSuffix :: OrgParser (F OrgInlines)
 citeSuffix = try $ do
   clearLastChar
   withMContext
@@ -276,7 +276,7 @@ citeSuffix = try $ do
       eof <|> void (lookAhead $ single ';'))
     (plainMarkupContext minimalSet)
 
-orgCiteKey :: WithMContext Text
+orgCiteKey :: OrgParser Text
 orgCiteKey = do
   _ <- char '@'
   takeWhile1P (Just "citation key allowed chars") orgCiteKeyChar
@@ -290,7 +290,7 @@ orgCiteKeyChar c =
 
 -- * Inline Babel calls
 
-inlBabel :: Marked WithMContext (F OrgInlines)
+inlBabel :: Marked OrgParser (F OrgInlines)
 inlBabel = mark "c" . try $ do
   _ <- string "call_"
   name <- takeWhile1P (Just "babel call name")
@@ -306,7 +306,7 @@ inlBabel = mark "c" . try $ do
 
 -- * Inline source blocks
 
-inlSrc :: Marked WithMContext (F OrgInlines)
+inlSrc :: Marked OrgParser (F OrgInlines)
 inlSrc = mark "s" . try $ do
   _ <- string "src_"
   name <- takeWhile1P (Just "babel call name")
@@ -321,17 +321,17 @@ inlSrc = mark "s" . try $ do
 
 -- * Line breaks
 
-linebreak :: Marked WithMContext (F OrgInlines)
+linebreak :: Marked OrgParser (F OrgInlines)
 linebreak =  mark "\\" . try $
   pure B.linebreak <$ string "\\\\" <* hspace <* newline' <* hspace
 
 
 -- * Links
 
-angleLink :: Marked WithMContext (F OrgInlines)
+angleLink :: Marked OrgParser (F OrgInlines)
 angleLink = mark "<" . try $ do
   _ <- char '<'
-  protocol <- manyAlphaAZ
+  protocol <- manyAsciiAlpha
   _ <- char ':'
   tgt <- fix $ \search -> do
     partial <- takeWhile1P (Just "angle link target")
@@ -340,7 +340,7 @@ angleLink = mark "<" . try $ do
       <|> newline *> hspace *> ((T.stripEnd partial <>) <$> search)
   pureF $ B.uriLink protocol "" (B.plain tgt)
 
-regularLinkOrImage :: Marked WithMContext (F OrgInlines)
+regularLinkOrImage :: Marked OrgParser (F OrgInlines)
 regularLinkOrImage = mark "[" . try $ do
   _ <- string "[["
   str <- linkTarget
@@ -363,12 +363,12 @@ regularLinkOrImage = mark "[" . try $ do
         <|> char '\\' *> liftA2 T.cons (option '\\' $ oneOf ['[', ']']) rest
         <|> newline *> hspace *> ((T.stripEnd partial `T.snoc` ' ' <>) <$> rest)
 
-    linkDescr :: WithMContext (F OrgInlines)
+    linkDescr :: OrgParser (F OrgInlines)
     linkDescr = try $ do
       _ <- char '['
-      st <- getParserState
+      st <- getFullState
       str <- findChars2 ']' ']' (Just "link description")
-      parsed <- parseFromText (Just st) str $
+      parsed <- parseFromText st str $
                 plainMarkupContext standardSet -- FIXME this is not the right set but... whatever
       return $ do
         (tgt', _) <- linkToTarget str
@@ -408,8 +408,8 @@ isImgTarget _ = False
 
 -- * Timestamps
 
-timestamp :: Marked WithMContext (F OrgInlines)
-timestamp = mark "<[" $ lift $ pure . B.timestamp <$> parseTimestamp
+timestamp :: Marked OrgParser (F OrgInlines)
+timestamp = mark "<[" $ pure . B.timestamp <$> parseTimestamp
 
 -- | Read a timestamp.
 parseTimestamp :: OrgParser TimestampData

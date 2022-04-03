@@ -67,7 +67,7 @@ section lvl = try $ do
       }
  where
    titleObjects :: OrgParser (F OrgInlines, Tags)
-   titleObjects = runMContext_
+   titleObjects = withMContext_
                   (mark " \n" endOfTitle)
                   (plainMarkupContext standardSet)
 
@@ -107,7 +107,7 @@ priorityCookie = try $
     priorityFromChar :: OrgParser Priority
     priorityFromChar =
       NumericPriority <$> digitIntChar <|>
-      LetterPriority <$> uppercaseAZ
+      LetterPriority <$> upperAscii
 
 orgTagWord :: OrgParser Text
 orgTagWord = takeWhile1P (Just "tag characters (alphanumeric, @, %, # or _)")

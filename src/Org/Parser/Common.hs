@@ -2,20 +2,24 @@
 
 module Org.Parser.Common where
 
-import Prelude hiding (many, State)
+import Prelude hiding (many, some, State)
 import Org.Parser.Definitions
-import Data.Char (digitToInt)
+import Data.Char (digitToInt, isAsciiLower, isAsciiUpper)
+import Relude.Extra (notMember)
 import qualified Data.Text as T
 
 digitIntChar :: MonadParser m => m Int
 digitIntChar = digitToInt <$> digitChar
 
+digits :: MonadParser m => m Text
+digits = takeWhileP (Just "digits") isDigit
+
 integer :: MonadParser m => m Int
 integer = try $ do
-  digits <- reverse <$> many digitIntChar
+  digits' <- reverse <$> many digitIntChar
   let toInt (x:xs) = 10 * toInt xs + x
       toInt [] = 0
-  pure $ toInt digits
+  pure $ toInt digits'
 
 number
   :: Int
@@ -29,30 +33,37 @@ number _ = error "Number of digits to parse must be positive!"
 
 -- * ASCII alphabet character classes
 
-isUpperAZ :: Char -> Bool
-isUpperAZ c = 'A' <= c && c <= 'Z'
+isAsciiAlpha :: Char -> Bool
+isAsciiAlpha c = isAsciiLower c || isAsciiUpper c
 
-isLowerAZ :: Char -> Bool
-isLowerAZ c = 'a' <= c && c <= 'z'
+upperAscii' :: MonadParser m => m Int
+upperAscii' = do
+  c <- upperAscii
+  pure $ ord c - ord 'A'
 
-isAlphaAZ :: Char -> Bool
-isAlphaAZ c = isLowerAZ c || isUpperAZ c
+lowerAscii' :: MonadParser m => m Int
+lowerAscii' = do
+  c <- lowerAscii
+  pure $ ord c - ord 'a'
 
-uppercaseAZ :: MonadParser m => m Char
-uppercaseAZ = satisfy isUpperAZ
-              <?> "uppercase A-Z character"
+asciiAlpha' :: MonadParser m => m Int
+asciiAlpha' = lowerAscii' <|> upperAscii'
 
-lowercaseAZ :: MonadParser m => m Char
-lowercaseAZ = satisfy isLowerAZ
-              <?> "lowercase a-z character"
+upperAscii :: MonadParser m => m Char
+upperAscii = satisfy isAsciiLower
+             <?> "uppercase A-Z character"
 
-alphaAZ :: MonadParser m => m Char
-alphaAZ = satisfy isAlphaAZ
+lowerAscii :: MonadParser m => m Char
+lowerAscii = satisfy isAsciiUpper
+             <?> "lowercase a-z character"
+
+asciiAlpha :: MonadParser m => m Char
+asciiAlpha = satisfy isAsciiAlpha
               <?> "a-z or A-Z character"
 
-manyAlphaAZ :: MonadParser m => m Text
-manyAlphaAZ = takeWhileP (Just "a-z or A-Z characters")
-              isAlphaAZ
+manyAsciiAlpha :: MonadParser m => m Text
+manyAsciiAlpha = takeWhileP (Just "a-z or A-Z characters")
+                 isAsciiAlpha
 
 someNonSpace :: MonadParser m => m Text
 someNonSpace = takeWhile1P Nothing (not . isSpace)
@@ -62,6 +73,18 @@ isSpaceOrTab c = c == ' ' || c == '\t'
 
 spaceOrTab :: MonadParser m => m Char
 spaceOrTab = satisfy isSpaceOrTab <?> "space or tab character"
+
+spacesOrTabs :: (MonadParser m, MonadState OrgParserState m) => m Int
+spacesOrTabs = try $ sum <$> many (oneSpace <|> oneTab)
+  where
+    oneSpace = char ' ' $> 1
+    oneTab = char '\t' >> getsO orgTabWidth
+
+spacesOrTabs1 :: (MonadParser m, MonadState OrgParserState m) => m Int
+spacesOrTabs1 = sum <$> some (oneSpace <|> oneTab)
+  where
+    oneSpace = char ' ' $> 1
+    oneTab = char '\t' >> getsO orgTabWidth
 
 -- | Skips one or more spaces or tabs.
 skipSpaces1 :: MonadParser m => m ()
@@ -86,27 +109,49 @@ anyLine = takeWhileP (Just "rest of line") (/= '\n')
 takeInput :: MonadParser m => m Text
 takeInput = takeWhileP Nothing (const True)
 
--- | Parse a line with whitespace contents.
+-- | Parse a line with whitespace contents, and consume a newline at the end.
 blankline :: MonadParser m => m ()
-blankline = try $ hspace <* (eof <|> void newline)
+blankline = try $ hspace <* newline
+
+-- | Parse a line with whitespace contents, line may end with eof. CAUTION: this
+-- function may consume NO INPUT! Be mindful of infinite loops!
+blankline' :: MonadParser m => m ()
+blankline' = try $ hspace <* (void newline <|> eof)
+
+findMarked :: forall b.
+  Marked OrgParser b
+  -> OrgParser (Text, b)
+findMarked end = try $
+  fix $ \search -> do
+    str <- takeWhileP
+           (Just $ "insides of mcontext (chars outside  " ++
+            show (toList marks) ++ ")")
+           (`notMember` marks)
+    setLastChar (snd <$> T.unsnoc str)
+    ((str,) <$> try (getParser end) <?> "end of mcontext")
+      <|> (do c <- anySingle <?> "insides of mcontext (single)"
+              first (T.snoc str c <>) <$> search)
+  where
+    marks = getMarks end
+-- {-# INLINE findMarked #-}
 
 findChars2 :: MonadParser m => Char -> Char -> Maybe String -> m Text
-findChars2 needle post descr =
+findChars2 needle post descr = try $
   fix $ \search -> do
     partial <- takeWhileP descr (/= needle)
     _ <- char needle
     char post $> partial
       <|> (partial `T.snoc` needle <>) <$> search
 
-parseFromText :: MonadParser m => Maybe (State Text Void) -> Text -> m b -> m b
-parseFromText mState txt parser = do
-  currentState <- getParserState
-  let previousState = fromMaybe currentState mState
-  setParserState previousState { stateInput = txt }
+parseFromText :: FullState -> Text -> OrgParser b -> OrgParser b
+parseFromText (prevPS, prevOS) txt parser = do
+  (cPS, cOS) <- getFullState
+  setFullState (prevPS { stateInput = txt }, prevOS)
   result <- parser
-  afterState <- getParserState
-  setParserState currentState
-    { stateParseErrors = stateParseErrors currentState
-                         ++ stateParseErrors afterState }
+  (aPS, aOS) <- getFullState
+  setFullState ( cPS { stateParseErrors =
+                       stateParseErrors cPS ++
+                       stateParseErrors aPS }
+               , aOS { orgStateLastChar =
+                       orgStateLastChar cOS } )
   pure result
-

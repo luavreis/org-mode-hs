@@ -89,6 +89,13 @@ srcBlock ::
   OrgElements
 srcBlock aff lang nums swi args = one . SrcBlock aff lang nums swi args
 
+list ::
+  Affiliated ->
+  ListType ->
+  [ListItem] ->
+  OrgElements
+list aff kind = one . PlainList aff kind
+
 -- * Object builders
 
 -- | Convert a 'Text' to 'OrgInlines', treating interword spaces as

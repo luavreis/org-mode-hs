@@ -167,7 +167,7 @@ data ListType = Ordered | Descriptive | Unordered
 data ListItem = ListItem Bullet (Maybe Int) (Maybe Checkbox) [OrgInline] [OrgElement]
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
-data Bullet = Bullet Char | Counter Char Char
+data Bullet = Bullet Char | Counter Text Char
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 data Checkbox = BoolBox Bool | PartialBox
