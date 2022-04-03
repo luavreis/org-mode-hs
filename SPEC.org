@@ -15,6 +15,8 @@ Also, common understanding of "alphabetic" usually includes many alphabetic char
 * Elements
 ** Greater blocks
 Countrary to what the spec says it's not possible to quote lines inside.
+** Special blocks
+It's not possible to quote lines inside verse blocks. And please, if you drop support for flags don't drop support for their functionality (ajusting line number starts and creating referenes to lines of code).
 ** List Items
 It says "not counting lines inside other elements" although lines inside paragraphs do count when they are not indented.
 * Objects

@@ -10,6 +10,7 @@ import Org.Parser.Objects
 import Org.Parser.MarkupContexts
 import qualified Data.Text as T
 import qualified Data.Map as M
+import Relude.Extra (lookup)
 
 -- | Parse input as org document tree.
 orgDocument :: OrgParser OrgDocument
@@ -23,7 +24,7 @@ orgDocument = do
   -- This means an state with keywords is available.
   finalState <- getState
   return $ flip runReader finalState . getAp $ do
-    keywords' <- sequence $ orgStateKeywords finalState
+    keywords' <- orgStateKeywords finalState
     footnotes' <- sequence $ orgStateFootnotes finalState
     topLevel' <- topLevel
     sections' <- sequence sections
@@ -45,11 +46,17 @@ section lvl = try $ do
   guard (lvl <= level)
   todoKw <- optional todoKeyword
   priority <- optional priorityCookie
-  (title, tags) <- titleObjects
+  (title, tags, titleTxt) <- titleObjects
   planning   <- option emptyPlanning planningInfo
   properties <- option mempty propertyDrawer
   contents   <- elements
   children   <- many (section (level + 1))
+  anchor <- case lookup "CUSTOM_ID" properties of
+    Just a -> do
+      registerAnchorTarget ("#" <> a) a title
+      registerAnchorTarget ("*" <> titleTxt) a title
+      pure a
+    Nothing -> registerTarget ("*" <> titleTxt) title
   return $ do
     title'    <- title
     contents' <- contents
@@ -60,14 +67,15 @@ section lvl = try $ do
       , sectionTodo = todoKw
       , sectionPriority = priority
       , sectionTitle = toList title'
+      , sectionAnchor = anchor
       , sectionTags = tags
       , sectionPlanning = planning
       , sectionContents = toList contents'
       , sectionChildren = children'
       }
  where
-   titleObjects :: OrgParser (F OrgInlines, Tags)
-   titleObjects = withMContext_
+   titleObjects :: OrgParser (F OrgInlines, Tags, Text)
+   titleObjects = withMContext__
                   (mark " \n" endOfTitle)
                   (plainMarkupContext standardSet)
 
@@ -138,7 +146,7 @@ propertyDrawer = try $ do
   _ <- string' ":properties:"
   skipSpaces
   _ <- newline
-  manyTill nodeProperty (try endOfDrawer)
+  fromList <$> manyTill nodeProperty (try endOfDrawer)
   where
    endOfDrawer :: OrgParser Text
    endOfDrawer = try $
@@ -154,6 +162,7 @@ propertyDrawer = try $ do
      *> takeWhile1P (Just "node property name") (not . isSpace)
         <&> T.stripSuffix ":"
         >>= guardMaybe "expecting ':' at end of node property name"
+        <&> T.toLower
 
    value :: OrgParser PropertyValue
    value =

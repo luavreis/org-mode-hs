@@ -10,6 +10,7 @@ import Org.Parser.MarkupContexts
 import Relude.Extra hiding (next)
 import qualified Org.Builder as B
 import qualified Data.Text as T
+import Text.Slugify (slugify)
 
 -- | Read the start of a header line, return the header level
 headingStart :: OrgParser Int
@@ -43,13 +44,14 @@ para = try do
   (inls, next) <- withMContext_
                   (mark "\n" end)
                   (plainMarkupContext standardSet)
-  pure $ (B.para <$> inls) <> next
+  (<> next) <$> withAffiliated (\aff -> B.para aff <$> inls)
   where
     end :: OrgParser (F OrgElements)
     end = eof $> mempty <|> try do
       _ <- newline
       lookAhead headingStart $> mempty
         <|> element
+
 
 -- * Plain lists
 
@@ -70,7 +72,7 @@ listItem = try do
   cookie <- optional counterSet
   box    <- optional checkbox
   tag    <- case bullet of
-    Bullet _ -> toList <<$>> option mempty listItemTag
+    Bullet _ -> toList <<$>> option mempty itemTag
     _        -> pureF []
   els <- liftA2 (<>) (blankline $> mempty <|> indentedPara indent)
                      (indentedElements indent)
@@ -105,8 +107,8 @@ checkbox = try $
            char 'X' $> BoolBox True  <|>
            char '-' $> PartialBox
 
-listItemTag :: OrgParser (F OrgInlines)
-listItemTag = try do
+itemTag :: OrgParser (F OrgInlines)
+itemTag = try do
   st <- getFullState
   (contents, found) <- findMarked end
   guard found
@@ -121,7 +123,7 @@ indentedPara indent = try do
   (inls, next) <- withMContext_
                   (mark "\n" end)
                   (plainMarkupContext standardSet)
-  pure $ (B.para <$> inls) <> next
+  (<> next) <$> withAffiliated (\aff -> B.para aff <$> inls)
   where
     end :: OrgParser (F OrgElements)
     end = eof $> mempty <|> try do
@@ -152,7 +154,7 @@ exampleBlock = try do
   _ <- anyLine
   startingNumber <- updateLineNumbers switches
   contents <- rawBlockContents end switches
-  pure <$> (withAffiliated B.example ?? startingNumber ?? switches ?? contents)
+  pure <$> (withAffiliated B.example ?? startingNumber ?? contents)
   where
     end = try $ hspace *> string' "#+end_example" <* blankline'
 
@@ -165,7 +167,7 @@ srcBlock = try do
   _ <- anyLine
   num <- updateLineNumbers switches
   contents <- rawBlockContents end switches
-  pure <$> (withAffiliated B.srcBlock ?? lang ?? num ?? switches ?? args ?? contents)
+  pure <$> (withAffiliated B.srcBlock ?? lang ?? num ?? args ?? contents)
   where
     end = try $ hspace *> string' "#+end_src" <* blankline'
     headerArg = liftA2 (,) (hspace1 *> char ':' *> someNonSpace)
@@ -179,9 +181,18 @@ exportBlock = try do
   format <- option "" $ hspace1 *> someNonSpace
   _ <- anyLine
   contents <- T.unlines <$> manyTill anyLine end
-  pure <$> (withAffiliated B.export ?? format ?? contents)
+  pureF $ B.export format contents
   where
     end = try $ hspace *> string' "#+end_export" <* blankline'
+
+verseBlock :: OrgParser (F OrgElements)
+verseBlock = try do
+  hspace
+  _ <- string' "#+begin_verse"
+  undefined
+  where
+    -- end = try $ hspace *> string' "#+end_export" <* blankline'
+
 
 indentContents :: Int -> [SrcLine] -> [SrcLine]
 indentContents tabWidth (map (srcLineMap $ tabsToSpaces tabWidth) -> lins) =
@@ -241,11 +252,12 @@ rawBlockLine switches = try $
           content <- T.stripEnd . T.reverse <$> takeInput
           pure (ref, content)
         = do
-          alias <- if "-r" `member` switches
-                   then show <$> getSrcLineNum
-                   else pure ref
-          registerTarget ("(" <> ref <> ")") Coderef (pure $ B.plain alias)
-          pure $ RefLine ref content
+          (ref', alias) <- if "-r" `member` switches
+                           then ("",) . show <$> getSrcLineNum
+                           else pure (ref, ref)
+          let anchor = "coderef-" <> slugify ref
+          registerAnchorTarget ("(" <> ref <> ")") anchor (pure $ B.plain alias)
+          pure $ RefLine anchor ref' content
       | otherwise = pure $ SrcLine txt
 
 blockSwitches :: OrgParser (Map Text Text)
@@ -274,3 +286,12 @@ blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
       s <- T.snoc . one <$> char '-'
                         <*> oneOf ['i', 'k', 'r']
       pure (s, "")
+
+
+-- * Greater Blocks
+
+-- * Drawers
+
+
+
+-- * LaTeX Environments

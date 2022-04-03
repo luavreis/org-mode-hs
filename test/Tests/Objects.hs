@@ -12,7 +12,7 @@ testObjects = testGroup "Objects"
     [
       "<1997-11-03 Mon 19:15>" =?>
       B.timestamp
-        (TimestampData True ((1997,11,3, Just "Mon"), Just (19,15), []))
+        (TimestampData True ((1997,11,3, Just "Mon"), Just (19,15), Nothing, Nothing))
     ]
 
   , "Citation with corner case markups" ~: citation $

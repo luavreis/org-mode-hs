@@ -15,14 +15,14 @@ testDocument = testGroup "Document"
             :foobarbar: bla bla
              :ENd:
       |]
-        =?> [ ("Fo^o3'", "bar")
-            , ("foobar", "")
-            , ("foobarbar", "bla bla")
-            ]
+        =?> fromList [ ("Fo^o3'", "bar")
+                     , ("foobar", "")
+                     , ("foobarbar", "bla bla")
+                     ]
 
     , [text|:properties:
             :end:
       |]
-        =?> []
+        =?> mempty
     ]
   ]
