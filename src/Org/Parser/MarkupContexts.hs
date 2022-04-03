@@ -7,84 +7,34 @@ import Org.Parser.Definitions
 import Data.Set (notMember)
 import qualified Data.Text as T
 
-newtype MarkupContext = MarkupContext
-    { lastChar :: Maybe Char
-    }
-    deriving (Show)
-
-defaultMCtx :: MarkupContext
-defaultMCtx = MarkupContext Nothing
-
-type WithMContext = StateT MarkupContext OrgParser
-
-setLastChar :: Maybe Char -> WithMContext ()
-setLastChar lchar = modify (\c -> c { lastChar = lchar <|> lastChar c })
-
-clearLastChar :: WithMContext ()
-clearLastChar = modify (\c -> c { lastChar = Nothing })
-
-ctxChar :: Char -> WithMContext Char
-ctxChar c = char c <* setLastChar (Just c)
-
-putLastChar :: Maybe Char -> WithMContext ()
-putLastChar lchar = modify (\c -> c { lastChar = lchar })
-
-runMContext_ ::
-  Marked OrgParser b
-  -> WithMContext a
-  -> OrgParser (a, b)
-runMContext_ end p = do
-  flip evalStateT defaultMCtx $
-    withMContext_ (mapParser lift end) p
-
-runMContext ::
-  Marked OrgParser ()
-  -> WithMContext a
-  -> OrgParser a
-runMContext end = fmap fst . runMContext_ end
-
 withMContext_ :: forall a b.
-  Marked WithMContext b
-  -> WithMContext a
-  -> WithMContext (a, b)
+  Marked OrgParser b
+  -> OrgParser a
+  -> OrgParser (a, b)
 withMContext_ end p = try do
-  let
-    marks = getMarks end
-    find' :: WithMContext (Text, b)
-    find' = do
-      str <- takeWhileP
-             (Just $ "insides of mcontext (chars outside  " ++
-              show (toList marks) ++ ")")
-             (`notMember` marks)
-      setLastChar (snd <$> T.unsnoc str)
-      ((str,) <$> getParser end <?> "end of mcontext")
-        <|> (do c <- anySingle <?> "insides of mcontext (single)"
-                first (T.snoc str c <>) <$> find')
-  st <- getParserState
-  ctx <- get
-  ((str, final), ctx') <- lift $ runStateT (try find') ctx
+  st <- getFullState
+  (str, final) <- findMarked end
   guard (not $ T.null str)
   -- traceM $ "parsing in substring: " ++ show str
   -- traceM $ "with last char: " ++ show ctx
   -- traceM $ "with last char after substring: " ++ show ctx'
-  (, final) <$> parseFromText (Just st) str p
-    <* put ctx'
+  (, final) <$> parseFromText st str p
 
 withMContext ::
-  Marked WithMContext b
-  -> WithMContext a
-  -> WithMContext a
+  Marked OrgParser b
+  -> OrgParser a
+  -> OrgParser a
 withMContext end = fmap fst . withMContext_ end
 
 withBalancedContext ::
   Char
   -> Char
-  -> WithMContext a
-  -> WithMContext a
+  -> OrgParser a
+  -> OrgParser a
 withBalancedContext lchar rchar p = try do
   _ <- char lchar
   let
-    find' :: StateT Int WithMContext Text
+    find' :: StateT Int OrgParser Text
     find' = do
       str <- takeWhileP
              (Just "insides of markup")
@@ -96,38 +46,39 @@ withBalancedContext lchar rchar p = try do
       if | balance == 0 -> pure str
          | balance > 0  -> (T.snoc str c <>) <$> find'
          | otherwise    -> fail "unbalaced delimiters"
-  st <- getParserState
+  st <- getFullState
   str <- evalStateT find' 1
   -- traceM $ "balanced parsing in substring: " ++ show str
-  setLastChar (snd <$> T.unsnoc str)
-  parseFromText (Just st) str p
+  parseFromText st str p
     <* setLastChar (Just rchar)
 
 markupContext :: Monoid k
   => (Text -> k)
-  -> Marked WithMContext k
-  -> WithMContext k
-markupContext f elems = try $ do
-  let specials = getMarks elems
-  str <- optional $ takeWhile1P
-         (Just $ "insides of markup (chars not in "
-          ++ show (toList specials) ++ ")")
-         (`notMember` specials)
-  -- traceM $ "consumed: " ++ show str
-  let self = maybe mempty f str
-  setLastChar (T.last <$> str)
-  (self <>) <$> (finishSelf <|> anotherEl <|> nextChar)
+  -> Marked OrgParser k
+  -> OrgParser k
+markupContext f elems = go
   where
-    finishSelf = try $ do
-      eof
-      pure mempty
-    anotherEl = try $ do
-      el <- getParser elems
-      rest <- markupContext f elems
-      pure $ el <> rest
-    nextChar = try $ do
-      c <- anySingle
-      -- traceM $ "parsed char: " ++ show c
-      setLastChar (Just c)
-      rest <- markupContext f elems
-      pure $ f (T.singleton c) <> rest
+    go = try $ do
+      let specials = getMarks elems
+      str <- optional $ takeWhile1P
+             (Just $ "insides of markup (chars not in "
+              ++ show (toList specials) ++ ")")
+             (`notMember` specials)
+      -- traceM $ "consumed: " ++ show str
+      let self = maybe mempty f str
+      setLastChar (T.last <$> str)
+      (self <>) <$> (finishSelf <|> anotherEl <|> nextChar)
+      where
+        finishSelf = try $ do
+          eof
+          pure mempty
+        anotherEl = try $ do
+          el <- getParser elems
+          rest <- go
+          pure $ el <> rest
+        nextChar = try $ do
+          c <- anySingle
+          -- traceM $ "parsed char: " ++ show c
+          setLastChar (Just c)
+          rest <- go
+          pure $ f (T.singleton c) <> rest

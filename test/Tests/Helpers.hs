@@ -11,7 +11,6 @@ import Text.Pretty.Simple
 import Text.Megaparsec
 import Org.Parser.Definitions
 import Org.Builder (Many)
-import Org.Parser.MarkupContexts
 import qualified Text.Show
 
 type OrgParseError = ParseErrorBundle Text Void
@@ -31,12 +30,8 @@ instance Parsable OrgParser (F a) where
   parse' p = second applyFuture .
     parse (runStateT p defaultState) ""
 
-instance Parsable WithMContext (F a) where
-  type Parsed WithMContext (F a) = a
-  parse' p = parse' (evalStateT p defaultMCtx)
-
-instance Parsable (Marked WithMContext) (F a) where
-  type Parsed (Marked WithMContext) (F a) = a
+instance Parsable (Marked OrgParser) (F a) where
+  type Parsed (Marked OrgParser) (F a) = a
   parse' p = parse' (getParser p)
 
 instance Parsable OrgParser Properties where

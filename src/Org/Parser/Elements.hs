@@ -30,14 +30,17 @@ elements :: OrgParser (F OrgElements)
 elements = mconcat <$> manyTill (element <|> para) (void (lookAhead headingStart) <|> eof)
 
 element :: OrgParser (F OrgElements)
-element = choice [ exampleBlock
+element = choice [ blankline $> mempty
+                 , commentLine
+                 , exampleBlock
                  , srcBlock
                  , exportBlock
+                 , plainList
                  ] <?> "org element"
 
 para :: OrgParser (F OrgElements)
 para = try do
-  (inls, next) <- runMContext_
+  (inls, next) <- withMContext_
                   (mark "\n" end)
                   (plainMarkupContext standardSet)
   pure $ (B.para <$> inls) <> next
@@ -45,24 +48,101 @@ para = try do
     end :: OrgParser (F OrgElements)
     end = eof $> mempty <|> try do
       _ <- newline
-      some blankline $> mempty
-        <|> lookAhead headingStart $> mempty
+      lookAhead headingStart $> mempty
         <|> element
 
 -- * Plain lists
 
-counterCookie :: OrgParser Int
-counterCookie = try $
+plainList :: OrgParser (F OrgElements)
+plainList = do
+  (indent, fstItem) <- listItem
+  rest <- many . try $ guardIndent indent >> snd <$> listItem
+  let kind = listItemType <$> fstItem
+      items = (:) <$> fstItem <*> sequence rest
+  withAffiliated \aff -> B.list aff <$> kind <*> items
+  where
+    guardIndent i = guard . (== i) =<< spacesOrTabs
+
+listItem :: OrgParser (Int, F ListItem)
+listItem = try do
+  (indent, bullet) <- unorderedBullet <|> counterBullet
+  hspace1 <|> lookAhead (void newline)
+  cookie <- optional counterSet
+  box    <- optional checkbox
+  tag    <- case bullet of
+    Bullet _ -> toList <<$>> option mempty listItemTag
+    _        -> pureF []
+  els <- liftA2 (<>) (blankline $> mempty <|> indentedPara indent)
+                     (indentedElements indent)
+  pure (indent, ListItem bullet cookie box <$> tag <*> (toList <$> els))
+  where
+    unorderedBullet = fmap (second Bullet) $
+      try ((,) <$> spacesOrTabs  <*> satisfy \c -> c == '+' || c == '-') <|>
+      try ((,) <$> spacesOrTabs1 <*> char '*')
+    counterBullet = try do
+      indent <- spacesOrTabs
+      counter <- digits <|> T.singleton <$> satisfy isAsciiAlpha
+      d   <- satisfy \c -> c == '.' || c == ')'
+      pure (indent, Counter counter d)
+
+counterSet :: OrgParser Int
+counterSet = try $
   string "[@"
   *> parseNum
   <* char ']'
   <* hspace
   where
-    parseNum = integer
-               <|> snd <$> lowerAlpha
-               <|> snd <$> upperAlpha
+    parseNum = integer <|> asciiAlpha'
 
--- * Blocks
+checkbox :: OrgParser Checkbox
+checkbox = try $
+  char '['
+  *> tick
+  <* char ']'
+  <* hspace1
+  where
+    tick = char ' ' $> BoolBox False <|>
+           char 'X' $> BoolBox True  <|>
+           char '-' $> PartialBox
+
+listItemTag :: OrgParser (F OrgInlines)
+listItemTag = try do
+  st <- getFullState
+  (contents, found) <- findMarked end
+  guard found
+  parseFromText st contents (plainMarkupContext standardSet)
+  where
+    end = mark " \t\n" $
+      spaceOrTab *> string "::" *> spaceOrTab $> True
+        <|> newline $> False
+
+indentedPara :: Int -> OrgParser (F OrgElements)
+indentedPara indent = try do
+  (inls, next) <- withMContext_
+                  (mark "\n" end)
+                  (plainMarkupContext standardSet)
+  pure $ (B.para <$> inls) <> next
+  where
+    end :: OrgParser (F OrgElements)
+    end = eof $> mempty <|> try do
+      _ <- newline
+      blankline' $> mempty
+        <|> lookAhead headingStart $> mempty
+        <|> try (guard . (<= indent) =<< spacesOrTabs) $> mempty
+        <|> element
+
+indentedElements :: Int -> OrgParser (F OrgElements)
+indentedElements indent =
+  mconcat <$> many indentedElement
+  where
+    indentedElement = try do
+      notFollowedBy headingStart
+      blankline $> mempty <|> do
+        guard . (> indent) =<< lookAhead spacesOrTabs
+        element <|> indentedPara indent
+
+
+-- * Lesser blocks
 
 exampleBlock :: OrgParser (F OrgElements)
 exampleBlock = try do
@@ -74,10 +154,10 @@ exampleBlock = try do
   contents <- rawBlockContents end switches
   pure <$> (withAffiliated B.example ?? startingNumber ?? switches ?? contents)
   where
-    end = try $ hspace *> string' "#+end_example" <* blankline
+    end = try $ hspace *> string' "#+end_example" <* blankline'
 
 srcBlock :: OrgParser (F OrgElements)
-srcBlock = try $ do
+srcBlock = try do
   hspace
   _ <- string' "#+begin_src"
   lang <- option "" $ hspace1 *> someNonSpace
@@ -87,13 +167,13 @@ srcBlock = try $ do
   contents <- rawBlockContents end switches
   pure <$> (withAffiliated B.srcBlock ?? lang ?? num ?? switches ?? args ?? contents)
   where
-    end = try $ hspace *> string' "#+end_src" <* blankline
+    end = try $ hspace *> string' "#+end_src" <* blankline'
     headerArg = liftA2 (,) (hspace1 *> char ':' *> someNonSpace)
                            (T.strip <$> takeWhileP Nothing (\c -> c /= ':' && c /= '\n'))
     headerArgs = fromList <$> many headerArg
 
 exportBlock :: OrgParser (F OrgElements)
-exportBlock = try $ do
+exportBlock = try do
   hspace
   _ <- string' "#+begin_export"
   format <- option "" $ hspace1 *> someNonSpace
@@ -101,22 +181,23 @@ exportBlock = try $ do
   contents <- T.unlines <$> manyTill anyLine end
   pure <$> (withAffiliated B.export ?? format ?? contents)
   where
-    end = try $ hspace *> string' "#+end_export" <* blankline
+    end = try $ hspace *> string' "#+end_export" <* blankline'
 
-indentContents :: [SrcLine] -> [SrcLine]
-indentContents (map (srcLineMap tabsToSpaces) -> lins) =
+indentContents :: Int -> [SrcLine] -> [SrcLine]
+indentContents tabWidth (map (srcLineMap $ tabsToSpaces tabWidth) -> lins) =
   map (srcLineMap $ T.drop minIndent) lins
   where
     minIndent = minimum1 (0 :| map (indentSize . srcLineContent) lins)
     indentSize = T.length . T.takeWhile (== ' ')
 
-tabsToSpaces :: Text -> Text
-tabsToSpaces txt = T.span (\c -> c == ' ' || c == '\t') txt
-                   & first (flip T.replicate " "
-                             . uncurry (+)
-                             . bimap T.length ((* 4) . T.length)
-                             . T.partition (== ' '))
-                   & uncurry (<>)
+tabsToSpaces :: Int -> Text -> Text
+tabsToSpaces tabWidth txt =
+  T.span (\c -> c == ' ' || c == '\t') txt
+  & first (flip T.replicate " "
+            . uncurry (+)
+            . bimap T.length ((* tabWidth) . T.length)
+            . T.partition (== ' '))
+  & uncurry (<>)
 
 updateLineNumbers :: Map Text Text -> OrgParser (Maybe Int)
 updateLineNumbers switches =
@@ -131,10 +212,11 @@ updateLineNumbers switches =
 rawBlockContents :: OrgParser void -> Map Text Text -> OrgParser [SrcLine]
 rawBlockContents end switches = do
   contents <- manyTill (rawBlockLine switches) end
-  preserveIndent <- asksO orgSrcPreserveIndentation
+  tabWidth       <- getsO orgTabWidth
+  preserveIndent <- getsO orgSrcPreserveIndentation
   pure $ if preserveIndent || "-i" `member` switches
-         then map (srcLineMap tabsToSpaces) contents
-         else indentContents contents
+         then map (srcLineMap (tabsToSpaces tabWidth)) contents
+         else indentContents tabWidth contents
 
 quotedLine :: OrgParser Text
 quotedLine = do
@@ -154,7 +236,7 @@ rawBlockLine switches = try $
           (hspace :: Parsec Void Text ())
           _ <- string (T.reverse refpos)
           ref <- toText . reverse <$> someTill
-                 (satisfy $ \c -> isAlphaAZ c || isDigit c || c == '-')
+                 (satisfy $ \c -> isAsciiAlpha c || isDigit c || c == '-')
                  (string $ T.reverse refpre)
           content <- T.stripEnd . T.reverse <$> takeInput
           pure (ref, content)

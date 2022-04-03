@@ -1,0 +1,73 @@
+prettyParse elements [text|
+- list with
+ - sublist
+- testing
+|]
+
+prettyParse elements [text|
+  - foo
+	
+    bar
+|]
+
+prettyParse elements [text|
+- foo
+#+begin_example
+  foobar
+  #+end_example
+|]
+
+prettyParse elements [text|
+- foo
+  #+begin_example
+  should work!
+  #+end_example
+|]
+
+prettyParse elements [text|
+    -
+  #+begin_example
+  should not work
+  #+end_example
+|]
+
+prettyParse elements [text|
+-
+  #+begin_example
+  should work!
+  #+end_example
+|]
+
+prettyParse elements [text|
+- #+begin_example
+  should not work!
+  #+end_example
+|]
+
+prettyParse elements [text|
+- item
+# with comment
+  breaking list
+|]
+
+
+prettyParse elements [text|
+- item
+  # with comment
+  interspersed
+|]
+
+- a \(f\)
+       * ab c
+- foo
+abc \* \/
+a. [@b] a b c d
+b. e fgh
+
+   //fuck foo// aha
+
+*劉邵* 等襲蘄春
+
+prettyParse elements [text|
+- will it work? u.u
+|]

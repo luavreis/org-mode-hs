@@ -9,15 +9,18 @@ module Org.Parser.Definitions
   , module Text.Megaparsec
   , module Text.Megaparsec.Char
   , module Text.Megaparsec.Debug
+  , module Control.Monad.Combinators.NonEmpty
   , module Data.Char
   ) where
 
+import Prelude hiding (State)
 import Org.Types
 import Org.Parser.State
 import Org.Builder (OrgElements, OrgInlines)
-import Text.Megaparsec
+import Text.Megaparsec hiding (some)
 import Text.Megaparsec.Char
 import Text.Megaparsec.Debug
+import Control.Monad.Combinators.NonEmpty (some)
 import Data.Char (isSpace, isPunctuation, isAlphaNum, isLetter, isDigit, isAscii)
 import Relude.Extra (insert)
 
@@ -26,14 +29,6 @@ type Parser = ParsecT Void Text Identity
 type MonadParser m = MonadParsec Void Text m
 
 type OrgParser = StateT OrgParserState Parser
-
-getState :: OrgParser OrgParserState
-getState = get
-
-updateState
-  :: (OrgParserState -> OrgParserState)
-  -> OrgParser ()
-updateState = modify
 
 popUniqueId :: OrgParser Text
 popUniqueId = do
@@ -63,17 +58,52 @@ registerTarget name kind alias = do
 withAffiliated :: (Affiliated -> a) -> OrgParser a
 withAffiliated f = f <$> gets orgStatePendingAffiliated
 
+
+-- * Last char
+
+setLastChar :: Maybe Char -> OrgParser ()
+setLastChar lchar =
+  modify (\c -> c { orgStateLastChar = lchar <|> orgStateLastChar c })
+
+clearLastChar :: OrgParser ()
+clearLastChar = modify (\c -> c { orgStateLastChar = Nothing })
+
+putLastChar :: Maybe Char -> OrgParser ()
+putLastChar lchar = modify (\c -> c { orgStateLastChar = lchar })
+
+
+-- * State and Future convenience functions
+
+type FullState = (State Text Void, OrgParserState)
+
+getState :: OrgParser OrgParserState
+getState = get
+
+getFullState :: OrgParser FullState
+getFullState = liftA2 (,) getParserState getState
+
+setFullState :: FullState -> OrgParser ()
+setFullState (pS, oS) = setParserState pS >> put oS
+
+updateState ::
+  (OrgParserState -> OrgParserState) ->
+  OrgParser ()
+updateState = modify
+
 askF :: F OrgParserState
 askF = Ap ask
 
-asksO :: (OrgOptions -> a) -> OrgParser a
-asksO f = f <$> gets orgStateOptions
+getsO :: MonadState OrgParserState m => (OrgOptions -> a) -> m a
+getsO f = f <$> gets orgStateOptions
 
 asksF :: (OrgParserState -> a) -> F a
 asksF f = Ap $ asks f
 
 pureF :: Monad m => a -> m (F a)
 pureF = pure . pure
+
+
+-- * Marked parsers
 
 data Marked m a = Marked
   { getMarks :: Set Char -- TODO use (Pred {toPred :: Char -> Bool})
