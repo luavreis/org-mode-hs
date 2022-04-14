@@ -84,6 +84,13 @@ srcBlock ::
   OrgElements
 srcBlock aff lang nums args = one . SrcBlock aff lang nums args
 
+greaterBlock ::
+  Affiliated ->
+  GreaterBlockType ->
+  OrgElements ->
+  OrgElements
+greaterBlock aff btype = one . GreaterBlock aff btype . toList
+
 list ::
   Affiliated ->
   ListType ->

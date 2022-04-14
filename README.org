@@ -11,7 +11,7 @@ In the spec terms, the following components are implemented:
 |---------------------+----------------------+-------+--------------------|
 | Affiliated Keywords | X                    |       | X                  |
 |---------------------+----------------------+-------+--------------------|
-| GreaterBlock        | X                    |       | X                  |
+| GreaterBlock        | X                    | X     | X                  |
 | Drawer              | X                    |       | X                  |
 | DynamicBlock        | X                    |       | X                  |
 | FootnoteDefinition  | X                    |       | X                  |
