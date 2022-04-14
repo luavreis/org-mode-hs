@@ -476,7 +476,7 @@ plainList kind items = do
     listItems =
       join <$> forM items \(ListItem _ i cbox t c) ->
         runChildrenWith do
-          "Counter" ## spliceOrEmpty i counterSet
+          "CounterSet" ## spliceOrEmpty i counterSet
           "Checkbox" ## spliceOrEmpty cbox checkbox
           "Tag" ## toSplice t
           contents (cropRenderElements c)

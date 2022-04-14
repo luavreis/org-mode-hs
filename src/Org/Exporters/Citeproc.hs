@@ -1,7 +1,6 @@
 module Org.Exporters.Citeproc where
 import Org.Types
 import Citeproc.CslJson
-import qualified Citeproc.Types as CT
 import qualified Data.Text as T
 
 toCslJson :: [OrgInline] -> CslJson Text

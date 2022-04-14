@@ -45,8 +45,8 @@ standardSet =
 plainMarkupContext :: Marked OrgParser (F OrgInlines) -> OrgParser (F OrgInlines)
 plainMarkupContext = markupContext (pure . B.plain)
 
-newline' :: OrgParser Char
-newline' = newline <* clearLastChar
+newlineAndClear :: OrgParser Char
+newlineAndClear = newline <* clearLastChar
 
 emphasisPreChars :: String
 emphasisPreChars = "-\t ('\"{\8203"
@@ -117,7 +117,7 @@ doubleQuoted = markup B.doubleQuoted '"'
 -- | An endline character that can be treated as a space, not a line break.
 endline ::  Marked OrgParser (F OrgInlines)
 endline = mark "\n" $ try $
-  newline'
+  newlineAndClear
   *> hspace
   $> pure B.softbreak
 
@@ -331,7 +331,7 @@ inlSrc = mark "s" . try $ do
 
 linebreak :: Marked OrgParser (F OrgInlines)
 linebreak =  mark "\\" . try $
-  pure B.linebreak <$ string "\\\\" <* hspace <* newline' <* hspace
+  pure B.linebreak <$ string "\\\\" <* hspace <* newlineAndClear <* hspace
 
 
 -- * Links
