@@ -4,64 +4,64 @@
 Thanks @tecosaur for the table 🙂
 
 In the spec terms, the following components are implemented:
-| Component           | Type                 | Parse | HTML (via Heist templates) |
-|---------------------+----------------------+-------+----------------------------|
-| Heading             | X                    | X     | X                          |
-| Section             | X                    | X     | X                          |
-|---------------------+----------------------+-------+----------------------------|
-| Affiliated Keywords | X                    |       | X                          |
-|---------------------+----------------------+-------+----------------------------|
-| GreaterBlock        | X                    |       | X                          |
-| Drawer              | X                    |       | X                          |
-| DynamicBlock        | X                    |       | X                          |
-| FootnoteDefinition  | X                    |       | X                          |
-| InlineTask          | X                    |       |                            |
-| Item                | X                    | X     | X                          |
-| List                | X                    | X     | X                          |
-| PropertyDrawer      | X                    | X     | X                          |
-| Table               |                      |       |                            |
-|---------------------+----------------------+-------+----------------------------|
-| BabelCall           | X                    |       |                            |
-| Comment Block       | X                    | X     | X                          |
-| Example Block       | X                    | X     | X                          |
-| Export Block        | X                    | X     | X                          |
-| Src Block           | X                    | X     | X                          |
-| Verse Block         | X                    |       |                            |
-| Clock               | X                    |       |                            |
-| DiarySexp           | X                    |       |                            |
-| Planning            | X                    | X     |                            |
-| Comment             | X                    | X     | X                          |
-| FixedWidth          | X (as example block) |       | X                          |
-| HorizontalRule      | X                    | X     | X                          |
-| Keyword             | X                    |       |                            |
-| LaTeXEnvironment    | X                    |       |                            |
-| NodeProperty        | X                    | X     | X                          |
-| Paragraph           | X                    | X     | X                          |
-| TableRow            |                      |       |                            |
-| TableHRule          |                      |       |                            |
-|---------------------+----------------------+-------+----------------------------|
-| OrgEntity           | X                    | X     | X                          |
-| LaTeXFragment       | X                    | X     |                            |
-| ExportSnippet       | X                    | X     | X                          |
-| FootnoteReference   | X                    |       | X                          |
-| InlineBabelCall     | X                    |       |                            |
-| InlineSrcBlock      | X                    | X     |                            |
-| RadioLink           | X                    |       | X                          |
-| PlainLink           | X                    |       | X                          |
-| AngleLink           | X                    | X     | X                          |
-| RegularLink         | X                    | X     | X                          |
-| LineBreak           | X                    | X     | X                          |
-| Macro               | X                    |       |                            |
-| Citation            | X                    | X     | (WIP via citeproc)         |
-| RadioTarget         | X                    |       |                            |
-| Target              | X                    |       |                            |
-| StatisticsCookie    | X                    |       |                            |
-| Subscript           | X                    |       | X                          |
-| Superscript         | X                    |       | X                          |
-| TableCell           |                      |       |                            |
-| Timestamp           | X                    | X     | X                          |
-| Plain               | X                    | X     | X                          |
-| Markup              | X                    | X     | X                          |
+| Component           | Type                 | Parse | HTML (using Heist) |
+|---------------------+----------------------+-------+--------------------|
+| Heading             | X                    | X     | X                  |
+| Section             | X                    | X     | X                  |
+|---------------------+----------------------+-------+--------------------|
+| Affiliated Keywords | X                    |       | X                  |
+|---------------------+----------------------+-------+--------------------|
+| GreaterBlock        | X                    |       | X                  |
+| Drawer              | X                    |       | X                  |
+| DynamicBlock        | X                    |       | X                  |
+| FootnoteDefinition  | X                    |       | X                  |
+| InlineTask          | X                    |       |                    |
+| Item                | X                    | X     | X                  |
+| List                | X                    | X     | X                  |
+| PropertyDrawer      | X                    | X     | X                  |
+| Table               |                      |       |                    |
+|---------------------+----------------------+-------+--------------------|
+| BabelCall           | X                    |       |                    |
+| Comment Block       | X                    | X     | X                  |
+| Example Block       | X                    | X     | X                  |
+| Export Block        | X                    | X     | X                  |
+| Src Block           | X                    | X     | X                  |
+| Verse Block         | X                    |       |                    |
+| Clock               | X                    |       |                    |
+| DiarySexp           | X                    |       |                    |
+| Planning            | X                    | X     |                    |
+| Comment             | X                    | X     | X                  |
+| FixedWidth          | X (as example block) |       | X                  |
+| HorizontalRule      | X                    | X     | X                  |
+| Keyword             | X                    |       |                    |
+| LaTeXEnvironment    | X                    |       |                    |
+| NodeProperty        | X                    | X     | X                  |
+| Paragraph           | X                    | X     | X                  |
+| TableRow            |                      |       |                    |
+| TableHRule          |                      |       |                    |
+|---------------------+----------------------+-------+--------------------|
+| OrgEntity           | X                    | X     | X                  |
+| LaTeXFragment       | X                    | X     |                    |
+| ExportSnippet       | X                    | X     | X                  |
+| FootnoteReference   | X                    |       | X                  |
+| InlineBabelCall     | X                    |       |                    |
+| InlineSrcBlock      | X                    | X     |                    |
+| RadioLink           | X                    |       | X                  |
+| PlainLink           | X                    |       | X                  |
+| AngleLink           | X                    | X     | X                  |
+| RegularLink         | X                    | X     | X                  |
+| LineBreak           | X                    | X     | X                  |
+| Macro               | X                    |       |                    |
+| Citation            | X                    | X     | (WIP via citeproc) |
+| RadioTarget         | X                    |       |                    |
+| Target              | X                    |       |                    |
+| StatisticsCookie    | X                    |       |                    |
+| Subscript           | X                    |       | X                  |
+| Superscript         | X                    |       | X                  |
+| TableCell           |                      |       |                    |
+| Timestamp           | X                    | X     | X                  |
+| Plain               | X                    | X     | X                  |
+| Markup              | X                    | X     | X                  |
 
 * Comparasion to Pandoc
 The main difference between this parser and the Org Reader from Pandoc is that this one parses into a specialized Org-element-like AST, while the reader parses into the =Pandoc= AST, which cannot express all Org elements directly. This has the effect that some Org features are either unsupported by the reader or "projected" onto Pandoc in ways that bundle less information about the Org source. In contrast, this reader aims to represent Org documents more faithfully before "projecting" them into formats like HTML or even the Pandoc AST itself. So you can expect more org-specific features to be parsed, and a hopefully more accurate parsing in general.

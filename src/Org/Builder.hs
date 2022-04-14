@@ -188,6 +188,3 @@ image = one . Image
 
 horizontalRule :: OrgElements
 horizontalRule = one HorizontalRule
-
-special :: Text -> OrgInlines -> OrgInlines
-special s = one . SpanSpecial s . toList

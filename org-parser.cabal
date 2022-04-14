@@ -19,7 +19,7 @@ Source-repository    head
 common common-options
   default-language:  Haskell2010
   build-depends:     base >= 4.5
-                   , relude >= 1
+                   , relude
                    , aeson
                    , bytestring
                    , citeproc
@@ -30,7 +30,9 @@ common common-options
                    , megaparsec >= 9
                    , pandoc-types
                    , parser-combinators
+                   , skylighting
                    , slugify
+                   , stringsearch
                    , syb
                    , time >= 1.10
                    , text >= 1.2
@@ -56,6 +58,8 @@ library
   hs-source-dirs:    src
   exposed-modules:   Org.Types
                      Org.Builder
+                     Org.Walk
+                     Org.Parser
                      Org.Exporters.Heist
   other-modules:     Org.Parser.Common
                      Org.Parser.State
@@ -64,6 +68,7 @@ library
                      Org.Parser.Elements
                      Org.Parser.Objects
                      Org.Parser.MarkupContexts
+                     Org.Exporters.Citeproc
                      Org.Data.Entities
                      Paths_org_parser
   autogen-modules:   Paths_org_parser

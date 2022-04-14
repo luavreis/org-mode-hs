@@ -150,7 +150,9 @@ findChars2 needle post descr = try $
 parseFromText :: FullState -> Text -> OrgParser b -> OrgParser b
 parseFromText (prevPS, prevOS) txt parser = do
   (cPS, cOS) <- getFullState
-  setFullState (prevPS { stateInput = txt }, prevOS)
+  setFullState ( prevPS { stateInput = txt }
+               , cOS { orgStateLastChar =
+                       orgStateLastChar prevOS } )
   result <- parser
   (aPS, aOS) <- getFullState
   setFullState ( cPS { stateParseErrors =

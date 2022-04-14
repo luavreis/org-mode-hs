@@ -1,17 +1,12 @@
-<!-- Helper for the checkboxes -->
-<bind tag="cbwrapper">
-  <pre><apply-contents /></pre>&ensp;
-</bind>
-
 <!-- Checkboxes. All three cases must be defined. -->
 <bind tag="Checkbox:true">
-  <cbwrapper>[X]</cbwrapper>
+  <code>[X]</code>
 </bind>
 <bind tag="Checkbox:false">
-  <cbwrapper>[ ]</cbwrapper>
+  <code>[ ]</code>
 </bind>
 <bind tag="Checkbox:partial">
-  <cbwrapper>[-]</cbwrapper>
+  <code>[-]</code>
 </bind>
 
 <!-- Plain list types. All three cases must be defined. -->
@@ -48,7 +43,7 @@
 <bind tag="PlainList:descriptive">
   <dl>
     <ListItems>
-      <dt><Checkbox /><Tag /><dt>
+      <dt><Checkbox /><Tag /></dt>
       <dd><Contents /></dd>
     </ListItems>
   </dl>

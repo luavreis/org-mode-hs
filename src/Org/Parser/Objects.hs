@@ -346,7 +346,7 @@ angleLink = mark "<" . try $ do
                (\c -> c /= '\n' && c /= '>')
     char '>' $> partial
       <|> newline *> hspace *> ((T.stripEnd partial <>) <$> search)
-  pureF $ B.uriLink protocol "" (B.plain tgt)
+  pureF $ B.uriLink protocol tgt (B.plain $ protocol <> ":" <> tgt)
 
 regularLinkOrImage :: Marked OrgParser (F OrgInlines)
 regularLinkOrImage = mark "[" . try $ do

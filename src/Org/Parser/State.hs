@@ -27,7 +27,7 @@ data OrgParserState = OrgParserState
   , orgStateLastChar             :: Maybe Char
   , orgStateExcludeTags          :: Set Tag
   , orgStateExcludeTagsChanged   :: Bool
-  , orgStateKeywords             :: F Keywords
+  , orgStateKeywords             :: [F (KeywordKey, KeywordValue)]
   , orgStateLinkFormatters       :: OrgLinkFormatters
   , orgStateMacros               :: Map Text MacroExpander
   , orgStateSrcLineNumber        :: Int
@@ -45,7 +45,7 @@ defaultState =  OrgParserState
   , orgStateLastChar             = Nothing
   , orgStateExcludeTags          = mempty
   , orgStateExcludeTagsChanged   = False
-  , orgStateKeywords             = pure mempty
+  , orgStateKeywords             = []
   , orgStateLinkFormatters       = mempty
   , orgStateMacros               = mempty
   , orgStateSrcLineNumber        = 1

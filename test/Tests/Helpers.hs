@@ -13,8 +13,6 @@ import Org.Parser.Definitions
 import Org.Builder (Many)
 import qualified Text.Show
 
-type OrgParseError = ParseErrorBundle Text Void
-
 -- | This class is mainly used for the tests cases.
 -- @Parsed m a@ is the "monad-stripped" version of parse
 -- tree with which we can compare in the test cases.

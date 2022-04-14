@@ -30,6 +30,8 @@ commentLine = try do
 elements :: OrgParser (F OrgElements)
 elements = mconcat <$> manyTill (element <|> para) (void (lookAhead headingStart) <|> eof)
 
+-- | Each element parser must consume till the start of a line or EOF.
+-- This is necessary for correct counting of list indentations.
 element :: OrgParser (F OrgElements)
 element = choice [ blankline $> mempty
                  , commentLine
@@ -56,14 +58,14 @@ para = try do
 -- * Plain lists
 
 plainList :: OrgParser (F OrgElements)
-plainList = do
+plainList = try do
   (indent, fstItem) <- listItem
-  rest <- many . try $ guardIndent indent >> snd <$> listItem
+  rest <- many . try $ guardIndent indent =<< listItem
   let kind = listItemType <$> fstItem
       items = (:) <$> fstItem <*> sequence rest
   withAffiliated \aff -> B.list aff <$> kind <*> items
   where
-    guardIndent i = guard . (== i) =<< spacesOrTabs
+    guardIndent indent (i, l) = guard (indent == i) $> l
 
 listItem :: OrgParser (Int, F ListItem)
 listItem = try do
@@ -130,7 +132,8 @@ indentedPara indent = try do
       _ <- newline
       blankline' $> mempty
         <|> lookAhead headingStart $> mempty
-        <|> try (guard . (<= indent) =<< spacesOrTabs) $> mempty
+        -- This line is tricky. We don't want to consume any indentation.
+        <|> lookAhead (try $ guard . (<= indent) =<< spacesOrTabs) $> mempty
         <|> element
 
 indentedElements :: Int -> OrgParser (F OrgElements)
@@ -198,7 +201,7 @@ indentContents :: Int -> [SrcLine] -> [SrcLine]
 indentContents tabWidth (map (srcLineMap $ tabsToSpaces tabWidth) -> lins) =
   map (srcLineMap $ T.drop minIndent) lins
   where
-    minIndent = minimum1 (0 :| map (indentSize . srcLineContent) lins)
+    minIndent = maybe 0 minimum1 (nonEmpty $ map (indentSize . srcLineContent) lins)
     indentSize = T.length . T.takeWhile (== ' ')
 
 tabsToSpaces :: Int -> Text -> Text
@@ -213,7 +216,7 @@ tabsToSpaces tabWidth txt =
 updateLineNumbers :: Map Text Text -> OrgParser (Maybe Int)
 updateLineNumbers switches =
   case "-n" `lookup` switches of
-    Just (readMaybe . toString -> n) -> setSrcLineNum (fromMaybe 0 n)
+    Just (readMaybe . toString -> n) -> setSrcLineNum (fromMaybe 1 n)
                                      *> fmap Just getSrcLineNum
     _ -> case "+n" `lookup` switches of
            Just (readMaybe . toString -> n) -> incSrcLineNum (fromMaybe 0 n)
@@ -247,7 +250,7 @@ rawBlockLine switches = try $
           (hspace :: Parsec Void Text ())
           _ <- string (T.reverse refpos)
           ref <- toText . reverse <$> someTill
-                 (satisfy $ \c -> isAsciiAlpha c || isDigit c || c == '-')
+                 (satisfy $ \c -> isAsciiAlpha c || isDigit c || c == '-' || c == ' ')
                  (string $ T.reverse refpre)
           content <- T.stripEnd . T.reverse <$> takeInput
           pure (ref, content)

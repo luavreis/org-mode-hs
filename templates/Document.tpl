@@ -45,19 +45,6 @@ Available splices:
   </head>
   <body>
     <Contents />
-    <Sections />
-    <Footnotes>
-      <div id="footnotes">
-        <h2>Footnotes: </h2>
-        <FootnoteDefs>
-          <div class="footdef">
-            <sup>
-              <a id="fn.${Number}" href="#fnr.${Number}">[<Number />]</a>
-            </sup>
-            <Contents />
-          </div>
-        </FootnoteDefs>
-      </div>
-    </Footnotes>
+    <Footnotes />
   </body>
 </html>
