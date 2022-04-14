@@ -12,7 +12,7 @@ digitIntChar :: MonadParser m => m Int
 digitIntChar = digitToInt <$> digitChar
 
 digits :: MonadParser m => m Text
-digits = takeWhileP (Just "digits") isDigit
+digits = takeWhile1P (Just "digits") isDigit
 
 integer :: MonadParser m => m Int
 integer = try $ do
@@ -70,7 +70,7 @@ someAsciiAlpha = takeWhile1P (Just "a-z or A-Z characters")
                  isAsciiAlpha
 
 someNonSpace :: MonadParser m => m Text
-someNonSpace = takeWhile1P Nothing (not . isSpace)
+someNonSpace = takeWhile1P (Just "not whitespace") (not . isSpace)
 
 isSpaceOrTab :: Char -> Bool
 isSpaceOrTab c = c == ' ' || c == '\t'
@@ -104,7 +104,12 @@ guardMaybe :: (MonadFail m, MonadParser m) => String -> Maybe a -> m a
 guardMaybe _ (Just x) = pure x
 guardMaybe err _      = fail err
 
+-- | Parse a newline or EOF. Consumes no input at EOF!
+newline' :: MonadParser m => m ()
+newline' = void newline <|> eof
+
 -- | Parse the rest of line, returning the contents without the final newline.
+-- Consumes no input at EOF!
 anyLine :: MonadParser m => m (Tokens Text)
 anyLine = takeWhileP (Just "rest of line") (/= '\n')
           <* newline
@@ -117,10 +122,10 @@ takeInput = takeWhileP Nothing (const True)
 blankline :: MonadParser m => m ()
 blankline = try $ hspace <* newline
 
--- | Parse a line with whitespace contents, line may end with eof. CAUTION: this
+-- | Parse a line with whitespace contents, line may end with EOF. CAUTION: this
 -- function may consume NO INPUT! Be mindful of infinite loops!
 blankline' :: MonadParser m => m ()
-blankline' = try $ hspace <* (void newline <|> eof)
+blankline' = try $ hspace <* newline'
 
 findMarked :: forall b.
   Marked OrgParser b

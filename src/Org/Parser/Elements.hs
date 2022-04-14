@@ -7,7 +7,7 @@ import Org.Parser.Definitions
 import Org.Parser.Common
 import Org.Parser.Objects
 import Org.Parser.MarkupContexts
-import Relude.Extra hiding (next)
+import Relude.Extra hiding (next, elems)
 import qualified Org.Builder as B
 import qualified Data.Text as T
 import Text.Slugify (slugify)
@@ -23,23 +23,31 @@ commentLine :: OrgParser (F OrgElements)
 commentLine = try do
   hspace
   _ <- char '#'
-  _ <- newline $> ""
+  _ <- blankline' $> ""
        <|> char ' ' *> anyLine
   pure mempty
 
 elements :: OrgParser (F OrgElements)
-elements = mconcat <$> manyTill (element <|> para) (void (lookAhead headingStart) <|> eof)
+elements = elements' (void (lookAhead headingStart) <|> eof)
+
+elements' :: OrgParser end -> OrgParser (F OrgElements)
+elements' end = mconcat <$> manyTill (element <|> para) end
 
 -- | Each element parser must consume till the start of a line or EOF.
 -- This is necessary for correct counting of list indentations.
 element :: OrgParser (F OrgElements)
 element = choice [ blankline $> mempty
-                 , commentLine
-                 , exampleBlock
-                 , srcBlock
-                 , exportBlock
-                 , plainList
-                 ] <?> "org element"
+                 , elementNonEmpty
+                 ] <?> "org element or blank line"
+
+elementNonEmpty :: OrgParser (F OrgElements)
+elementNonEmpty = choice [ commentLine
+                         , exampleBlock
+                         , srcBlock
+                         , exportBlock
+                         , greaterBlock
+                         , plainList
+                         ] <?> "org element"
 
 para :: OrgParser (F OrgElements)
 para = try do
@@ -49,9 +57,10 @@ para = try do
   (<> next) <$> withAffiliated (\aff -> B.para aff <$> inls)
   where
     end :: OrgParser (F OrgElements)
-    end = eof $> mempty <|> try do
-      _ <- newline
+    end = try do
+      _ <- newline'
       lookAhead headingStart $> mempty
+        <|> eof $> mempty
         <|> element
 
 
@@ -70,13 +79,13 @@ plainList = try do
 listItem :: OrgParser (Int, F ListItem)
 listItem = try do
   (indent, bullet) <- unorderedBullet <|> counterBullet
-  hspace1 <|> lookAhead (void newline)
+  hspace1 <|> lookAhead (void newline')
   cookie <- optional counterSet
   box    <- optional checkbox
   tag    <- case bullet of
     Bullet _ -> toList <<$>> option mempty itemTag
     _        -> pureF []
-  els <- liftA2 (<>) (blankline $> mempty <|> indentedPara indent)
+  els <- liftA2 (<>) (blankline' $> mempty <|> indentedPara indent)
                      (indentedElements indent)
   pure (indent, ListItem bullet cookie box <$> tag <*> (toList <$> els))
   where
@@ -103,7 +112,7 @@ checkbox = try $
   char '['
   *> tick
   <* char ']'
-  <* hspace1
+  <* (hspace1 <|> lookAhead (void newline'))
   where
     tick = char ' ' $> BoolBox False <|>
            char 'X' $> BoolBox True  <|>
@@ -118,7 +127,7 @@ itemTag = try do
   where
     end = mark " \t\n" $
       spaceOrTab *> string "::" *> spaceOrTab $> True
-        <|> newline $> False
+        <|> newline' $> False
 
 indentedPara :: Int -> OrgParser (F OrgElements)
 indentedPara indent = try do
@@ -128,11 +137,11 @@ indentedPara indent = try do
   (<> next) <$> withAffiliated (\aff -> B.para aff <$> inls)
   where
     end :: OrgParser (F OrgElements)
-    end = eof $> mempty <|> try do
-      _ <- newline
-      blankline' $> mempty
+    end = try do
+      _ <- newline'
+      lookAhead blankline' $> mempty
         <|> lookAhead headingStart $> mempty
-        -- This line is tricky. We don't want to consume any indentation.
+        -- We don't want to consume any indentation, so we look ahead.
         <|> lookAhead (try $ guard . (<= indent) =<< spacesOrTabs) $> mempty
         <|> element
 
@@ -142,9 +151,9 @@ indentedElements indent =
   where
     indentedElement = try do
       notFollowedBy headingStart
-      blankline $> mempty <|> do
+      blankline *> notFollowedBy blankline' $> mempty <|> do
         guard . (> indent) =<< lookAhead spacesOrTabs
-        element <|> indentedPara indent
+        elementNonEmpty <|> indentedPara indent
 
 
 -- * Lesser blocks
@@ -272,6 +281,7 @@ blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
       s <- T.snoc . one <$> oneOf ['+', '-']
                         <*> char 'n'
       num <- option "" $ hspace1 *> takeWhileP Nothing isDigit
+      _ <- lookAhead spaceChar
       return (s, num)
 
     fmt :: OrgParser (Text, Text)
@@ -281,6 +291,7 @@ blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
       hspace1
       str <- between (char '"') (char '"') $
              takeWhileP Nothing (\c -> c /= '"' && c /= '\n')
+      _ <- lookAhead spaceChar
       return (s, str)
 
     switch :: OrgParser (Text, Text)
@@ -288,6 +299,7 @@ blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
       hspace1
       s <- T.snoc . one <$> char '-'
                         <*> oneOf ['i', 'k', 'r']
+      _ <- lookAhead spaceChar
       pure (s, "")
 
 
