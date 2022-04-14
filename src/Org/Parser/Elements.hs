@@ -305,6 +305,23 @@ blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
 
 -- * Greater Blocks
 
+greaterBlock :: OrgParser (F OrgElements)
+greaterBlock = try do
+  hspace
+  _ <- string' "#+begin_"
+  bname <- someNonSpace
+  _ <- takeWhileP Nothing (/= '\n')
+  els <- withMContext (end bname) elements
+  f <- withAffiliated B.greaterBlock
+  pure $ f (blockType bname) <$> els
+  where
+    blockType = \case
+      (T.toLower -> "center") -> Center
+      (T.toLower -> "quote") -> Quote
+      other -> Special other
+    end :: Text -> Marked OrgParser Text
+    end name = mark "\n" . try $ newline *> hspace *> string' "#+end_" *> string' name <* blankline'
+
 -- * Drawers
 
 
