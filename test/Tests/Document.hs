@@ -12,10 +12,10 @@ testDocument = testGroup "Document"
       [text|   :pRoPerTieS:
             :Fo^o3': 	 bar
               :foobar:
-            :foobarbar: bla bla
+            :fooBARbar: bla bla
              :ENd:
       |]
-        =?> fromList [ ("Fo^o3'", "bar")
+        =?> fromList [ ("fo^o3'", "bar")
                      , ("foobar", "")
                      , ("foobarbar", "bla bla")
                      ]

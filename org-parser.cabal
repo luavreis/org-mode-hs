@@ -79,10 +79,12 @@ test-suite test
   hs-source-dirs:    src
                      test
   main-is:           test-org-parser.hs
-  build-depends:     tasty
+  build-depends:     Diff
+                   , tasty
                    , tasty-hunit
                    , neat-interpolation
                    , pretty-simple
+                   , pretty
   other-modules:     Org.Types
                      Org.Builder
                      Org.Exporters.Heist
