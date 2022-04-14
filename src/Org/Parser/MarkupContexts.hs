@@ -13,6 +13,7 @@ withMContext__ :: forall a b.
   -> OrgParser a
   -> OrgParser (a, b, Text)
 withMContext__ end p = try do
+  clearLastChar
   st <- getFullState
   (str, final) <- findMarked end
   guard (not $ T.null str)

@@ -24,15 +24,15 @@ orgDocument = do
   -- This means an state with keywords is available.
   finalState <- getState
   return $ flip runReader finalState . getAp $ do
-    keywords' <- orgStateKeywords finalState
+    keywords' <- sequence $ orgStateKeywords finalState
     footnotes' <- sequence $ orgStateFootnotes finalState
     topLevel' <- topLevel
     sections' <- sequence sections
     return OrgDocument
       { documentProperties = properties
-      , documentKeywords = keywords'
-      , topLevelContents = toList topLevel'
-      , documentChildren = sections'
+      , documentKeywords = keywordsFromList keywords'
+      , documentChildren = toList topLevel'
+      , documentSections = sections'
       , documentFootnotes = M.map toList footnotes'
       }
 
@@ -70,8 +70,8 @@ section lvl = try $ do
       , sectionAnchor = anchor
       , sectionTags = tags
       , sectionPlanning = planning
-      , sectionContents = toList contents'
-      , sectionChildren = children'
+      , sectionChildren = toList contents'
+      , sectionSubsections = children'
       }
  where
    titleObjects :: OrgParser (F OrgInlines, Tags, Text)
@@ -152,10 +152,10 @@ propertyDrawer = try $ do
    endOfDrawer = try $
      hspace *> string' ":end:" <* space
 
-   nodeProperty :: OrgParser (PropertyName, PropertyValue)
+   nodeProperty :: OrgParser (Text, Text)
    nodeProperty = try $ liftA2 (,) name value
 
-   name :: OrgParser PropertyName
+   name :: OrgParser Text
    name =
      skipSpaces
      *> char ':'
@@ -164,7 +164,7 @@ propertyDrawer = try $ do
         >>= guardMaybe "expecting ':' at end of node property name"
         <&> T.toLower
 
-   value :: OrgParser PropertyValue
+   value :: OrgParser Text
    value =
      skipSpaces
      *> (takeWhileP (Just "node property value") (/= '\n')

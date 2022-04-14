@@ -1,11 +1,12 @@
 {-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Org.Types where
 
 import Data.Generics (Data)
 import Data.Char (isDigit)
 import qualified Data.Text as T
-
+import qualified Data.Map as M
 
 -- * Document, Sections and Headings
 
@@ -13,41 +14,72 @@ data OrgDocument = OrgDocument
   { documentProperties :: Properties
   , documentKeywords   :: Keywords
   , documentFootnotes  :: Map Text [OrgElement]
-  , topLevelContents   :: [OrgElement]
-  , documentChildren   :: [OrgSection]
+  , documentChildren   :: [OrgElement]
+  , documentSections   :: [OrgSection]
   } deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
+lookupProperty :: Text -> OrgDocument -> Maybe Text
+lookupProperty k = M.lookup k . documentProperties
+
+lookupKeyword :: Text -> OrgDocument -> Maybe KeywordValue
+lookupKeyword k = M.lookup k . documentKeywords
+
+documentTitle :: OrgDocument -> [OrgInline]
+documentTitle doc = case lookupKeyword "title" doc of
+  Just (ParsedKeyword o) -> o
+  _ -> []
+
 data OrgSection = OrgSection
-  { sectionLevel      :: Int
-  , sectionProperties :: Properties
-  , sectionTodo       :: Maybe TodoKeyword
-  , sectionPriority   :: Maybe Priority
-  , sectionTitle      :: [OrgInline]
-  , sectionTags       :: Tags
-  , sectionPlanning   :: PlanningInfo
-  , sectionAnchor     :: Id
-  , sectionContents   :: [OrgElement]
-  , sectionChildren   :: [OrgSection]
+  { sectionLevel       :: Int
+  , sectionProperties  :: Properties
+  , sectionTodo        :: Maybe TodoKeyword
+  , sectionPriority    :: Maybe Priority
+  , sectionTitle       :: [OrgInline]
+  , sectionTags        :: Tags
+  , sectionPlanning    :: PlanningInfo
+  , sectionAnchor      :: Id
+  , sectionChildren    :: [OrgElement]
+  , sectionSubsections :: [OrgSection]
   } deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+
+lookupSectionProperty :: Text -> OrgSection -> Maybe Text
+lookupSectionProperty k = M.lookup k . sectionProperties
+
+type OrgContent = ([OrgElement], [OrgSection])
+
+documentContent :: OrgDocument -> OrgContent
+documentContent doc = (documentChildren doc, documentSections doc)
+
+sectionContent :: OrgSection -> OrgContent
+sectionContent sec = (sectionChildren sec, sectionSubsections sec)
+
+mapContent :: (OrgContent -> OrgContent) -> OrgDocument -> OrgDocument
+mapContent f d = let (c', s') = f (documentContent d)
+                 in d { documentChildren = c', documentSections = s' }
+
+mapContentM :: Monad m => (OrgContent -> m OrgContent) -> OrgDocument -> m OrgDocument
+mapContentM f d = do
+  (c', s') <- f (documentContent d)
+  pure $ d { documentChildren = c', documentSections = s' }
 
 type Tag = Text
 type Tags = [Tag]
 
 -- | The states in which a todo item can be
 data TodoState = Todo | Done
-  deriving (Eq, Ord, Show, Data, Read)
+  deriving (Eq, Ord, Show, Data, Read, Generic)
 
 -- | A to-do keyword like @TODO@ or @DONE@.
 data TodoKeyword = TodoKeyword
   { todoState :: TodoState
   , todoName  :: Text
   }
-  deriving (Show, Eq, Ord, Read, Data)
+  deriving (Show, Eq, Ord, Read, Data, Generic)
 
 data Priority
   = LetterPriority Char
   | NumericPriority Int
-  deriving (Show, Eq, Ord, Read, Data)
+  deriving (Show, Eq, Ord, Read, Data, Generic)
 
 type Date = (Int, Int, Int, Maybe Text)
 
@@ -61,7 +93,7 @@ type DateTime = (Date, Maybe Time, Maybe TimestampMark, Maybe TimestampMark)
 data TimestampData
   = TimestampData Bool DateTime
   | TimestampRange Bool DateTime DateTime
-  deriving (Show, Eq, Ord, Read, Data)
+  deriving (Show, Eq, Ord, Read, Data, Generic)
 
 -- | Planning information for a subtree/headline.
 data PlanningInfo = PlanningInfo
@@ -69,12 +101,9 @@ data PlanningInfo = PlanningInfo
   , planningDeadline  :: Maybe TimestampData
   , planningScheduled :: Maybe TimestampData
   }
-  deriving (Show, Eq, Ord, Read, Data)
+  deriving (Show, Eq, Ord, Read, Data, Generic)
 
-type PropertyName = Text
-type PropertyValue = Text
-
-type Properties = Map PropertyName PropertyValue
+type Properties = Map Text Text
 
 
 -- * Elements
@@ -103,7 +132,7 @@ data OrgElement
   | Clock ClockData
   | HorizontalRule
   | Keyword KeywordKey KeywordValue
-  | LaTeXEnvironment Affiliated Text Text
+  | LaTeXEnvironment Affiliated Text
   | Paragraph Affiliated [OrgInline]
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
@@ -138,7 +167,18 @@ data KeywordValue
   | BackendKeyword [(Text, Text)] -- attr_backend
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
+instance Semigroup KeywordValue where
+  (KeywordValue t1) <> (KeywordValue t2) = KeywordValue (t1 <> "\n" <> t2)
+  (DualKeyword o1 t1) <> (DualKeyword o2 t2) = DualKeyword (o1 <> "\n" <> o2) (t1 <> "\n" <> t2)
+  (ParsedKeyword t1) <> (ParsedKeyword t2) = ParsedKeyword (t1 <> t2)
+  (ParsedDualKeyword o1 t1) <> (ParsedDualKeyword o2 t2) = ParsedDualKeyword (o1 <> o2) (t1 <> t2)
+  (BackendKeyword b1) <> (BackendKeyword b2) = BackendKeyword (b1 <> b2)
+  _ <> x = x
+
 type Keywords = Map KeywordKey KeywordValue
+
+keywordsFromList :: [(KeywordKey, KeywordValue)] -> Keywords
+keywordsFromList = M.fromListWith (<>)
 
 type Affiliated = Keywords
 
@@ -228,7 +268,6 @@ data OrgInline -- TODO rename to OrgObject
   | Macro -- ^ Org inline macro (e.g. @{{{poem(red,blue)}}}@)
       Text -- ^ Macro name (e.g. @"poem"@)
       [Text] -- ^ Arguments (e.g. @["red", "blue"]@)
-  | SpanSpecial Text [OrgInline] -- ^ Hack to represent some particular data in the AST (useful for citations)
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 type Protocol = Text

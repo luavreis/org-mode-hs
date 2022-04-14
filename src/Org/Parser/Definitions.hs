@@ -28,6 +28,8 @@ type MonadParser m = MonadParsec Void Text m
 
 type OrgParser = StateT OrgParserState Parser
 
+type OrgParseError = ParseErrorBundle Text Void
+
 popUniqueId :: OrgParser Text
 popUniqueId = do
   ids <- gets orgStateIdStack

@@ -1,11 +1,20 @@
+{-# LANGUAGE FlexibleInstances #-}
 -- |
 
 module Org.Exporters.Heist
   ( loadOrgTemplates
   , renderSpliceable
+  , renderSpliceableToDoc
   , renderSpliceableIO
   , renderHtml
-  , renderHtmlWith
+  , renderHtmlIO
+  , renderXml
+  , renderXmlSpliceable
+  , documentSplices
+  , walkNodes
+  , Exporter
+  , Spliceable
+  , toSplice
   ) where
 import Data.Map.Syntax ((##))
 import Heist
@@ -20,24 +29,22 @@ import qualified Data.Text as T
 import qualified Text.XmlHtml as X
 import Relude.Extra (lookup, insert, toPairs)
 import Data.ByteString.Builder (toLazyByteString)
-import System.FilePath (normalise, (</>))
-import Heist.Splices (ignoreImpl, ignoreTag, bindTag, bindImpl)
-import Data.Char (isSpace)
+import System.FilePath (normalise, (</>), isRelative, takeExtension, (-<.>))
+import Heist.Splices (ignoreImpl, ignoreTag, bindTag, bindImpl, applyTag, applyImpl)
+import Data.ByteString.Lazy.Search (replace)
 import Paths_org_parser
 
 callTemplate' :: Monad n => ByteString -> Splices (Splice n) -> Splice n
-callTemplate' t = fmap trimSpaces . callTemplate t
+callTemplate' name = fmap (trimSpaces False) . callTemplate name
 
-quasiTrim :: Text -> Text
-quasiTrim = T.foldr go ""
+walkNodes :: (X.Node -> X.Node) -> [X.Node] -> [X.Node]
+walkNodes f = map f'
   where
-    go c1 t@(T.uncons -> Just (c2, tr))
-      | c1 == '\n', isSpace c2 = T.cons c1 tr
-      | isSpace c1, isSpace c2 = t
-    go c1 t = T.cons c1 t
+    f' (X.Element name attr child) = f $ X.Element name attr (walkNodes f child)
+    f' x = f x
 
-trimSpaces :: Template -> Template
-trimSpaces tpl = foldr go [] tpl
+trimSpaces :: Bool -> Template -> Template
+trimSpaces recursive tpl = foldr go [] tpl
                & changeLast (mapText T.stripEnd)
                & changeFst  (mapText T.stripStart)
   where
@@ -52,16 +59,30 @@ trimSpaces tpl = foldr go [] tpl
     mapText _ x = x
 
     go (X.TextNode t1) (uncons -> Just (X.TextNode t2, tr)) =
-      X.TextNode (quasiTrim (t1 <> t2)) : tr
-    go (X.TextNode t) r = X.TextNode (quasiTrim t) : r
+      X.TextNode (t1 <> t2) : tr
     go (X.Comment _) r = r
-    -- go (X.Element n a c) r | n /= "pre" = X.Element n a (trimSpaces c) : r
+    go (X.Element n a c) r | recursive, n /= "pre", n /= "code" = X.Element n a (trimSpaces True c) : r
     go n r = n : r
 
 defaultSplices :: Monad n => Splices (Splice n)
 defaultSplices = do
   ignoreTag ## ignoreImpl
   bindTag ## bindImpl
+  applyTag ## applyImpl
+
+caseSplice :: Monad n => Text -> Splice n -> Splice n
+caseSplice caseName splice = getCase =<< getParamNode
+  where
+    getCase (X.Element name attr child) =
+      let
+        cases :: Map Text X.Node
+        cases = fromList $ flip mapMaybe child \case
+          el@(X.Element "case" _ child') -> do
+            tag <- X.getAttribute "tag" el
+            pure (tag, X.Element name attr child')
+          _ -> Nothing
+      in maybe (pure []) (flip localParamNode splice . const) (lookup caseName cases)
+    getCase _ = pure []
 
 loadOrgTemplates :: Monad n => HeistConfig n
 loadOrgTemplates =
@@ -98,16 +119,12 @@ element :: Text -> [X.Node] -> [X.Node]
 element name = one . X.Element name []
 
 class Spliceable a where
-  toSplice :: MonadExporter n => a -> Splice n
+  toSplice :: a -> Splice Exporter
 
-renderSpliceable :: Spliceable a => HeistState Exporter -> a -> ByteString
-renderSpliceable st obj =
-  evalHeistT (toSplice obj) (X.TextNode "") st
-  & flip evalState defaultExporterState
-  & X.renderXmlFragment X.UTF8
-  & toStrict . toLazyByteString
+instance Spliceable (Splice Exporter) where
+  toSplice x = x
 
-instance Spliceable a => Spliceable [a] where
+instance {-# OVERLAPPABLE #-} Spliceable a => Spliceable [a] where
   toSplice = fmap join . mapM toSplice
 
 instance (Spliceable a, Spliceable b) => Spliceable (Either a b) where
@@ -116,71 +133,101 @@ instance (Spliceable a, Spliceable b) => Spliceable (Either a b) where
 instance Spliceable Text where
   toSplice = textSplice
 
-contents :: (Spliceable a, MonadExporter n) => a -> Splices (Splice n)
+contents :: (Spliceable a) => a -> Splices (Splice Exporter)
 contents c = do
   "Contents" ## toSplice c
 
 spliceOrEmpty :: Monad n => Maybe a -> (a -> Splice n) -> Splice n
 spliceOrEmpty x f = maybe (pure []) f x
 
-kwSplice :: MonadExporter n => Affiliated -> Text -> Splices (Splice n)
+kwSplice :: Affiliated -> Text -> Splices (Splice Exporter)
 kwSplice kws name =
- name ## runChildrenWith $
+ name ##
   case lookup (T.toLower name) kws of
-    Just (KeywordValue txt) -> contents txt
-    Just (DualKeyword _ t) -> contents t
-    Just (ParsedKeyword c) -> contents c
-    Just (ParsedDualKeyword _ c) -> contents c
-    _ -> mempty
+    Just (KeywordValue txt) -> toSplice txt
+    Just (DualKeyword _ t) -> toSplice t
+    Just (ParsedKeyword c) -> toSplice c
+    Just (ParsedDualKeyword _ c) -> toSplice c
+    _ -> pure []
 
 -- * Document
 
-renderSpliceableIO :: Spliceable a => a -> IO ByteString
-renderSpliceableIO obj = do
-  st <- initHeist loadOrgTemplates
-  case st of
-    Left e -> mapM putStrLn e *> error "WAAA"
-    Right st' -> pure $ renderSpliceable st' obj
+removeToBeRemoved :: LByteString -> LByteString
+removeToBeRemoved =
+  replace "</ToBeRemoved>" ("" :: LByteString) .
+  replace "<ToBeRemoved xmlhtmlRaw>" ("" :: LByteString)
 
-renderHtml :: ByteString -> OrgDocument -> IO ByteString
-renderHtml tplname doc = do
-  st <- initHeist loadOrgTemplates
-  case st of
-    Left e -> mapM putStrLn e *> error "WAAA"
-    Right st' -> pure $ renderHtmlWith st' tplname doc
+renderSpliceableToDoc :: Spliceable a => HeistState Exporter -> a -> LByteString
+renderSpliceableToDoc st obj =
+  evalHeistT (toSplice obj) (X.TextNode "") st
+  & flip evalState defaultExporterState
+  & trimSpaces True
+  & X.HtmlDocument X.UTF8 (Just $ X.DocType "html" X.NoExternalID X.NoInternalSubset)
+  & X.render
+  & toLazyByteString
+  & removeToBeRemoved
 
-renderHtmlWith :: HeistState Exporter -> ByteString -> OrgDocument -> ByteString
-renderHtmlWith hst tplname doc =
-  callTemplate' tplname (documentSplices doc)
+renderSpliceable :: Spliceable a => HeistState Exporter -> a -> LByteString
+renderSpliceable st obj =
+  evalHeistT (toSplice obj) (X.TextNode "") st
+  & flip evalState defaultExporterState
+  & trimSpaces True
+  & X.renderHtmlFragment X.UTF8
+  & toLazyByteString
+  & removeToBeRemoved
+
+renderSpliceableIO :: Spliceable a => a -> IO (Either [String] LByteString)
+renderSpliceableIO obj =
+  initHeist loadOrgTemplates
+  <&> second (`renderSpliceable` obj)
+
+renderHtmlIO :: ByteString -> OrgDocument -> IO (Either [String] LByteString)
+renderHtmlIO tplname doc =
+  initHeist loadOrgTemplates
+  <&> second (\st' -> renderHtml st' tplname doc)
+
+renderHtml :: HeistState Exporter -> ByteString -> OrgDocument -> LByteString
+renderHtml hst tplname doc =
+  callTemplate tplname (documentSplices doc)
   & \x -> evalHeistT x (X.TextNode "") hst
   & flip evalState st'
-  & X.renderXmlFragment X.UTF8
-  & toStrict . toLazyByteString
+  & trimSpaces True
+  & X.HtmlDocument X.UTF8 (Just $ X.DocType "html" X.NoExternalID X.NoInternalSubset)
+  & X.render
+  & toLazyByteString
+  & removeToBeRemoved
   where
     st' = defaultExporterState -- todo: get options from the document
 
-children :: MonadExporter n => [OrgSection] -> Splice n
-children childs = do
-  hlevels <- gets orgExportHeadlineLevels
-  spliceOrEmpty (viaNonEmpty (sectionLevel . head) childs) \ level ->
-    if level > hlevels
-    then element "ol" <$> mapM (fmap (X.Element "li" []) . toSplice) childs
-    else toSplice childs
+renderXml :: HeistState Exporter -> ByteString -> OrgDocument -> [X.Node]
+renderXml hst tplname doc =
+  callTemplate tplname (documentSplices doc)
+  & \x -> evalHeistT x (X.TextNode "") hst
+  & flip evalState st'
+  where
+    st' = defaultExporterState -- todo: get options from the document
 
-tags :: MonadExporter n => Tag -> Splice n
+renderXmlSpliceable :: HeistState Exporter -> ByteString -> OrgDocument -> [X.Node]
+renderXmlSpliceable hst tplname doc =
+  callTemplate tplname (documentSplices doc)
+  & \x -> evalHeistT x (X.TextNode "") hst
+  & flip evalState st'
+  where
+    st' = defaultExporterState -- todo: get options from the document
+
+tags :: Tag -> Splice Exporter
 tags tag = runChildrenWith $
   "Tag" ## toSplice tag
 
-documentSplices :: MonadExporter n => OrgDocument -> Splices (Splice n)
+documentSplices :: OrgDocument -> Splices (Splice Exporter)
 documentSplices doc = do
   foldMap (kwSplice $ documentKeywords doc) ["Language", "Title", "Date", "Author"]
-  contents (topLevelContents doc)
-  "Sections" ## children (documentChildren doc)
+  contents (documentContent doc)
   "Footnotes" ## do
     fnRefs <- snd <$> gets footnoteCounter -- TODO: is this run in the right order?? in the end?
     if not (null fnRefs)
     then
-      runChildrenWith do
+      callTemplate' "Footnotes" do
         "FootnoteDefs" ## join <$> forM (toPairs fnRefs) \ (fnLabel, i) ->
           spliceOrEmpty (lookup fnLabel (documentFootnotes doc)) \ fn ->
             runChildrenWith do
@@ -200,11 +247,11 @@ instance Spliceable OrgSection where
         "Title" ## toSplice $ sectionTitle section
         "Tags" ## join <$> forM (sectionTags section) tags
       "Anchor" ## textSplice (sectionAnchor section)
-      contents (sectionContents section)
-      "Subsections" ## children $ sectionChildren section
+      contents (sectionContent section)
     where
-      todo (TodoKeyword st nm) = runElementWith ("TodoKw:" <> todost st) $
-        "TodoName" ## textSplice nm
+      todo (TodoKeyword st nm) = caseSplice (todost st) $
+        runChildrenWith $
+          "TodoName" ## textSplice nm
       todost Done = "done"
       todost Todo = "todo"
       priority (LetterPriority c) = T.singleton c
@@ -214,12 +261,30 @@ instance Spliceable OrgSection where
         then (<> element "br" []) <$> inner
         else element ("h" <> show (sectionLevel section)) <$> inner
 
+-- * Contents
+
+instance Spliceable OrgContent where
+  toSplice content = do
+    liftA2 (<>) (toSplice (fst content)) (children $ snd content)
+
+instance {-# OVERLAPPABLE #-} (Spliceable a, Spliceable b) => Spliceable (a, b) where
+  toSplice content = do
+    liftA2 (<>) (toSplice (fst content)) (toSplice (snd content))
+
+children :: [OrgSection] -> Splice Exporter
+children childs = do
+  hlevels <- gets orgExportHeadlineLevels
+  spliceOrEmpty (viaNonEmpty (sectionLevel . head) childs) \ level ->
+    if level > hlevels
+    then element "ol" <$> mapM (fmap (X.Element "li" []) . toSplice) childs
+    else toSplice childs
+
 -- * Objects
 
 instance Spliceable OrgInline where
   toSplice = renderOrgObject
 
-renderOrgObject :: MonadExporter n => OrgInline -> Splice n
+renderOrgObject :: OrgInline -> Splice Exporter
 renderOrgObject = \case
   (Plain txt) -> toSplice txt
   SoftBreak -> textSplice " "
@@ -232,24 +297,44 @@ renderOrgObject = \case
   (Superscript objs) -> element "sup" <$> toSplice objs
   (Subscript objs) -> element "sub" <$> toSplice objs
   (Quoted _ objs) -> element "q" <$> toSplice objs
-  (Code txt) -> element "code" <$> toSplice txt
-  (Verbatim txt) -> element "pre" <$> toSplice txt
+  (Code txt) -> one . X.Element "code" [("class", "code")] <$> toSplice txt
+  (Verbatim txt) -> one . X.Element "code" [("class", "verbatim")] <$> toSplice txt
   (Timestamp tsdata) -> callTemplate' "Timestamp" (timestamp tsdata)
   (Entity name) -> toSplice $ maybe "⍰" htmlReplacement (lookup name defaultEntitiesMap)
   (LaTeXFragment k c) -> callTemplate' "LaTeXFragment" (latexFragment k c)
-  (ExportSnippet "html" c) -> toSplice c
-  (ExportSnippet _ _) -> pure []
+  (ExportSnippet "html" c) -> one . X.Element "ToBeRemoved" [("xmlhtmlRaw", "")] <$> toSplice c
+  ExportSnippet {} -> pure []
   (FootnoteRef label) -> callTemplate' "FootnoteRef" (footnoteRef label)
   (Cite cit) -> callTemplate' "Citation" (citation cit)
+  InlBabelCall {} -> pure []
+  (Src lang _ txt) -> one . X.Element "code" [("class", "src " <> lang)] <$> toSplice txt
+  (Link target inl) -> callTemplate' "Link" (link target inl)
+
+link :: LinkTarget -> [OrgInline] -> Splices (Splice Exporter)
+link target inl = do
+  contents inl
+  "Target" ## textSplice $ case target of
+    URILink "file" (changeExtension -> file)
+      | isRelative file -> toText file
+      | otherwise -> "file:///" <> T.dropWhile (== '/') (toText file)
+    URILink protocol uri -> protocol <> ":" <> uri
+    InternalLink anchor -> "#" <> anchor
+    UnresolvedLink tgt -> tgt
+  where
+    changeExtension (toString -> file) =
+      if takeExtension file == ".org"
+      then file -<.> ".html"
+      else file
+
 
 citation :: Citation -> Splices (Splice n)
 citation = error "not implemented"
 
-footnoteRef :: MonadExporter n => Text -> Splices (Splice n)
+footnoteRef :: Text -> Splices (Splice Exporter)
 footnoteRef label = do
   "Counter" ## (toSplice =<< getFootnoteRef label)
 
-timestamp :: forall n. MonadExporter n => TimestampData -> Splices (Splice n)
+timestamp :: TimestampData -> Splices (Splice Exporter)
 timestamp = \case
   TimestampData a (dateToDay -> d, fmap toTime -> t, r, w) -> do
     "Timestamp" ## runElement $ "Timestamp:" <> active a <> ":single"
@@ -269,7 +354,7 @@ timestamp = \case
     active True = "active"
     active False = "inactive"
 
-    tsMark :: TimestampMark -> Splices (Splice n)
+    tsMark :: TimestampMark -> Splices (Splice Exporter)
     tsMark (_,v,c) = do
       "Value" ## textSplice (show v)
       "Unit" ## runElement ("Unit:" `T.snoc` c)
@@ -277,7 +362,7 @@ timestamp = \case
     dateToDay (y,m,d,_) = fromGregorian (toInteger y) m d
     toTime (h,m) = TimeOfDay h m 0
 
-    tsDate :: Day -> Splices (Splice n)
+    tsDate :: Day -> Splices (Splice Exporter)
     tsDate day = "TSDate" ## do
       input <- getParamNode
       let dtl = defaultTimeLocale
@@ -292,7 +377,7 @@ timestamp = \case
           format = toString $ X.nodeText input
       toSplice . toText $ formatTime locale format day
 
-    tsTime :: Maybe TimeOfDay -> Splices (Splice n)
+    tsTime :: Maybe TimeOfDay -> Splices (Splice Exporter)
     tsTime time = "TSTime" ## do
       input <- getParamNode
       let dtl = defaultTimeLocale
@@ -304,7 +389,7 @@ timestamp = \case
 
     separate = map (toString . T.strip) . T.split (==',')
 
-latexFragment :: MonadExporter n => FragmentType -> Text -> Splices (Splice n)
+latexFragment :: FragmentType -> Text -> Splices (Splice Exporter)
 latexFragment kind txt = do
   contents txt
   "LaTeXFragment" ##
@@ -318,7 +403,7 @@ latexFragment kind txt = do
 instance Spliceable OrgElement where
   toSplice = renderOrgElement
 
-affSplices :: MonadExporter n => Affiliated -> Splices (Splice n)
+affSplices :: Affiliated -> Splices (Splice Exporter)
 affSplices aff = "WithAffiliated" ## do
   childs <- X.childNodes <$> getParamNode
   let children' = flip map childs \case
@@ -334,7 +419,7 @@ affAttrs aff = join $ mapMaybe getHtmlAttrs (toPairs aff)
     getHtmlAttrs ("attr_html", BackendKeyword x) = Just x
     getHtmlAttrs _ = Nothing
 
-renderOrgElement :: MonadExporter n => OrgElement -> Splice n
+renderOrgElement :: OrgElement -> Splice Exporter
 renderOrgElement = \case
   (Paragraph aff c) -> one . X.Element "p" (affAttrs aff) <$> toSplice c
   (GreaterBlock aff Quote c) -> callTemplate' "QuoteBlock" (affSplices aff <> contents c)
@@ -347,7 +432,7 @@ renderOrgElement = \case
   (DynamicBlock _ _ els) -> toSplice els
   (Drawer els) -> toSplice els
   -- Table {} -> error "Table html export is not yet implemented :( please help"
-  (ExportBlock "html" c) -> toSplice c
+  (ExportBlock "html" c) -> one . X.Element "ToBeRemoved" [("xmlhtmlRaw", "")] <$> toSplice c
   (ExportBlock _ _) -> pure []
   (ExampleBlock aff st c) -> callTemplate' "ExampleBlock" (affSplices aff <> srcOrExample st c)
   (SrcBlock aff lang st _ c) -> callTemplate' "SrcBlock" do
@@ -360,23 +445,28 @@ renderOrgElement = \case
 runElement :: Monad n => Text -> Splice n
 runElement txt = runNode (X.Element txt [] [])
 
-runElementWith :: Monad n => Text -> Splices (Splice n) -> Splice n
-runElementWith txt spl = localHS (bindSplices spl) $ runElement txt
-
-srcOrExample :: MonadExporter n => Maybe Int -> [SrcLine] -> Splices (Splice n)
+srcOrExample :: Maybe Int -> [SrcLine] -> Splices (Splice Exporter)
 srcOrExample stNumber lins = do
   "SrcLines" ## runLines
-  "LineNumberMarker" ## spliceOrEmpty stNumber \n ->
-    runChildrenWith ("Number" ## textSplice (show n))
   where
-    runLines = join <$> forM lins lineSplices
-    lineSplices (SrcLine c) = runElementWith "SrcLine:plain" $ contents c
-    lineSplices (RefLine i ref c) = runElementWith "SrcLine:ref" do
-      "Ref" ## toSplice ref
-      "Id"  ## toSplice i
-      contents c
+    runLines = intercalate [X.TextNode "\n"] <$>
+               forM (zip [0..] lins) (fmap (trimSpaces True) . lineSplices)
+    lineNumber offset = do
+      "LineNumber" ##
+        spliceOrEmpty ((offset +) <$> stNumber) \n ->
+          runChildrenWith ("Number" ## textSplice (show n))
+    lineSplices (offset, SrcLine c) = caseSplice "plain" $
+      runChildrenWith do
+        lineNumber offset
+        contents c
+    lineSplices (offset, RefLine i ref c) = caseSplice "ref" $
+      runChildrenWith do
+        lineNumber offset
+        "Ref" ## toSplice ref
+        "Id"  ## toSplice i
+        contents c
 
-plainList :: forall n. MonadExporter n => ListType -> [ListItem] -> Splices (Splice n)
+plainList :: ListType -> [ListItem] -> Splices (Splice Exporter)
 plainList kind items = do
   "PlainList" ## runPlainList
   "ListItems" ## listItems
@@ -387,17 +477,17 @@ plainList kind items = do
       join <$> forM items \(ListItem _ i cbox t c) ->
         runChildrenWith do
           "Counter" ## spliceOrEmpty i counterSet
-          "CheckBox" ## spliceOrEmpty cbox checkbox
+          "Checkbox" ## spliceOrEmpty cbox checkbox
           "Tag" ## toSplice t
           contents (cropRenderElements c)
       where
-        counterSet :: Int -> Splice n
+        counterSet :: Int -> Splice Exporter
         counterSet i = pure $ (one . X.TextNode . show) i
 
-        cropRenderElements [Paragraph _ objs] = Left objs
+        cropRenderElements (Paragraph _ objs : rest) = Left (objs, rest)
         cropRenderElements els = Right els
 
-        checkbox :: Checkbox -> Splice n
+        checkbox :: Checkbox -> Splice Exporter
         checkbox (BoolBox True) = runElement "Checkbox:true"
         checkbox (BoolBox False) = runElement "Checkbox:false"
         checkbox PartialBox = runElement "Checkbox:partial"

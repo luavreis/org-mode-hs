@@ -62,6 +62,31 @@ instance Walkable OrgElement Citation where
   walkM f x = walkCitationM f x
   query f x = queryCitation f x
 
+-- Sections
+
+instance Walkable OrgSection OrgDocument where
+  walkM f x = walkDocumentM f x
+  query f x = queryDocument f x
+
+instance Walkable OrgSection OrgSection where
+  walkM f x = walkSectionM f x >>= f
+  query f x = f x <> querySection f x
+
+instance Walkable OrgSection OrgElement where
+  walkM f x = walkElementM f x
+  query f x = queryElement f x
+
+instance Walkable OrgSection OrgInline where
+  walkM f x = walkObjectM f x
+  query f x = queryObject f x
+
+instance Walkable OrgSection KeywordValue where
+  walkM f x = walkKeywordM f x
+  query f x = queryKeyword f x
+
+instance Walkable OrgSection Citation where
+  walkM f x = walkCitationM f x
+  query f x = queryCitation f x
 
 -- * Walking
 
