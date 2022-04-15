@@ -1,5 +1,3 @@
-<span class="timestamp"><Timestamp /></span>
-
 <bind tag="Unit:h">hour</bind>
 <bind tag="Unit:d">day</bind>
 <bind tag="Unit:m">month</bind>
@@ -58,3 +56,4 @@
     ><Timestamp:active:range
   /></span
 ></bind>
+<span class="timestamp"><Timestamp /></span>

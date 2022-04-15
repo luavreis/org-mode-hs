@@ -298,9 +298,9 @@ renderOrgObject = \case
   (Code txt) -> one . X.Element "code" [("class", "code")] <$> toSplice txt
   (Verbatim txt) -> one . X.Element "code" [("class", "verbatim")] <$> toSplice txt
   (Timestamp tsdata) -> callTemplate' "Timestamp" (timestamp tsdata)
-  (Entity name) -> toSplice $ maybe "⍰" htmlReplacement (lookup name defaultEntitiesMap)
+  (Entity name) -> rawEl <$> toSplice (maybe "⍰" htmlReplacement (lookup name defaultEntitiesMap))
   (LaTeXFragment k c) -> callTemplate' "LaTeXFragment" (latexFragment k c)
-  (ExportSnippet "html" c) -> one . X.Element "ToBeRemoved" [("xmlhtmlRaw", "")] <$> toSplice c
+  (ExportSnippet "html" c) -> rawEl <$> toSplice c
   ExportSnippet {} -> pure []
   (FootnoteRef label) -> callTemplate' "FootnoteRef" (footnoteRef label)
   (Cite cit) -> callTemplate' "Citation" (citation cit)
@@ -309,6 +309,8 @@ renderOrgObject = \case
   (Link tgt inl) -> callTemplate' "Link" (target tgt <> contents inl)
   (Image tgt) -> callTemplate' "Image" (target tgt)
   Macro {} -> pure []
+  where
+    rawEl = one . X.Element "ToBeRemoved" [("xmlhtmlRaw", "")]
 
 target :: LinkTarget -> Splices (Splice Exporter)
 target tgt = do
@@ -390,7 +392,7 @@ timestamp = \case
 
 latexFragment :: FragmentType -> Text -> Splices (Splice Exporter)
 latexFragment kind txt = do
-  contents txt
+  "FragmentContents" ## textSplice txt
   "LaTeXFragment" ##
     case kind of
       InlMathFragment -> runElement "LaTeXFragment:inline"
