@@ -36,25 +36,30 @@ elements' end = mconcat <$> manyTill (element <|> para) end
 -- | Each element parser must consume till the start of a line or EOF.
 -- This is necessary for correct counting of list indentations.
 element :: OrgParser (F OrgElements)
-element = choice [ blankline $> mempty
+element = choice [ blankline $> mempty <* clearPendingAffiliated
                  , elementNonEmpty
                  ] <?> "org element or blank line"
 
 elementNonEmpty :: OrgParser (F OrgElements)
-elementNonEmpty = choice [ commentLine
-                         , exampleBlock
-                         , srcBlock
-                         , exportBlock
-                         , greaterBlock
-                         , plainList
+elementNonEmpty = choice [ commentLine      <* clearPendingAffiliated
+                         , exampleBlock     <* clearPendingAffiliated
+                         , srcBlock         <* clearPendingAffiliated
+                         , exportBlock      <* clearPendingAffiliated
+                         , greaterBlock     <* clearPendingAffiliated
+                         , plainList        <* clearPendingAffiliated
+                         , latexEnvironment <* clearPendingAffiliated
+                         , drawer           <* clearPendingAffiliated
+                         , affKeyword
+                         , keyword          <* clearPendingAffiliated
                          ] <?> "org element"
 
 para :: OrgParser (F OrgElements)
 para = try do
+  f <- withAffiliated B.para
   (inls, next) <- withMContext_
                   (mark "\n" end)
                   (plainMarkupContext standardSet)
-  (<> next) <$> withAffiliated (\aff -> B.para aff <$> inls)
+  pure $ (f <*> inls) <> next
   where
     end :: OrgParser (F OrgElements)
     end = try do
@@ -68,11 +73,12 @@ para = try do
 
 plainList :: OrgParser (F OrgElements)
 plainList = try do
+  f <- withAffiliated B.list
   (indent, fstItem) <- listItem
   rest <- many . try $ guardIndent indent =<< listItem
   let kind = listItemType <$> fstItem
       items = (:) <$> fstItem <*> sequence rest
-  withAffiliated \aff -> B.list aff <$> kind <*> items
+  pure $ f <*> kind <*> items
   where
     guardIndent indent (i, l) = guard (indent == i) $> l
 
@@ -131,10 +137,11 @@ itemTag = try do
 
 indentedPara :: Int -> OrgParser (F OrgElements)
 indentedPara indent = try do
+  f <- withAffiliated B.para
   (inls, next) <- withMContext_
                   (mark "\n" end)
                   (plainMarkupContext standardSet)
-  (<> next) <$> withAffiliated (\aff -> B.para aff <$> inls)
+  pure $ (f <*> inls) <> next
   where
     end :: OrgParser (F OrgElements)
     end = try do
@@ -151,7 +158,10 @@ indentedElements indent =
   where
     indentedElement = try do
       notFollowedBy headingStart
-      blankline *> notFollowedBy blankline' $> mempty <|> do
+      blankline
+        *> notFollowedBy blankline'
+        *> clearPendingAffiliated $> mempty
+        <|> do
         guard . (> indent) =<< lookAhead spacesOrTabs
         elementNonEmpty <|> indentedPara indent
 
@@ -160,31 +170,42 @@ indentedElements indent =
 
 exampleBlock :: OrgParser (F OrgElements)
 exampleBlock = try do
+  f <- withAffiliated B.example
   hspace
   _ <- string' "#+begin_example"
   switches <- blockSwitches
   _ <- anyLine
   startingNumber <- updateLineNumbers switches
   contents <- rawBlockContents end switches
-  pure <$> (withAffiliated B.example ?? startingNumber ?? contents)
+  pure $ f ?? startingNumber ?? contents
   where
     end = try $ hspace *> string' "#+end_example" <* blankline'
 
 srcBlock :: OrgParser (F OrgElements)
 srcBlock = try do
+  f <- withAffiliated B.srcBlock
   hspace
   _ <- string' "#+begin_src"
   lang <- option "" $ hspace1 *> someNonSpace
-  (switches, args) <- liftA2 (,) blockSwitches headerArgs
+  switches <- blockSwitches
+  args <- headerArgs
   _ <- anyLine
   num <- updateLineNumbers switches
   contents <- rawBlockContents end switches
-  pure <$> (withAffiliated B.srcBlock ?? lang ?? num ?? args ?? contents)
+  pure $ f ?? lang ?? num ?? args ?? contents
   where
     end = try $ hspace *> string' "#+end_src" <* blankline'
-    headerArg = liftA2 (,) (hspace1 *> char ':' *> someNonSpace)
-                           (T.strip <$> takeWhileP Nothing (\c -> c /= ':' && c /= '\n'))
-    headerArgs = fromList <$> many headerArg
+
+headerArgs :: StateT OrgParserState Parser [(Text, Text)]
+headerArgs = hspace >> fromList <$> headerArg `sepBy` hspace1
+  where
+    headerArg = liftA2 (,) (char ':' *> someNonSpace)
+                           (T.strip . fst <$>
+                            findMarked (mark ":\n" . try $
+                                        lookAhead (newline' <|>
+                                                   char ':'
+                                                   *> (mapM_ (guard . isSpace) =<< gets orgStateLastChar)
+                                                   *> void (satisfy (not . isSpace)))))
 
 exportBlock :: OrgParser (F OrgElements)
 exportBlock = try do
@@ -307,13 +328,14 @@ blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
 
 greaterBlock :: OrgParser (F OrgElements)
 greaterBlock = try do
+  f <- withAffiliated B.greaterBlock
   hspace
   _ <- string' "#+begin_"
   bname <- someNonSpace
   _ <- takeWhileP Nothing (/= '\n')
   els <- withMContext (end bname) elements
-  f <- withAffiliated B.greaterBlock
-  pure $ f (blockType bname) <$> els
+  clearPendingAffiliated
+  pure $ f ?? blockType bname <*> els
   where
     blockType = \case
       (T.toLower -> "center") -> Center
@@ -324,6 +346,96 @@ greaterBlock = try do
 
 -- * Drawers
 
+drawer :: OrgParser (F OrgElements)
+drawer = try do
+  hspace
+  _ <- char ':'
+  dname <- takeWhile1P (Just "drawer name") (\c -> c /= ':' && c /= '\n')
+  hspace <* lookAhead newline
+  els <- withMContext end elements
+  clearPendingAffiliated
+  return $ B.drawer dname <$> els
+  where
+    end :: Marked OrgParser ()
+    end = mark "\n" . try $ newline *> hspace <* string' ":end:"
 
 
 -- * LaTeX Environments
+
+latexEnvironment :: OrgParser (F OrgElements)
+latexEnvironment = try do
+  hspace
+  _ <- string "\\begin{"
+  ename <- takeWhile1P (Just "latex environment name")
+                       (\c -> isAsciiAlpha c || isDigit c || c == '*')
+  _ <- char '}'
+  (str, _) <- findMarked (end ename)
+  f <- withAffiliated B.latexEnvironment
+  pure $ f ?? "\\begin{" <> ename <> "}" <> str <> "\\end{" <> ename <> "}"
+  where
+    end :: Text -> Marked OrgParser ()
+    end name = mark "\\" . try $ string ("\\end{" <> name <> "}") *> blankline'
+
+-- * Keywords and affiliated keywords
+
+affKeyword :: OrgParser (F OrgElements)
+affKeyword = try do
+  hspace
+  _ <- string "#+"
+  (<|>) do
+      (T.toLower -> name) <- liftA2 (<>)
+                             (string' "attr_")
+                             (takeWhile1P Nothing (\c -> not (isSpace c || c == ':')))
+      _ <- char ':'
+      args <- headerArgs
+      blankline'
+      registerAffiliated $ pure (name, B.attrKeyword args)
+      pure mempty
+    do
+      affkws <- getsO orgElementAffiliatedKeywords
+      name <- choice (fmap (\s -> string' s $> s) affkws)
+      isdualkw <- (name `elem`) <$> getsO orgElementDualKeywords
+      isparsedkw <- (name `elem`) <$> getsO orgElementParsedKeywords
+      value <- if isparsedkw
+        then do
+          optArg <- option (pure mempty) $ guard isdualkw *> optionalArgP
+          _ <- char ':'
+          hspace
+          value <- withMContext (mark' '\n' newline') (plainMarkupContext standardSet)
+          pure $ B.parsedKeyword <$> optArg <*> value
+        else do
+          optArg <- option "" $ guard isdualkw *> optionalArg
+          _ <- char ':'
+          hspace
+          pure . B.valueKeyword optArg . T.stripEnd <$> anyLine'
+      registerAffiliated $ (name,) <$> value
+      pure mempty
+  where
+    optionalArgP = withBalancedContext '[' ']' (All . (/= '\n') <> All . (/= ':')) $
+                   plainMarkupContext standardSet
+    optionalArg = withBalancedContext '[' ']' (All . (/= '\n') <> All . (/= ':'))
+                  takeInput
+
+keyword :: OrgParser (F OrgElements)
+keyword = try do
+  hspace
+  _ <- string "#+"
+  -- This is one of the places where it is convoluted to replicate org-element
+  -- regexes: "#+abc:d:e :f" is a valid keyword of key "abc:d" and value "e :f".
+  name <- T.toLower . fst <$> fix \me -> do -- a joke?
+    res@(name, ended) <- findMarked $
+      Marked (Any . isSpace <> Any . (== ':')) ["space", ":"] . try $
+        (newline' <|> void (satisfy isSpace)) $> False
+        <|> char ':' *> notFollowedBy me $> True
+    guard (not $ T.null name)
+    guard ended <?> "keyword end"
+    pure res
+  hspace
+  parsedkw <- (name `elem`) <$> getsO orgElementParsedKeywords
+  value <-
+    if parsedkw
+    then B.parsedKeyword' <<$>> withMContext (mark' '\n' newline') (plainMarkupContext standardSet)
+    else pure . B.valueKeyword' . T.stripEnd <$> anyLine'
+  let kw = (name,) <$> value
+  registerKeyword kw
+  return $ uncurry B.keyword <$> kw

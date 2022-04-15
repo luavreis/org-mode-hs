@@ -5,7 +5,6 @@ module Org.Parser.Common where
 import Prelude hiding (many, some, State)
 import Org.Parser.Definitions
 import Data.Char (digitToInt, isAsciiLower, isAsciiUpper)
-import Relude.Extra (notMember)
 import qualified Data.Text as T
 
 digitIntChar :: MonadParser m => m Int
@@ -109,10 +108,15 @@ newline' :: MonadParser m => m ()
 newline' = void newline <|> eof
 
 -- | Parse the rest of line, returning the contents without the final newline.
--- Consumes no input at EOF!
 anyLine :: MonadParser m => m (Tokens Text)
 anyLine = takeWhileP (Just "rest of line") (/= '\n')
           <* newline
+
+-- | Parse the rest of line, returning the contents without the final newline or EOF.
+-- Consumes no input at EOF!
+anyLine' :: MonadParser m => m (Tokens Text)
+anyLine' = takeWhileP (Just "rest of line") (/= '\n')
+          <* newline'
 
 -- | Consumes the rest of input
 takeInput :: MonadParser m => m Text
@@ -133,15 +137,13 @@ findMarked :: forall b.
 findMarked end = try $
   fix $ \search -> do
     str <- takeWhileP
-           (Just $ "insides of mcontext (chars outside  " ++
-            show (toList marks) ++ ")")
-           (`notMember` marks)
+           (Just $ "insides of mcontext (not " ++
+            getMDescription end ++ ")")
+           (not . getMPred end)
     setLastChar (snd <$> T.unsnoc str)
     ((str,) <$> try (getParser end) <?> "end of mcontext")
       <|> (do c <- anySingle <?> "insides of mcontext (single)"
               first (T.snoc str c <>) <$> search)
-  where
-    marks = getMarks end
 -- {-# INLINE findMarked #-}
 
 findChars2 :: MonadParser m => Char -> Char -> Maybe String -> m Text
@@ -156,13 +158,34 @@ parseFromText :: FullState -> Text -> OrgParser b -> OrgParser b
 parseFromText (prevPS, prevOS) txt parser = do
   (cPS, cOS) <- getFullState
   setFullState ( prevPS { stateInput = txt }
-               , cOS { orgStateLastChar =
-                       orgStateLastChar prevOS } )
+               , cOS { orgStateLastChar = -- NOTE: using cOS instead of prevOS
+                                          -- is an implementation quirk. We
+                                          -- don't want neither the changes of
+                                          -- state done by the end parser in
+                                          -- markupContext nor the ones in the
+                                          -- fromText parser to be lost. But
+                                          -- this will have the effect of
+                                          -- commuting the change of state: the
+                                          -- end changes will be registered
+                                          -- before the body ones. This is not a
+                                          -- problem because most of state
+                                          -- building is commutative and most
+                                          -- querying is done in Future anyway.
+                                          -- The problematic ones are either
+                                          -- irrelevant to a paragraph (like the
+                                          -- order in which title keywords are
+                                          -- concatenated) or must be handled
+                                          -- manually like affiliated keywords.
+                       orgStateLastChar prevOS
+                     , orgStatePendingAffiliated =
+                       orgStatePendingAffiliated prevOS } )
   result <- parser
   (aPS, aOS) <- getFullState
   setFullState ( cPS { stateParseErrors =
                        stateParseErrors cPS ++
                        stateParseErrors aPS }
                , aOS { orgStateLastChar =
-                       orgStateLastChar cOS } )
+                       orgStateLastChar cOS
+                     , orgStatePendingAffiliated =
+                       orgStatePendingAffiliated cOS } )
   pure result

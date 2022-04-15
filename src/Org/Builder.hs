@@ -79,7 +79,7 @@ srcBlock ::
   Affiliated ->
   Text ->
   Maybe Int ->
-  Map Text Text ->
+  [(Text, Text)] ->
   [SrcLine] ->
   OrgElements
 srcBlock aff lang nums args = one . SrcBlock aff lang nums args
@@ -91,12 +91,57 @@ greaterBlock ::
   OrgElements
 greaterBlock aff btype = one . GreaterBlock aff btype . toList
 
+drawer ::
+  Text ->
+  OrgElements ->
+  OrgElements
+drawer name = one . Drawer name . toList
+
+latexEnvironment ::
+  Affiliated ->
+  Text ->
+  OrgElements
+latexEnvironment aff = one . LaTeXEnvironment aff
+
 list ::
   Affiliated ->
   ListType ->
   [ListItem] ->
   OrgElements
 list aff kind = one . PlainList aff kind
+
+parsedKeyword ::
+  OrgInlines ->
+  OrgInlines ->
+  KeywordValue
+parsedKeyword i = ParsedKeyword (toList i) . toList
+
+parsedKeyword' ::
+  OrgInlines ->
+  KeywordValue
+parsedKeyword' = parsedKeyword mempty
+
+valueKeyword ::
+  Text ->
+  Text ->
+  KeywordValue
+valueKeyword = ValueKeyword
+
+valueKeyword' ::
+  Text ->
+  KeywordValue
+valueKeyword' = valueKeyword ""
+
+attrKeyword ::
+  [(Text, Text)] ->
+  KeywordValue
+attrKeyword = BackendKeyword
+
+keyword ::
+  KeywordKey ->
+  KeywordValue ->
+  OrgElements
+keyword key = one . Keyword key
 
 -- * Object builders
 
