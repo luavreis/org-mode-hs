@@ -208,6 +208,8 @@ exportSnippet = mark "@" . try $ do
 
 -- * Citations
 
+-- The following code for org-cite citations was adapted and improved upon pandoc's.
+
 citation :: Marked OrgParser (F OrgInlines)
 citation = mark "[" $
   B.citation <<$>> withBalancedContext '[' ']' mempty orgCite

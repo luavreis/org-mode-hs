@@ -1,4 +1,6 @@
--- |
+-- | This was one of the first files that I wrote and is adapted from
+-- https://github.com/jgm/pandoc/blob/master/src/Text/Pandoc/Readers/Org/DocumentTree.hs
+-- So all credit where credit is due to Albert Krewinkel and John MacFarlane.
 
 module Org.Parser.Document where
 
