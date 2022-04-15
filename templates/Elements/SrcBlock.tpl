@@ -1,6 +1,7 @@
 <bind tag="DefNumberMarker"><LineNumber><span class="linenumber"><Number /></span></LineNumber></bind>
 
-<pre class="code ${Language}"><SrcLines>
+<WithAffiliated>
+  <pre class="code ${Language}"><SrcLines>
     <case tag="plain">
       <code class="line-of-code"><DefNumberMarker /><Contents /></code>
     </case>
@@ -10,4 +11,5 @@
       </span>
     </case>
   </SrcLines>
-</pre>
+  </pre>
+</WithAffiliated>

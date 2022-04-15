@@ -210,7 +210,7 @@ exportSnippet = mark "@" . try $ do
 
 citation :: Marked OrgParser (F OrgInlines)
 citation = mark "[" $
-  B.citation <<$>> withBalancedContext '[' ']' orgCite
+  B.citation <<$>> withBalancedContext '[' ']' mempty orgCite
 
 -- | A citation in org-cite style
 orgCite :: OrgParser (F Citation)
@@ -308,8 +308,8 @@ inlBabel = mark "c" . try $ do
   header2 <- option "" header
   pureF $ B.inlBabel name header1 header2 args
   where
-    header = withBalancedContext '[' ']' getInput
-    arguments = withBalancedContext '(' ')' getInput
+    header = withBalancedContext '[' ']' (All . (/= '\n')) getInput
+    arguments = withBalancedContext '(' ')' (All . (/= '\n')) getInput
 
 
 -- * Inline source blocks
@@ -323,8 +323,8 @@ inlSrc = mark "s" . try $ do
   str <- body
   pureF $ B.inlSrc name headers str
   where
-    header = withBalancedContext '[' ']' getInput
-    body = withBalancedContext '{' '}' getInput
+    header = withBalancedContext '[' ']' (All . (/= '\n')) getInput
+    body = withBalancedContext '{' '}' (All . (/= '\n')) getInput
 
 
 -- * Line breaks

@@ -144,10 +144,8 @@ kwSplice :: Affiliated -> Text -> Splices (Splice Exporter)
 kwSplice kws name =
  name ##
   case lookup (T.toLower name) kws of
-    Just (KeywordValue txt) -> toSplice txt
-    Just (DualKeyword _ t) -> toSplice t
-    Just (ParsedKeyword c) -> toSplice c
-    Just (ParsedDualKeyword _ c) -> toSplice c
+    Just (ValueKeyword _ txt) -> toSplice txt
+    Just (ParsedKeyword _ c) -> toSplice c
     _ -> pure []
 
 -- * Document
@@ -308,18 +306,19 @@ renderOrgObject = \case
   (Cite cit) -> callTemplate' "Citation" (citation cit)
   InlBabelCall {} -> pure []
   (Src lang _ txt) -> one . X.Element "code" [("class", "src " <> lang)] <$> toSplice txt
-  (Link target inl) -> callTemplate' "Link" (link target inl)
+  (Link tgt inl) -> callTemplate' "Link" (target tgt <> contents inl)
+  (Image tgt) -> callTemplate' "Image" (target tgt)
+  Macro {} -> pure []
 
-link :: LinkTarget -> [OrgInline] -> Splices (Splice Exporter)
-link target inl = do
-  contents inl
-  "Target" ## textSplice $ case target of
+target :: LinkTarget -> Splices (Splice Exporter)
+target tgt = do
+  "Target" ## textSplice $ case tgt of
     URILink "file" (changeExtension -> file)
       | isRelative file -> toText file
       | otherwise -> "file:///" <> T.dropWhile (== '/') (toText file)
     URILink protocol uri -> protocol <> ":" <> uri
     InternalLink anchor -> "#" <> anchor
-    UnresolvedLink tgt -> tgt
+    UnresolvedLink tgt' -> tgt'
   where
     changeExtension (toString -> file) =
       if takeExtension file == ".org"
@@ -405,13 +404,11 @@ instance Spliceable OrgElement where
 
 affSplices :: Affiliated -> Splices (Splice Exporter)
 affSplices aff = "WithAffiliated" ## do
-  childs <- X.childNodes <$> getParamNode
-  let children' = flip map childs \case
-                    X.Element tag attrs childs' ->
-                      X.Element tag (attrs <> affAttrs aff) childs'
-                    x -> x
-  localHS (bindSplices $ kwSplice aff "Caption") $
-    runNodeList children'
+  childs <- runChildrenWith $ kwSplice aff "Caption"
+  pure $ flip map childs \case
+    X.Element tag attrs childs' ->
+      X.Element tag (attrs <> affAttrs aff) childs'
+    x -> x
 
 affAttrs :: Affiliated -> [(Text, Text)]
 affAttrs aff = join $ mapMaybe getHtmlAttrs (toPairs aff)
@@ -430,7 +427,7 @@ renderOrgElement = \case
     contents c
   (PlainList aff k i) -> callTemplate' "PlainList" (affSplices aff <> plainList k i)
   (DynamicBlock _ _ els) -> toSplice els
-  (Drawer els) -> toSplice els
+  (Drawer _ els) -> toSplice els
   -- Table {} -> error "Table html export is not yet implemented :( please help"
   (ExportBlock "html" c) -> one . X.Element "ToBeRemoved" [("xmlhtmlRaw", "")] <$> toSplice c
   (ExportBlock _ _) -> pure []
@@ -439,6 +436,7 @@ renderOrgElement = \case
     "Language" ## toSplice lang
     affSplices aff
     srcOrExample st c
+  (LaTeXEnvironment aff text) -> callTemplate' "LaTeXEnvironment" (affSplices aff <> contents text)
   HorizontalRule -> pure $ element "hr" []
   Keyword {} -> pure []
 

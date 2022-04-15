@@ -8,20 +8,26 @@ import Org.Builder (OrgElements, OrgInlines)
 type F = Ap (Reader OrgParserState)
 
 data OrgOptions = OrgOptions
-  { orgSrcPreserveIndentation :: Bool
-  , orgTabWidth :: Int
+  { orgSrcPreserveIndentation    :: Bool
+  , orgTabWidth                  :: Int
+  , orgElementParsedKeywords     :: [Text]
+  , orgElementDualKeywords       :: [Text]
+  , orgElementAffiliatedKeywords :: [Text]
   }
 
 defaultOrgOptions :: OrgOptions
 defaultOrgOptions = OrgOptions
-  { orgSrcPreserveIndentation = False
-  , orgTabWidth               = 4
+  { orgSrcPreserveIndentation    = False
+  , orgTabWidth                  = 4
+  , orgElementParsedKeywords     = ["caption", "title", "date", "author"]
+  , orgElementDualKeywords       = ["caption", "results"]
+  , orgElementAffiliatedKeywords = ["caption", "data", "header", "headers", "label", "name", "plot", "resname", "result", "source", "srcname", "tblname"]
   }
 
 -- | Org-mode parser state
 data OrgParserState = OrgParserState
   { orgStateInternalTargets      :: Map Text (Id, F OrgInlines) -- ^ Key is target name and value is (type, default alias)
-  , orgStatePendingAffiliated    :: Affiliated
+  , orgStatePendingAffiliated    :: [F (KeywordKey, KeywordValue)]
   , orgStateOptions              :: OrgOptions
   , orgStateIdStack              :: [Id]
   , orgStateLastChar             :: Maybe Char

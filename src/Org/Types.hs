@@ -26,7 +26,7 @@ lookupKeyword k = M.lookup k . documentKeywords
 
 documentTitle :: OrgDocument -> [OrgInline]
 documentTitle doc = case lookupKeyword "title" doc of
-  Just (ParsedKeyword o) -> o
+  Just (ParsedKeyword _ o) -> o
   _ -> []
 
 data OrgSection = OrgSection
@@ -111,10 +111,12 @@ type Properties = Map Text Text
 -- | Org element. Like a Pandoc Block.
 data OrgElement
   = GreaterBlock Affiliated GreaterBlockType [OrgElement]
-  | Drawer [OrgElement]
+  | Drawer
+      Text -- ^ Drawer name
+      [OrgElement] -- ^ Drawer elements
   | DynamicBlock Text (Map Text Text) [OrgElement]
   | PlainList Affiliated ListType [ListItem]
-  -- | Table Affiliated [OrgInline] [ColSpec] TableHead [TableBody] TableFoot
+  -- Table Affiliated [OrgInline] [ColSpec] TableHead [TableBody] TableFoot
   | ExportBlock
       Text -- ^ Format
       Text -- ^ Contents
@@ -126,7 +128,7 @@ data OrgElement
       Affiliated -- ^ Affiliated keywords
       Text -- ^ Language
       (Maybe Int) -- ^ Starting line number
-      (Map Text Text) -- ^ Header arguments
+      [(Text, Text)] -- ^ Header arguments
       [SrcLine] -- ^ Contents
   | VerseBlock Affiliated [[OrgInline]]
   | Clock ClockData
@@ -160,25 +162,21 @@ srcLineMap f (RefLine i t c) = RefLine i t (f c)
 type KeywordKey = Text
 
 data KeywordValue
-  = KeywordValue Text -- everything else
-  | DualKeyword Text Text -- results
-  | ParsedKeyword [OrgInline] -- title, date
-  | ParsedDualKeyword [OrgInline] [OrgInline] -- caption
-  | BackendKeyword [(Text, Text)] -- attr_backend
+  = ValueKeyword Text Text
+  | ParsedKeyword [OrgInline] [OrgInline]
+  | BackendKeyword [(Text, Text)]
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 instance Semigroup KeywordValue where
-  (KeywordValue t1) <> (KeywordValue t2) = KeywordValue (t1 <> "\n" <> t2)
-  (DualKeyword o1 t1) <> (DualKeyword o2 t2) = DualKeyword (o1 <> "\n" <> o2) (t1 <> "\n" <> t2)
-  (ParsedKeyword t1) <> (ParsedKeyword t2) = ParsedKeyword (t1 <> t2)
-  (ParsedDualKeyword o1 t1) <> (ParsedDualKeyword o2 t2) = ParsedDualKeyword (o1 <> o2) (t1 <> t2)
+  (ValueKeyword o1 t1) <> (ValueKeyword o2 t2) = ValueKeyword (o1 <> "\n" <> o2) (t1 <> "\n" <> t2)
+  (ParsedKeyword o1 t1) <> (ParsedKeyword o2 t2) = ParsedKeyword (o1 <> o2) (t1 <> t2)
   (BackendKeyword b1) <> (BackendKeyword b2) = BackendKeyword (b1 <> b2)
   _ <> x = x
 
 type Keywords = Map KeywordKey KeywordValue
 
 keywordsFromList :: [(KeywordKey, KeywordValue)] -> Keywords
-keywordsFromList = M.fromListWith (<>)
+keywordsFromList = M.fromListWith (flip (<>))
 
 type Affiliated = Keywords
 

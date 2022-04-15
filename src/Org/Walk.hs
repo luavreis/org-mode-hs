@@ -158,7 +158,7 @@ walkElementM
   -> m OrgElement
 walkElementM f (Paragraph af o) = Paragraph <$> walkM f af <*> walkM f o
 walkElementM f (GreaterBlock af t o) = GreaterBlock <$> walkM f af ?? t <*> walkM f o
-walkElementM f (Drawer o) = Drawer <$> walkM f o
+walkElementM f (Drawer a o) = Drawer a <$> walkM f o
 walkElementM f (DynamicBlock n p o) = DynamicBlock n p <$> walkM f o
 walkElementM f (PlainList af t i) = PlainList <$> walkM f af ?? t <*> mapM walkListItemM i
   where walkListItemM (ListItem b i' c t' e) = ListItem b i' c <$> walkM f t' <*> walkM f e
@@ -182,7 +182,7 @@ queryElement
   -> c
 queryElement f (Paragraph af o) = query f af <> query f o
 queryElement f (GreaterBlock af _ o) = query f af <> query f o
-queryElement f (Drawer o) = query f o
+queryElement f (Drawer _ o) = query f o
 queryElement f (DynamicBlock _ _ o) = query f o
 queryElement f (PlainList af _ i) = query f af <> foldMap queryListItem i
   where queryListItem (ListItem _ _ _ t e) = query f t <> query f e
@@ -256,10 +256,8 @@ walkKeywordM
   => (a -> m a)
   -> KeywordValue
   -> m KeywordValue
-walkKeywordM f (ParsedKeyword c) = ParsedKeyword <$> walkM f c
-walkKeywordM f (ParsedDualKeyword o c) = ParsedDualKeyword <$> walkM f o <*> walkM f c
-walkKeywordM _ x@KeywordValue {} = pure x
-walkKeywordM _ x@DualKeyword {} = pure x
+walkKeywordM f (ParsedKeyword o c) = ParsedKeyword <$> walkM f o <*> walkM f c
+walkKeywordM _ x@ValueKeyword {} = pure x
 walkKeywordM _ x@BackendKeyword {} = pure x
 
 queryKeyword
@@ -269,10 +267,8 @@ queryKeyword
   => (a -> c)
   -> KeywordValue
   -> c
-queryKeyword f (ParsedKeyword c) = query f c
-queryKeyword f (ParsedDualKeyword o c) = query f o <> query f c
-queryKeyword _ KeywordValue {} = mempty
-queryKeyword _ DualKeyword {} = mempty
+queryKeyword f (ParsedKeyword o c) = query f o <> query f c
+queryKeyword _ ValueKeyword {} = mempty
 queryKeyword _ BackendKeyword {} = mempty
 
 -- * Citation

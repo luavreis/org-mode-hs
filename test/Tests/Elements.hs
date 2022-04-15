@@ -10,15 +10,12 @@ testElements :: TestTree
 testElements = testGroup "Elements"
   [
     "Comment line" ~: commentLine $
-    [
-      "# this is a comment" =?> mempty,
+    [ "# this is a comment" =?> mempty
+    , "  # this is also a comment" =?> mempty
+    , "#this line is not a comment" =!> ()
+    ]
 
-      "  # this is also a comment" =?> mempty,
-
-      "#this line is not a comment" =!> ()
-    ],
-
-    "Paragraph" ~: para $
+  , "Paragraph" ~: para $
     [
       [text|
          foobar
@@ -36,4 +33,10 @@ testElements = testGroup "Elements"
                           <> B.bold "at end" <> B.softbreak <> B.verbatim "at start"
                           <> " but not~here~ and\nnot _here_right.")
     ]
+
+  -- Add case for affiliated keywords with:
+  --  + aff keyword at end of paragraph acting on next element
+  --  + showing non leaking of aff kw from block to outside
+  -- Add case showing preservation of state of end parser
+  -- Add case showing preservation of state from inside to outside markupContext
   ]

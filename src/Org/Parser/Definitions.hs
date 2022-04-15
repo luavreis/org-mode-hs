@@ -20,7 +20,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Debug
 import Data.Char (isSpace, isPunctuation, isAlphaNum, isLetter, isDigit, isAscii)
-import Relude.Extra (insert)
+import Relude.Extra (insert, member)
 
 type Parser = ParsecT Void Text Identity
 
@@ -60,11 +60,24 @@ registerAnchorTarget name anchor alias = do
   targets <- gets orgStateInternalTargets
   updateState \s -> s { orgStateInternalTargets = insert name (anchor, alias) targets }
 
-clearPendingAffiliated :: OrgParser ()
-clearPendingAffiliated = modify (\s -> s { orgStatePendingAffiliated = mempty })
+registerKeyword :: F (KeywordKey, KeywordValue) -> OrgParser ()
+registerKeyword kw =
+  updateState \s -> s { orgStateKeywords =
+                        kw : orgStateKeywords s }
 
-withAffiliated :: (Affiliated -> a) -> OrgParser a
-withAffiliated f = f <$> gets orgStatePendingAffiliated
+registerAffiliated :: F (KeywordKey, KeywordValue) -> OrgParser ()
+registerAffiliated kw =
+  updateState \s -> s { orgStatePendingAffiliated =
+                        kw : orgStatePendingAffiliated s }
+
+clearPendingAffiliated :: OrgParser ()
+clearPendingAffiliated = modify (\s -> s { orgStatePendingAffiliated = [] })
+
+withAffiliated :: (Affiliated -> a) -> OrgParser (F a)
+withAffiliated f = (gets orgStatePendingAffiliated
+                    <&> sequence
+                    <&> fmap keywordsFromList
+                    <&> fmap f)
                    <* clearPendingAffiliated
 
 
@@ -114,27 +127,41 @@ pureF = pure . pure
 
 -- * Marked parsers
 
+type CharAnyAp = Char -> Any
+
 data Marked m a = Marked
-  { getMarks :: Set Char -- TODO use (Pred {toPred :: Char -> Bool})
+  { getMarks :: Char -> Any
+  , getDescr :: [String]
   , getParser :: m a
   }
 
 mapParser :: (m1 a -> m2 a) -> Marked m1 a -> Marked m2 a
-mapParser f (Marked marks parser) = Marked marks (f parser)
+mapParser f (Marked marks descr parser) = Marked marks descr (f parser)
 
 mark :: String -> m a -> Marked m a
-mark = Marked . fromList
+mark (fromList -> s :: Set Char) = Marked (Any . (`member` s)) ["one of " <> show s]
+
+mark' :: Char -> m a -> Marked m a
+mark' c = Marked (Any . (== c)) [show c]
 
 unmarked :: m a -> Marked m a
-unmarked = Marked mempty
+unmarked = Marked (const mempty) []
 
 instance Functor m => Functor (Marked m) where
-  fmap f x@(Marked _ p) = x { getParser = fmap f p }
+  fmap f x@(Marked _ _ p) = x { getParser = fmap f p }
 
 instance Alternative m => Semigroup (Marked m a) where
-  Marked s1 p1 <> Marked s2 p2 =
-    Marked (s1 <> s2) (p1 <|> p2)
+  Marked s1 d1 p1 <> Marked s2 d2 p2 =
+    Marked (s1 <> s2) (d1 <> d2) (p1 <|> p2)
 
 instance Alternative m => Monoid (Marked m a) where
-  mempty = Marked mempty empty
-  mconcat xs = Marked (foldMap getMarks xs) (choice $ map getParser xs)
+  mempty = Marked (const mempty) [] empty
+  mconcat xs = Marked (foldMap getMarks xs)
+                      (foldMap getDescr xs)
+                      (choice $ map getParser xs)
+
+getMPred :: Marked m a -> Char -> Bool
+getMPred = (getAny .) . getMarks
+
+getMDescription :: Marked m a -> String
+getMDescription = intercalate " or " . getDescr

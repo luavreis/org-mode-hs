@@ -5,7 +5,6 @@ module Org.Parser.MarkupContexts where
 
 import Org.Parser.Common
 import Org.Parser.Definitions
-import Data.Set (notMember)
 import qualified Data.Text as T
 
 withMContext__ :: forall a b.
@@ -39,17 +38,18 @@ withMContext end = fmap fst . withMContext_ end
 withBalancedContext ::
   Char
   -> Char
+  -> (Char -> All) -- ^ Allowed
   -> OrgParser a
   -> OrgParser a
-withBalancedContext lchar rchar p = try do
+withBalancedContext lchar rchar ((getAll .) -> allowed) p = try do
   _ <- char lchar
   let
     find' :: StateT Int OrgParser Text
     find' = do
       str <- takeWhileP
              (Just "insides of markup")
-             (\c -> c /= lchar && c /= rchar)
-      c <- anySingle <?> "balanced delimiters";
+             (\c -> allowed c && c /= lchar && c /= rchar)
+      c <- satisfy allowed <?> "balanced delimiters";
       when (c == lchar) $ modify (+ 1)
       when (c == rchar) $ modify (subtract 1)
       balance <- get
@@ -69,11 +69,11 @@ markupContext :: Monoid k
 markupContext f elems = go
   where
     go = try $ do
-      let specials = getMarks elems
+      let specials = getMPred elems
       str <- optional $ takeWhile1P
-             (Just $ "insides of markup (chars not in "
-              ++ show (toList specials) ++ ")")
-             (`notMember` specials)
+             (Just $ "insides of markup (not " <>
+              getMDescription elems <> ")")
+             (not . specials)
       -- traceM $ "consumed: " ++ show str
       let self = maybe mempty f str
       setLastChar (T.last <$> str)
