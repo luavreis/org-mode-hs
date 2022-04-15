@@ -73,6 +73,14 @@ library
                      Paths_org_parser
   autogen-modules:   Paths_org_parser
 
+executable org-parser
+  import:            common-options
+  hs-source-dirs:    app
+  main-is:           org-parser.hs
+  build-depends:     org-parser
+                   , optparse-applicative
+  ghc-options:       -threaded
+
 test-suite test
   import:            common-options
   type:              exitcode-stdio-1.0
@@ -101,6 +109,6 @@ test-suite test
                      Tests.Elements
                      Tests.Helpers
                      Paths_org_parser
-  ghc-options:      -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:      -threaded -with-rtsopts=-N
   default-extensions:
     QuasiQuotes
