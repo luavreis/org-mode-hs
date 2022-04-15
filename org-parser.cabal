@@ -1,8 +1,8 @@
 cabal-version:       2.4
 Name:                org-parser
 version:             0.1
-Synopsis:            Types for representing a Org document
-Description:         TODO write description
+Synopsis:            Parser and exporter for Org Mode documents.
+Description:         todo
 
 Maintainer:          lvr@s-viva.xyz
 Bug-Reports:         https://github.com/lucasvreis/org-parser/issues
