@@ -1,9 +1,48 @@
 #+title: org-parser
 
+* Table of contents :TOC:
+- [[#how-to-test-and-play-with-it][How to test and play with it]]
+  - [[#testing-the-parser-in-ghci][Testing the parser in =ghci=]]
+  - [[#unit-tests][Unit tests]]
+- [[#progress][Progress]]
+  - [[#going-beyond-what-is-listed-in-the-spec][Going beyond what is listed in the spec]]
+- [[#exporters][Exporters]]
+  - [[#heist-html-exporter][Heist HTML exporter]]
+- [[#comparasion-to-pandoc][Comparasion to Pandoc]]
+- [[#ideas-for-things-to-be-done][Ideas for things to be done]]
+  - [[#elisp-variables][Elisp variables]]
+  - [[#emacs-queries-in-batch-or-client-mode][Emacs queries in batch or client mode]]
+
+* How to test and play with it
+Unfortunately there is no CLI yet, and ~org-parser~ will remain unpublished as an library for now. I am in the middle of a semester and I don't have time to write the CLI or figure out how to push this to Hackage (two things I have never done before). But still, you can use the parser either as a library in Haskell (like I've been doing in [[https://github.com/lucasvreis/abacateiro][abacateiro]]) or test it from =ghci=.
+
+** Testing the parser in =ghci=
+
+This assumes you have =cabal= installed.
+
+Clone the parser repository and run =cabal repl test= inside of it. Cabal will be busy downloading dependencies and building for a while. You can then call the convenience function ~prettyParse~ like so:
+
+: prettyParse orgDocument [text|
+: This is a test.
+: |]
+
+You can write the contents to be parsed between =[text|= and =|]=. More generally, you can call
+
+: prettyParse [parser to parse] [string to parse]
+
+Where =[parser to parse]= can be basically any of the functions from =Org.Parse.Document=, =Org.Parser.Elements= or =Org.Parser.Objects= that have monadic type =OrgParser=. You don't need to import those modules youself as they are already imported in the ~test~ namespace.
+
+** Unit tests
+I plan to cover a broad range of the spec in the unit tests under [[test][test]]. Those should follow the same energy as [[https://mirror.las.iastate.edu/tex-archive/info/knuth-pdf/tex/tripman.pdf][A torture test for TeX]], and should touch as much corner cases as possible against org-element. Take for example the parsing of
+: [cite:/foo/;/bar/@bef=bof=;/baz/]
+under [[test/Tests/Objects.hs][tests/Tests/Objects.hs]]. This alone tests many things about allowed pre/post chars in markup and the inner parsing of citations (in fact, =foo=, =bar=, =bof= and =baz= are all parsed with markup in this example!).
+
+For now I have mostly been testing as many corner cases as possible manually.
+
 * Progress
 Thanks @tecosaur for the table 🙂
 
-In the spec terms, the following components are implemented:
+In the spec terms (see below the table for other features), the following components are implemented:
 | Component           | Type             | Parse | HTML (using Heist) |
 |---------------------+------------------+-------+--------------------|
 | Heading             | X                | X     | X                  |
@@ -63,6 +102,27 @@ In the spec terms, the following components are implemented:
 | Timestamp           | X                | X     | X                  |
 | Plain               | X                | X     | X                  |
 | Markup              | X                | X     | X                  |
+
+** Going beyond what is listed in the spec
+
+~org-element-parse-buffer~ does not parse /everything/ that will eventually be parsed or processed when exporting a document written in Org-mode. Examples of Org features that are not handled by the parser alone (so aren't described in the spec) include content from keywords like =#+title:=, that are parsed "later" by the exporter itself, references in lines of =src= or =example= blocks and link resolving, that are done in a post-processing step, and the use of =#+include:= keywords, =TODO= keywords and radio links, that are done in a pre-processing step.
+
+But my motto for writing this parser is: information useful for all exporters should be trivial to get from the AST, and minimal text processing should be done an exporter. Since the aspects listed above are genuine /org-mode features/, and not optional extensions, they should be resolved in the AST outputed by this parser. Below is a table with more Org features that are not listed in the spec but are planned to be supported:
+
+| Feature                                    | Implemented?                                         |
+|--------------------------------------------+------------------------------------------------------|
+| ​=#+include:= keywords                      | no                                                   |
+| Src/example blocks switches and references | yes                                                  |
+| Resolving all inner links                  | yes                                                  |
+| Parsing image links into =Image=​s          | yes                                                  |
+| Pre-processing radio links                 | no; conformant implementation requires parsing twice |
+| Per-file TODO keywords                     | no                                                   |
+
+* Exporters
+For now there is a highly customizable HTML exporter. I plan to add a Pandoc exporter in the future, so that it's possible to convert Org documents to other types of markup with this more specialized parser.
+
+** Heist HTML exporter
+Heist is a Haskell templating library that uses raw XML/HTML for templating. You can have a look at the templates used for HTML export in the [[templates][templates]] directory. Those can be customized by the user without having to write Haskell or recompile the library.
 
 * Comparasion to Pandoc
 The main difference between this parser and the Org Reader from Pandoc is that this one parses into a specialized Org-element-like AST, while the reader parses into the =Pandoc= AST, which cannot express all Org elements directly. This has the effect that some Org features are either unsupported by the reader or "projected" onto Pandoc in ways that bundle less information about the Org source. In contrast, this reader aims to represent Org documents more faithfully before "projecting" them into formats like HTML or even the Pandoc AST itself. So you can expect more org-specific features to be parsed, and a hopefully more accurate parsing in general.
