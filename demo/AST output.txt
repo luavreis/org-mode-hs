@@ -1,0 +1,176 @@
+OrgDocument
+{ documentProperties = fromList []
+, documentKeywords = fromList []
+, documentFootnotes = fromList []
+, documentChildren =
+    [ LaTeXEnvironment
+        ( fromList
+            [
+                ( "attr_html"
+                , BackendKeyword
+                    [
+                        ( "style"
+                        , "font-size:40px; color: red"
+                        )
+                    ]
+                )
+            ]
+        ) "\begin{equation*}
+        1 + 2 + 3
+      \end{equation*}"
+    , Paragraph
+        ( fromList [] )
+        [ Plain "Here are some timestamps: "
+        , Timestamp
+            ( TimestampData False
+                (
+                    ( 2020
+                    , 2
+                    , 3
+                    , Nothing
+                    )
+                , Nothing
+                , Nothing
+                , Nothing
+                )
+            )
+        , Plain " or "
+        , Timestamp
+            ( TimestampData False
+                (
+                    ( 2020
+                    , 3
+                    , 2
+                    , Just "Mon"
+                    )
+                , Just
+                    ( 14
+                    , 29
+                    )
+                , Nothing
+                , Nothing
+                )
+            )
+        ]
+    , ExampleBlock
+        ( fromList [] )
+        ( Just 1 )
+        [ SrcLine "This is a code example with lines"
+        , RefLine "coderef-foo" "Foo" "And a line with reference"
+        ]
+    , ExampleBlock
+        ( fromList [] )
+        ( Just 3 )
+        [ SrcLine "This line continues the former block."
+        , RefLine "coderef-bar" "" "And here is a numbered reference"
+        ]
+    , Paragraph
+        ( fromList [] )
+        [ Plain "Here I refer to "
+        , Link
+            ( InternalLink "coderef-foo" )
+            [ Plain "Foo" ]
+        , Plain " and here to the line "
+        , Link
+            ( InternalLink "coderef-bar" )
+            [ Plain "4" ]
+        , Plain "."
+        ]
+    ]
+, documentSections =
+    [ OrgSection
+        { sectionLevel = 2
+        , sectionProperties = fromList []
+        , sectionTodo = Just
+            ( TodoKeyword
+                { todoState = Todo
+                , todoName = "TODO"
+                }
+            )
+        , sectionPriority = Just
+            ( LetterPriority 'C' )
+        , sectionTitle =
+            [ Plain " with priorities" ]
+        , sectionTags = []
+        , sectionPlanning = PlanningInfo
+            { planningClosed = Nothing
+            , planningDeadline = Nothing
+            , planningScheduled = Nothing
+            }
+        , sectionAnchor = "0"
+        , sectionChildren =
+            [ PlainList
+                ( fromList [] )
+                ( Unordered '+' )
+                [ ListItem
+                    ( Bullet '+' ) Nothing Nothing []
+                    [ Paragraph
+                        ( fromList [] )
+                        [ Plain "Hi" ]
+                    , PlainList
+                        ( fromList [] )
+                        ( Unordered '-' )
+                        [ ListItem
+                            ( Bullet '-' ) Nothing Nothing []
+                            [ Paragraph
+                                ( fromList [] )
+                                [ Plain "from" ]
+                            , PlainList
+                                ( fromList [] )
+                                ( Unordered '*' )
+                                [ ListItem
+                                    ( Bullet '*' ) Nothing Nothing []
+                                    [ Paragraph
+                                        ( fromList [] )
+                                        [ Plain "list" ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                , ListItem
+                    ( Bullet '-' ) Nothing Nothing []
+                    [ Paragraph
+                        ( fromList [] )
+                        [ Plain "More types" ]
+                    , PlainList
+                        ( fromList [] ) ( Ordered OrderedNum )
+                        [ ListItem
+                            ( Counter "1" '.' ) Nothing Nothing []
+                            [ Paragraph
+                                ( fromList [] )
+                                [ Plain "Bla" ]
+                            , PlainList
+                                ( fromList [] ) ( Ordered OrderedAlpha )
+                                [ ListItem
+                                    ( Counter "a" '.' ) Nothing Nothing []
+                                    [ Paragraph
+                                        ( fromList [] )
+                                        [ Plain "Foo" ]
+                                    , PlainList
+                                        ( fromList [] ) Descriptive
+                                        [ ListItem
+                                            ( Bullet '-' ) Nothing Nothing
+                                            [ Plain "foo" ]
+                                            [ Paragraph
+                                                ( fromList [] )
+                                                [ Plain "bar" ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            , Paragraph
+                ( fromList [] )
+                [ Plain "Some ergodic fun: "
+                , LaTeXFragment InlMathFragment "\sum_{i=1}^{\infty} \varphi \circ f^i(x) = \int \varphi \;d\mu"
+                , Plain "."
+                ]
+            ]
+        , sectionSubsections = []
+        }
+    ]
+}

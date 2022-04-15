@@ -75,9 +75,10 @@ section lvl = try $ do
       }
  where
    titleObjects :: OrgParser (F OrgInlines, Tags, Text)
-   titleObjects = withMContext__
-                  (mark " \n" endOfTitle)
-                  (plainMarkupContext standardSet)
+   titleObjects = option mempty $
+     withMContext__
+     (mark " \n" endOfTitle)
+     (plainMarkupContext standardSet)
 
    endOfTitle :: OrgParser Tags
    endOfTitle = try $ do

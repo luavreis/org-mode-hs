@@ -1,6 +1,7 @@
 #+title: org-parser
 
 * Table of contents :TOC:
+- [[#demo][Demo]]
 - [[#how-to-test-and-play-with-it][How to test and play with it]]
   - [[#testing-the-parser-in-ghci][Testing the parser in =ghci=]]
   - [[#unit-tests][Unit tests]]
@@ -12,6 +13,12 @@
 - [[#ideas-for-things-to-be-done][Ideas for things to be done]]
   - [[#elisp-variables][Elisp variables]]
   - [[#emacs-queries-in-batch-or-client-mode][Emacs queries in batch or client mode]]
+
+* Demo
+[[demo/demo.png]]
+
+The page on the right was rendered using this parser and its HTML exporter (plus CSS styling).
+You can see the org document source in [[demo/content.org][demo/content.org]] and the resulting AST in [[demo/AST output.txt][demo/AST output.txt]].
 
 * How to test and play with it
 Unfortunately there is no CLI yet, and ~org-parser~ will remain unpublished as an library for now. I am in the middle of a semester and I don't have time to write the CLI or figure out how to push this to Hackage (two things I have never done before). But still, you can use the parser either as a library in Haskell (like I've been doing in [[https://github.com/lucasvreis/abacateiro][abacateiro]]) or test it from =ghci=.
@@ -34,7 +41,7 @@ Where =[parser to parse]= can be basically any of the functions from =Org.Parse.
 
 ** Unit tests
 I plan to cover a broad range of the spec in the unit tests under [[test][test]]. Those should follow the same energy as [[https://mirror.las.iastate.edu/tex-archive/info/knuth-pdf/tex/tripman.pdf][A torture test for TeX]], and should touch as much corner cases as possible against org-element. Take for example the parsing of
-: [cite:/foo/;/bar/@bef=bof=;/baz/]
+: [c​ite:/foo/;/bar/@bef=bof=;/baz/]
 under [[test/Tests/Objects.hs][tests/Tests/Objects.hs]]. This alone tests many things about allowed pre/post chars in markup and the inner parsing of citations (in fact, =foo=, =bar=, =bof= and =baz= are all parsed with markup in this example!).
 
 For now I have mostly been testing as many corner cases as possible manually.

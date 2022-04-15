@@ -1,0 +1,31 @@
+
+#+attr_html: :style font-size:40px; color: red
+\begin{equation*}
+  1 + 2 + 3
+\end{equation*}
+Here are some timestamps: [2020-02-03] or [2020-03-02 Mon 14:29]
+
+#+begin_example -l ";; ref:%s" -n
+This is a code example with lines
+And a line with reference ;; ref:Foo
+#+end_example
+
+#+begin_example -r +n
+This line continues the former block.
+And here is a numbered reference (ref:bar)
+#+end_example
+
+Here I refer to [[(Foo)]] and here to the line [[(bar)]].
+
+** TODO [#C] with priorities
+
++ Hi
+  - from
+    * list
+
+- More types
+  1. Bla
+    a. Foo
+       - foo :: bar
+Some ergodic fun: \(\sum_{i=1}^{\infty} \varphi \circ f^i(x) = \int \varphi \;d\mu\).
+

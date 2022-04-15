@@ -27,7 +27,7 @@
               shortmonths="Jan., Feb., Mar., Apr., May, June, July, Aug., Sept., Oct., Nov., Dec."
       >%a, %B %e, %Y</TSDate
     ><TSTime ampm="AM,PM"
-      > at %P</TSTime
+      > at %R %P</TSTime
     ></time
   ><Repeater
     >, repeating every <Value /> <Unit /></Repeater
