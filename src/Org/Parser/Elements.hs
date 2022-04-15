@@ -301,7 +301,7 @@ blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
       hspace1
       s <- T.snoc . one <$> oneOf ['+', '-']
                         <*> char 'n'
-      num <- option "" $ hspace1 *> takeWhileP Nothing isDigit
+      num <- option "" $ try $ hspace1 *> takeWhileP Nothing isDigit
       _ <- lookAhead spaceChar
       return (s, num)
 
