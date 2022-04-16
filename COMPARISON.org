@@ -1,9 +1,0 @@
-#+TITLE: Comparison to other Org Mode parsers
-
-* Test cases
-
-*** Nested markup
-#+name: t:1
-#+begin_src org
-//a test//
-#+end_src
