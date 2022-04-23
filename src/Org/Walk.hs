@@ -7,6 +7,7 @@ module Org.Walk
   ) where
 import Org.Types
 import Text.Pandoc.Walk (Walkable, walk, walkM, query)
+import Data.Bitraversable (bimapM)
 
 -- * Instances
 
@@ -207,7 +208,7 @@ walkDocumentM
   -> OrgDocument
   -> m OrgDocument
 walkDocumentM f (OrgDocument p k fn c s) =
-  OrgDocument p <$> walkM f k <*> walkM f fn <*> walkM f c <*> walkM f s
+  OrgDocument p <$> mapM (bimapM pure (walkM f)) k <*> walkM f fn <*> walkM f c <*> walkM f s
 
 queryDocument
   :: ( Monoid c
@@ -219,7 +220,7 @@ queryDocument
   -> OrgDocument
   -> c
 queryDocument f (OrgDocument _ k fn c s) =
-  query f k <> query f fn <> query f c <> query f s
+  query f (map snd k) <> query f fn <> query f c <> query f s
 
 -- * Section
 

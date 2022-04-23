@@ -61,6 +61,7 @@ library
                      Org.Walk
                      Org.Parser
                      Org.Exporters.Heist
+                     Org.Exporters.Citeproc
   other-modules:     Org.Parser.Common
                      Org.Parser.State
                      Org.Parser.Definitions
@@ -68,7 +69,6 @@ library
                      Org.Parser.Elements
                      Org.Parser.Objects
                      Org.Parser.MarkupContexts
-                     Org.Exporters.Citeproc
                      Org.Data.Entities
                      Paths_org_parser
   autogen-modules:   Paths_org_parser

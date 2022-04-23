@@ -32,7 +32,7 @@ orgDocument = do
     sections' <- sequence sections
     return OrgDocument
       { documentProperties = properties
-      , documentKeywords = keywordsFromList keywords'
+      , documentKeywords = keywords'
       , documentChildren = toList topLevel'
       , documentSections = sections'
       , documentFootnotes = M.map toList footnotes'

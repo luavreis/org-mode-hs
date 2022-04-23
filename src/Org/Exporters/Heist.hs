@@ -219,7 +219,8 @@ tags tag = runChildrenWith $
 
 documentSplices :: OrgDocument -> Splices (Splice Exporter)
 documentSplices doc = do
-  foldMap (kwSplice $ documentKeywords doc) ["Language", "Title", "Date", "Author"]
+  foldMap (kwSplice $ keywordsFromList $ documentKeywords doc)
+          ["Language", "Title", "Date", "Author"]
   contents (documentContent doc)
   "Footnotes" ## do
     fnRefs <- snd <$> gets footnoteCounter -- TODO: is this run in the right order?? in the end?
