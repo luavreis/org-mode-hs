@@ -12,7 +12,7 @@ import qualified Data.Map as M
 
 data OrgDocument = OrgDocument
   { documentProperties :: Properties
-  , documentKeywords   :: Keywords
+  , documentKeywords   :: [(KeywordKey, KeywordValue)]
   , documentFootnotes  :: Map Text [OrgElement]
   , documentChildren   :: [OrgElement]
   , documentSections   :: [OrgSection]
@@ -21,13 +21,14 @@ data OrgDocument = OrgDocument
 lookupProperty :: Text -> OrgDocument -> Maybe Text
 lookupProperty k = M.lookup k . documentProperties
 
-lookupKeyword :: Text -> OrgDocument -> Maybe KeywordValue
-lookupKeyword k = M.lookup k . documentKeywords
+lookupKeyword :: Text -> OrgDocument -> [KeywordValue]
+lookupKeyword k = map snd . filter ((k ==) . fst) . documentKeywords
 
 documentTitle :: OrgDocument -> [OrgInline]
-documentTitle doc = case lookupKeyword "title" doc of
-  Just (ParsedKeyword _ o) -> o
-  _ -> []
+documentTitle doc = foldMap justParsed (lookupKeyword "title" doc)
+  where
+    justParsed (ParsedKeyword _ o) = o
+    justParsed _ = []
 
 data OrgSection = OrgSection
   { sectionLevel       :: Int
