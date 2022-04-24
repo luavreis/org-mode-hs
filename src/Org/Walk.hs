@@ -118,6 +118,7 @@ walkObjectM _ x@InlBabelCall {} = pure x
 walkObjectM _ x@Src {} = pure x
 walkObjectM _ x@Macro {} = pure x
 walkObjectM _ x@Image {} = pure x
+walkObjectM _ x@Target {} = pure x
 
 queryObject :: (Monoid c, Walkable a OrgInline, Walkable a Citation) => (a -> c) -> OrgInline -> c
 queryObject f (Italic o) = query f o
@@ -144,6 +145,7 @@ queryObject _ InlBabelCall {} = mempty
 queryObject _ Src {} = mempty
 queryObject _ Macro {} = mempty
 queryObject _ Image {} = mempty
+queryObject _ Target {} = mempty
 
 
 -- Elements
