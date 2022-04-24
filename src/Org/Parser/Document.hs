@@ -153,7 +153,7 @@ propertyDrawer = try $ do
   where
    endOfDrawer :: OrgParser Text
    endOfDrawer = try $
-     hspace *> string' ":end:" <* blankline
+     hspace *> string' ":end:" <* blankline'
 
    nodeProperty :: OrgParser (Text, Text)
    nodeProperty = try $ liftA2 (,) name value

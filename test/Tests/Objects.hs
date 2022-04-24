@@ -13,6 +13,14 @@ testObjects = testGroup "Objects"
       "<1997-11-03 Mon 19:15>" =?>
       B.timestamp
         (TimestampData True ((1997,11,3, Just "Mon"), Just (19,15), Nothing, Nothing))
+
+    , "[2020-03-04 20:20]" =?>
+      B.timestamp
+        (TimestampData False ((2020,03,04, Nothing), Just (20,20), Nothing, Nothing))
+
+    , "[2020-03-04 0:20]" =?>
+      B.timestamp
+        (TimestampData False ((2020,03,04, Nothing), Just (0,20), Nothing, Nothing))
     ]
 
   , "Citation with corner case markups" ~: citation $
