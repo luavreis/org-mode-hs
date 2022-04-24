@@ -264,6 +264,7 @@ data OrgInline -- TODO rename to OrgObject
   | Src Text Text Text
   | Link LinkTarget [OrgInline]
   | Image LinkTarget
+  | Target Id
   | Macro -- ^ Org inline macro (e.g. @{{{poem(red,blue)}}}@)
       Text -- ^ Macro name (e.g. @"poem"@)
       [Text] -- ^ Arguments (e.g. @["red", "blue"]@)

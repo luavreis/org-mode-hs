@@ -313,6 +313,7 @@ renderOrgObject = \case
   (Src lang _ txt) -> one . X.Element "code" [("class", "src " <> lang)] <$> toSplice txt
   (Link tgt inl) -> callTemplate' "Link" (target tgt <> contents inl)
   (Image tgt) -> callTemplate' "Image" (target tgt)
+  (Target uid) -> pure [X.Element "a" [("id", uid)] []]
   Macro {} -> pure []
   where
     rawEl = one . X.Element "ToBeRemoved" [("xmlhtmlRaw", "")]

@@ -74,12 +74,15 @@ clearPendingAffiliated :: OrgParser ()
 clearPendingAffiliated = modify (\s -> s { orgStatePendingAffiliated = [] })
 
 withAffiliated :: (Affiliated -> a) -> OrgParser (F a)
-withAffiliated f = (gets orgStatePendingAffiliated
-                    <&> sequence
-                    <&> fmap keywordsFromList
-                    <&> fmap f)
-                   <* clearPendingAffiliated
+withAffiliated f = do
+  affs <- sequence <$> gets orgStatePendingAffiliated
+  (f . keywordsFromList <$> affs)
+    <$ clearPendingAffiliated
 
+withTargetDescription :: F OrgInlines -> OrgParser a -> OrgParser a
+withTargetDescription descr f = do
+  updateState \s -> s { orgStateTargetDescriptionCtx = Just descr }
+  f <* updateState \s -> s { orgStateTargetDescriptionCtx = Nothing }
 
 -- * Last char
 

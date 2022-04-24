@@ -230,13 +230,16 @@ inlSrc :: Text -> Text -> Text -> OrgInlines
 inlSrc name headers = one . Src name headers
 
 link :: LinkTarget -> OrgInlines -> OrgInlines
-link target = one . Link target . toList
+link tgt = one . Link tgt . toList
 
 uriLink :: Text -> Text -> OrgInlines -> OrgInlines
 uriLink protocol tgt = one . Link (URILink protocol tgt) . toList
 
 image :: LinkTarget -> OrgInlines
 image = one . Image
+
+target :: Id -> OrgInlines
+target = one . Target
 
 horizontalRule :: OrgElements
 horizontalRule = one HorizontalRule

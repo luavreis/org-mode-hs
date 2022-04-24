@@ -74,26 +74,31 @@ para = try do
 plainList :: OrgParser (F OrgElements)
 plainList = try do
   f <- withAffiliated B.list
-  (indent, fstItem) <- listItem
-  rest <- many . try $ guardIndent indent =<< listItem
+  ((indent, fstItem), i0) <- runStateT listItem 0
+  rest <- evalStateT (many . try $ guardIndent indent =<< listItem) i0
   let kind = listItemType <$> fstItem
       items = (:) <$> fstItem <*> sequence rest
   pure $ f <*> kind <*> items
   where
     guardIndent indent (i, l) = guard (indent == i) $> l
 
-listItem :: OrgParser (Int, F ListItem)
+listItem :: StateT Int OrgParser (Int, F ListItem)
 listItem = try do
-  (indent, bullet) <- unorderedBullet <|> counterBullet
+  (indent, bullet) <- lift $ unorderedBullet <|> counterBullet
   hspace1 <|> lookAhead (void newline')
-  cookie <- optional counterSet
-  box    <- optional checkbox
-  tag    <- case bullet of
-    Bullet _ -> toList <<$>> option mempty itemTag
-    _        -> pureF []
-  els <- liftA2 (<>) (blankline' $> mempty <|> indentedPara indent)
-                     (indentedElements indent)
-  pure (indent, ListItem bullet cookie box <$> tag <*> (toList <$> els))
+  cookie <- lift $ optional counterSet
+  box    <- lift $ optional checkbox
+  case cookie of
+    Just n0 -> put n0
+    Nothing -> modify (+ 1)
+  n <- B.plain . show <$> get
+  lift . withTargetDescription (pure n) do
+    tag    <- case bullet of
+      Bullet _ -> toList <<$>> option mempty itemTag
+      _        -> pureF []
+    els <- liftA2 (<>) (blankline' $> mempty <|> indentedPara indent)
+                       (indentedElements indent)
+    pure (indent, ListItem bullet cookie box <$> tag <*> (toList <$> els))
   where
     unorderedBullet = fmap (second Bullet) $
       try ((,) <$> spacesOrTabs  <*> satisfy \c -> c == '+' || c == '-') <|>
