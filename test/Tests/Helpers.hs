@@ -68,7 +68,7 @@ infix 1 =?>
 x =?> y = (x, Right y)
 
 infix 1 =!>
-(=!>) :: a -> b -> (a, Either b c)
+(=!>) :: a -> () -> (a, Either () c)
 x =!> y = (x, Left y)
 
 infix 4 =:

@@ -23,7 +23,7 @@ testObjects = testGroup "Objects"
         (TimestampData False ((2020,03,04, Nothing), Just (0,20), Nothing, Nothing))
     ]
 
-  , "Citation with corner case markups" ~: citation $
+  , "Citations" ~: citation $
     [
       "[cite:/foo/;/bar/@bef=bof=;/baz/]" =?>
       let ref = CiteReference
@@ -39,5 +39,45 @@ testObjects = testGroup "Objects"
           , citationSuffix = [ Italic [ Plain "baz" ] ]
           , citationReferences = [ref]
           }
+    ]
+
+  , "Targets" ~: target $
+    [
+      "<<this is a target>>" =?>
+      B.target "0"
+
+    , "<< not a target>>" =!> ()
+
+    , "<<not a target >>" =!> ()
+
+    , "<<this < is not a target>>" =!> ()
+
+    , "<<this \n is not a target>>" =!> ()
+
+    , "<<this > is not a target>>" =!> ()
+    ]
+
+  , "Subscripts and superscripts" ~: plainMarkupContext suscript $
+    [
+      "not a _suscript" =?>
+      B.text "not a _suscript"
+
+    , "not_{{suscript}" =?>
+      B.text "not_{{suscript}"
+
+    , "a_{balanced {suscript} ok}" =?>
+      B.plain "a" <> B.subscript (B.text "balanced {suscript} ok")
+
+    , "a^+strange,suscript," =?>
+      B.plain "a" <> B.superscript (B.text "+strange,suscript") <> B.plain ","
+
+    , "a^*suspicious suscript" =?>
+      B.plain "a" <> B.superscript (B.plain "*") <> B.plain "suspicious suscript"
+
+    , "a_bad,.,.,maleficent, one" =?>
+      B.plain "a" <> B.subscript (B.plain "bad,.,.,maleficent") <> B.text ", one"
+
+    , "a_some\\LaTeX" =?>
+      B.plain "a" <> B.subscript (B.plain "some" <> B.fragment "\\LaTeX")
     ]
   ]

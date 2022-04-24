@@ -140,7 +140,7 @@ entityOrFragment = mark' '\\' $ try $ do
     fragment = try $ do
       name <- someAsciiAlpha
       text <- (name <>) <$> option "" brackets
-      pureF $ B.fragment text
+      pureF $ B.fragment ("\\" <> text)
 
     brackets :: MonadParser m => m Text
     brackets = try $ do
@@ -420,6 +420,8 @@ target :: Marked OrgParser (F OrgInlines)
 target = mark' '<' $ try do
   _ <- string "<<"
   str <- takeWhile1P (Just "dedicated target") (\c -> c /= '<' && c /= '>' && c /= '\n')
+  guard (not (isSpace $ T.head str))
+  guard (not (isSpace $ T.last str))
   _ <- string ">>"
   descr <- fromMaybe (pure $ B.text "No description for this link") <$>
            gets orgStateTargetDescriptionCtx
@@ -431,6 +433,8 @@ target = mark' '<' $ try do
 
 suscript :: Marked OrgParser (F OrgInlines)
 suscript = mark "_^" $ try do
+  lchar <- gets orgStateLastChar
+  for_ lchar $ guard . not . isSpace
   start <- satisfy \c -> c == '_' || c == '^'
   contents <- asterisk <|> balanced <|> plain
   if start == '_'

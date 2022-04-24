@@ -31,7 +31,8 @@ testElements = testGroup "Elements"
       |]
         =?> B.para mempty ("with " <> B.italic "wrapped\nmarkup" <> " and markup "
                           <> B.bold "at end" <> B.softbreak <> B.verbatim "at start"
-                          <> " but not~here~ and\nnot _here_right.")
+                          <> " but not~here~ and\nnot _here" <> B.subscript (B.plain "right")
+                          <> B.plain ".")
     ]
 
   -- Add case for affiliated keywords with:
