@@ -116,7 +116,7 @@ doubleQuoted = markup B.doubleQuoted '"'
 
 -- | An endline character that can be treated as a space, not a line break.
 endline ::  Marked OrgParser (F OrgInlines)
-endline = mark "\n" $ try $
+endline = mark' '\n' $ try $
   newlineAndClear
   *> hspace
   $> pure B.softbreak
@@ -124,7 +124,7 @@ endline = mark "\n" $ try $
 -- * Entities and LaTeX fragments
 
 entityOrFragment :: Marked OrgParser (F OrgInlines)
-entityOrFragment = mark "\\" $ try $ do
+entityOrFragment = mark' '\\' $ try $ do
   _ <- char '\\'
   entity <|> fragment
   where
@@ -148,7 +148,7 @@ entityOrFragment = mark "\\" $ try $ do
       pure $ open `T.cons` str `T.snoc` close
 
 mathFragment :: Marked OrgParser (F OrgInlines)
-mathFragment = mark "\\" $ try $ do
+mathFragment = mark' '\\' $ try $ do
   _ <- char '\\'
   open <- satisfy (\c -> c == '(' || c == '[')
   str <- findChars2 '\\' (if open == '(' then ')' else ']')
@@ -158,7 +158,7 @@ mathFragment = mark "\\" $ try $ do
     else B.dispMath str
 
 texMathFragment :: Marked OrgParser (F OrgInlines)
-texMathFragment = mark "$" $ try $ do
+texMathFragment = mark' '$' $ try $ do
   display <|> inline
   where
     display = try $ do
@@ -198,7 +198,7 @@ texMathFragment = mark "$" $ try $ do
 -- * Export snippets
 
 exportSnippet :: Marked OrgParser (F OrgInlines)
-exportSnippet = mark "@" . try $ do
+exportSnippet = mark' '@' . try $ do
   _ <- string "@@"
   backend <- takeWhile1P (Just "export snippet backend")
              (\c -> isAsciiAlpha c || isDigit c || c == '-')
@@ -211,7 +211,7 @@ exportSnippet = mark "@" . try $ do
 -- The following code for org-cite citations was adapted and improved upon pandoc's.
 
 citation :: Marked OrgParser (F OrgInlines)
-citation = mark "[" $
+citation = mark' '[' $
   B.citation <<$>> withBalancedContext '[' ']' mempty orgCite
 
 -- | A citation in org-cite style
@@ -301,7 +301,7 @@ orgCiteKeyChar c =
 -- * Inline Babel calls
 
 inlBabel :: Marked OrgParser (F OrgInlines)
-inlBabel = mark "c" . try $ do
+inlBabel = mark' 'c' . try $ do
   _ <- string "call_"
   name <- takeWhile1P (Just "babel call name")
           (\c -> not (isSpace c) && c `notElem` ['[', ']', '(', ')'])
@@ -317,7 +317,7 @@ inlBabel = mark "c" . try $ do
 -- * Inline source blocks
 
 inlSrc :: Marked OrgParser (F OrgInlines)
-inlSrc = mark "s" . try $ do
+inlSrc = mark' 's' . try $ do
   _ <- string "src_"
   name <- takeWhile1P (Just "babel call name")
           (\c -> not (isSpace c) && c /= '{' && c /= '[')
@@ -332,14 +332,14 @@ inlSrc = mark "s" . try $ do
 -- * Line breaks
 
 linebreak :: Marked OrgParser (F OrgInlines)
-linebreak =  mark "\\" . try $
+linebreak =  mark' '\\' . try $
   pure B.linebreak <$ string "\\\\" <* hspace <* newlineAndClear <* hspace
 
 
 -- * Links
 
 angleLink :: Marked OrgParser (F OrgInlines)
-angleLink = mark "<" . try $ do
+angleLink = mark' '<' . try $ do
   _ <- char '<'
   protocol <- manyAsciiAlpha
   _ <- char ':'
@@ -359,10 +359,10 @@ regularLinkOrImage = mark "[" . try $ do
     Nothing -> do
       _ <- char ']'
       return $ do
-        (target, alias) <- linkToTarget str
-        pure $ if isImgTarget target
-               then B.image target
-               else B.link target alias
+        (tgt, alias) <- linkToTarget str
+        pure $ if isImgTarget tgt
+               then B.image tgt
+               else B.link tgt alias
   <* setLastChar (Just ']')
   where
     linkTarget :: MonadParser m => m Text
@@ -411,6 +411,15 @@ isImgTarget (URILink protocol rest) = hasImgExtension && (protocol `elem` imgPro
    imgProtocols = [ "file", "http", "https", "attachment" ]
 isImgTarget _ = False
 
+target :: Marked OrgParser (F OrgInlines)
+target = mark' '<' $ try do
+  _ <- string "<<"
+  str <- takeWhile1P (Just "dedicated target") (\c -> c /= '<' && c /= '>' && c /= '\n')
+  _ <- string ">>"
+  descr <- fromMaybe (pure $ B.text "No description for this link") <$>
+           gets orgStateTargetDescriptionCtx
+  uid <- registerTarget str descr
+  pureF $ B.target uid
 
 -- * Macros
 

@@ -26,8 +26,9 @@ defaultOrgOptions = OrgOptions
 
 -- | Org-mode parser state
 data OrgParserState = OrgParserState
-  { orgStateInternalTargets      :: Map Text (Id, F OrgInlines) -- ^ Key is target name and value is (type, default alias)
+  { orgStateInternalTargets      :: Map Text (Id, F OrgInlines) -- ^ Key is target name and value is (anchor, default alias)
   , orgStatePendingAffiliated    :: [F (KeywordKey, KeywordValue)]
+  , orgStateTargetDescriptionCtx :: Maybe (F OrgInlines)
   , orgStateOptions              :: OrgOptions
   , orgStateIdStack              :: [Id]
   , orgStateLastChar             :: Maybe Char
@@ -46,6 +47,7 @@ defaultState :: OrgParserState
 defaultState =  OrgParserState
   { orgStateInternalTargets      = mempty
   , orgStatePendingAffiliated    = mempty
+  , orgStateTargetDescriptionCtx = Nothing
   , orgStateOptions              = defaultOrgOptions
   , orgStateIdStack              = fmap show [0::Int ..]
   , orgStateLastChar             = Nothing

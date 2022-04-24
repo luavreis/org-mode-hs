@@ -101,7 +101,7 @@ In the spec terms (see below the table for other features), the following compon
 | Macro               | X                |       | n.a.               |
 | Citation            | X                | X     | (WIP via citeproc) |
 | RadioTarget         |                  |       |                    |
-| Target              |                  |       |                    |
+| Target              | X                | X     | X                  |
 | StatisticsCookie    |                  |       |                    |
 | Subscript           | X                |       | X                  |
 | Superscript         | X                |       | X                  |
@@ -120,7 +120,7 @@ But my motto for writing this parser is: information useful for all exporters sh
 |--------------------------------------------+------------------------------------------------------|
 | ​=#+include:= keywords                      | no                                                   |
 | Src/example blocks switches and references | yes                                                  |
-| Resolving all inner links                  | yes                                                  |
+| Resolving all inner links                  | some                                                 |
 | Parsing image links into =Image=​s          | yes                                                  |
 | Pre-processing radio links                 | no; conformant implementation requires parsing twice |
 | Per-file TODO keywords                     | no                                                   |
