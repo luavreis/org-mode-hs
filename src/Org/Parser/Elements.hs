@@ -92,8 +92,8 @@ listItem = try do
     Just n0 -> put n0
     Nothing -> modify (+ 1)
   n <- B.plain . show <$> get
-  lift . withTargetDescription (pure n) do
-    tag    <- case bullet of
+  lift $ withTargetDescription (pure n) do
+    tag <- case bullet of
       Bullet _ -> toList <<$>> option mempty itemTag
       _        -> pureF []
     els <- liftA2 (<>) (blankline' $> mempty <|> indentedPara indent)

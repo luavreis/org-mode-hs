@@ -27,6 +27,7 @@ minimalSet =
           , texMathFragment
           , singleQuoted
           , doubleQuoted
+          , suscript
           ]
 
 standardSet ::  Marked OrgParser (F OrgInlines)
@@ -38,6 +39,7 @@ standardSet =
           , inlBabel
           , inlSrc
           , linebreak
+          , target
           , angleLink
           , regularLinkOrImage
           ]
@@ -187,7 +189,7 @@ texMathFragment = mark' '$' $ try $ do
     singleChar = try $ do
       c <- satisfy (\x -> not (isSpace x) && x `notMember` allowedCharsSet)
       post
-      pure $ T.singleton c
+      pure $ one c
 
     allowedCharsSet :: Set Char
     allowedCharsSet = fromList ['.',',','?',';','"']
@@ -411,6 +413,9 @@ isImgTarget (URILink protocol rest) = hasImgExtension && (protocol `elem` imgPro
    imgProtocols = [ "file", "http", "https", "attachment" ]
 isImgTarget _ = False
 
+
+-- * Targets and radio targets
+
 target :: Marked OrgParser (F OrgInlines)
 target = mark' '<' $ try do
   _ <- string "<<"
@@ -420,6 +425,35 @@ target = mark' '<' $ try do
            gets orgStateTargetDescriptionCtx
   uid <- registerTarget str descr
   pureF $ B.target uid
+
+
+-- * Subscripts and superscripts
+
+suscript :: Marked OrgParser (F OrgInlines)
+suscript = mark "_^" $ try do
+  start <- satisfy \c -> c == '_' || c == '^'
+  contents <- asterisk <|> balanced <|> plain
+  if start == '_'
+    then pure $ B.subscript <$> contents
+    else pure $ B.superscript <$> contents
+  where
+    asterisk = pure . B.plain . one <$> char '*'
+
+    balanced = withBalancedContext '{' '}' (const $ All True) $
+      plainMarkupContext minimalSet
+
+    sign = pure <$> option mempty (B.plain . one <$> oneOf ['+', '-'])
+
+    plain = liftA2 (<>) sign $ withMContext plainEnd $
+      plainMarkupContext entityOrFragment
+
+    plainEnd :: Marked OrgParser ()
+    plainEnd = Marked (Any . not . isAlphaNum)
+               ["non-alphanum chars"] $ try do
+      lookAhead $ eof
+        <|> try (some (oneOf [',', '.', '\\']) *> notFollowedBy (satisfy isAlphaNum))
+        <|> void (noneOf [',', '.', '\\'])
+
 
 -- * Macros
 

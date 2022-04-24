@@ -103,8 +103,8 @@ In the spec terms (see below the table for other features), the following compon
 | RadioTarget         |                  |       |                    |
 | Target              | X                | X     | X                  |
 | StatisticsCookie    |                  |       |                    |
-| Subscript           | X                |       | X                  |
-| Superscript         | X                |       | X                  |
+| Subscript           | X                | X     | X                  |
+| Superscript         | X                | X     | X                  |
 | TableCell           |                  |       |                    |
 | Timestamp           | X                | X     | X                  |
 | Plain               | X                | X     | X                  |

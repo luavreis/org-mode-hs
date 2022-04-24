@@ -130,8 +130,6 @@ pureF = pure . pure
 
 -- * Marked parsers
 
-type CharAnyAp = Char -> Any
-
 data Marked m a = Marked
   { getMarks :: Char -> Any
   , getDescr :: [String]
