@@ -9,6 +9,7 @@ import Citeproc hiding (Citation, toText)
 import qualified Citeproc as C
 import Data.Aeson (decode)
 import qualified Data.Map as M
+import System.FilePath (isAbsolute, (</>))
 
 toCslJson :: [OrgInline] -> CslJson Text
 toCslJson [] = CslEmpty
@@ -132,27 +133,37 @@ processCitations opt sty lang refs doc =
       Nothing -> Nothing
     render = renderCslJson True locale
 
-loadStyle :: FilePath -> IO (Style (CslJson Text))
+loadStyle :: MonadIO m => FilePath -> m (Style (CslJson Text))
 loadStyle fp = do
   xml <- readFileText fp
   parseStyle (\_ -> pure "") xml >>= \case
     Left e -> error $ prettyCiteprocError e
     Right s -> pure s
 
-loadBibliography :: FilePath -> IO [Reference (CslJson Text)]
+loadBibliography :: MonadIO m => FilePath -> m [Reference (CslJson Text)]
 loadBibliography fp = do
   json <- readFileLBS fp
   case decode json of
     Just r -> pure r
     Nothing -> error $ "Could not parse CSL JSON bibliography at " <> toText fp
 
-processCitationsInDoc :: CiteprocOptions -> [Text] -> Maybe Text -> OrgDocument -> IO OrgDocument
-processCitationsInDoc cpOpt ocGlobalBib defStyle doc = do
-  let bibFp = ocGlobalBib ++
-              mapMaybe justText (lookupKeyword "bibliography" doc)
+processCitationsInDoc ::
+  MonadIO m =>
+  CiteprocOptions ->
+  FilePath ->
+  [FilePath] ->
+  Maybe FilePath ->
+  OrgDocument ->
+  m OrgDocument
+processCitationsInDoc cpOpt root ocGlobalBib defStyle doc = do
+  let bibFp = (ocGlobalBib ++) $
+              lookupKeyword "bibliography" doc
+              & mapMaybe justText
+              & map (makeAbsolute . toString)
       styFp = (lookupKeyword "cite_export" doc
                & mapMaybe justText
-               & find ((Just "" /=) . fmap T.strip . T.stripPrefix "csl "))
+               & find (maybe False (("" /=) . T.strip) . T.stripPrefix "csl ")
+               & fmap (makeAbsolute . toString))
               <|> defStyle
       lang = case lookupKeyword "language" doc
                   & mapMaybe justText
@@ -173,5 +184,7 @@ processCitationsInDoc cpOpt ocGlobalBib defStyle doc = do
         x -> x
   pure doc''
   where
+    makeAbsolute fp | isAbsolute fp = root </> fp
+                    | otherwise = fp
     justText (ValueKeyword _ t) = Just t
     justText _ = Nothing
