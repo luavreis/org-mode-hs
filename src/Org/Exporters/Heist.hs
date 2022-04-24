@@ -142,11 +142,11 @@ spliceOrEmpty x f = maybe (pure []) f x
 
 kwSplice :: Affiliated -> Text -> Splices (Splice Exporter)
 kwSplice kws name =
- name ##
-  case lookup (T.toLower name) kws of
-    Just (ValueKeyword _ txt) -> toSplice txt
-    Just (ParsedKeyword _ c) -> toSplice c
-    _ -> pure []
+  name ##
+    case lookup (T.toLower name) kws of
+      Just (ValueKeyword _ txt) -> toSplice txt
+      Just (ParsedKeyword _ c) -> toSplice c
+      _ -> pure []
 
 -- * Document
 
@@ -221,6 +221,10 @@ documentSplices :: OrgDocument -> Splices (Splice Exporter)
 documentSplices doc = do
   foldMap (kwSplice $ keywordsFromList $ documentKeywords doc)
           ["Language", "Title", "Date", "Author"]
+  "TitleText" ## textSplice . foldMap X.nodeText =<<
+    case viaNonEmpty sconcat (lookupKeyword "title" doc) of
+      Just (ParsedKeyword _ o) -> toSplice o
+      _ -> pure []
   contents (documentContent doc)
   "Footnotes" ## do
     fnRefs <- snd <$> gets footnoteCounter -- TODO: is this run in the right order?? in the end?
@@ -304,7 +308,7 @@ renderOrgObject = \case
   (ExportSnippet "html" c) -> rawEl <$> toSplice c
   ExportSnippet {} -> pure []
   (FootnoteRef label) -> callTemplate' "FootnoteRef" (footnoteRef label)
-  (Cite cit) -> callTemplate' "Citation" (citation cit)
+  (Cite _) -> textSplice "(unresolved citation)"
   InlBabelCall {} -> pure []
   (Src lang _ txt) -> one . X.Element "code" [("class", "src " <> lang)] <$> toSplice txt
   (Link tgt inl) -> callTemplate' "Link" (target tgt <> contents inl)
@@ -327,10 +331,6 @@ target tgt = do
       if takeExtension file == ".org"
       then file -<.> ".html"
       else file
-
-
-citation :: Citation -> Splices (Splice n)
-citation = error "not implemented"
 
 footnoteRef :: Text -> Splices (Splice Exporter)
 footnoteRef label = do
