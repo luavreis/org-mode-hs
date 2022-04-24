@@ -95,7 +95,9 @@ test-suite test
                    , pretty
   other-modules:     Org.Types
                      Org.Builder
+                     Org.Walk
                      Org.Exporters.Heist
+                     Org.Exporters.Citeproc
                      Org.Parser.Document
                      Org.Parser.Elements
                      Org.Parser.Objects

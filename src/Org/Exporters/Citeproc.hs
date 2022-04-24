@@ -43,6 +43,7 @@ toCslJson (x : xs) = to x <> toCslJson xs
     to InlBabelCall{} = CslEmpty
     to Image{} = CslEmpty
     to Macro{} = CslEmpty
+    to Target{} = CslEmpty
 
 data CiteStyle
   = Author
