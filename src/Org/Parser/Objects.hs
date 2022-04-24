@@ -458,7 +458,7 @@ parseTimestamp = try $ do
       year  <- number 4 <* char '-'
       month <- number 2 <* char '-'
       day   <- number 2
-      dayName <- optional $ do
+      dayName <- optional $ try do
         hspace1
         takeWhile1P (Just "dayname characters") isLetter
       pure (year, month, day, dayName)

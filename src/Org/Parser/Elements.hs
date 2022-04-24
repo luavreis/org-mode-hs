@@ -24,7 +24,7 @@ commentLine = try do
   hspace
   _ <- char '#'
   _ <- blankline' $> ""
-       <|> char ' ' *> anyLine
+       <|> char ' ' *> anyLine'
   pure mempty
 
 elements :: OrgParser (F OrgElements)
