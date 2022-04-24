@@ -64,5 +64,10 @@ https://orgmode.(o)rg
 
 =DESCRIPTION=: it's not about the balancement of square brackets. You can't balance =[[= with =]]= inside, try it. Brakets can appear freely as long as they don't appear together as =]]=.
 
+** Subscripts/superscripts
+Markup is allowed inside super/subscripts when enclosed in brackets.
+
+SIGN should be optional.
+
 ** Markup
 

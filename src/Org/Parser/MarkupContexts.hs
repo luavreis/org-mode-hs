@@ -91,4 +91,4 @@ markupContext f elems = go
           -- traceM $ "parsed char: " ++ show c
           setLastChar (Just c)
           rest <- go
-          pure $ f (T.singleton c) <> rest
+          pure $ f (one c) <> rest
