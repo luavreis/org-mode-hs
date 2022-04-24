@@ -27,14 +27,6 @@ Also, a big inconsistency related to braces: =\alpha{}= is parsed entirely as an
 ** Export snippets
 In =BACKEND=: "zero or more alphanumeric..." should be ONE or more.
 
-There is something broken in Org. <<bugs>> The following is parsed as an export snippet AND two nonempty paragraphs!
-
-#+begin_src org
-@@html:fo aksjdaksjd ajs d
-
-askdjas aksj daj sao@@
-#+end_src
-
 ** Inline Babel Calls
 =ARGUMENTS= is NOT optional, and in "Opening and closing square brackets must be balanced", for arguments parenthesis should be balanced not square brackets.
 
