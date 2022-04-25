@@ -22,7 +22,7 @@ common common-options
                    , relude
                    , aeson
                    , bytestring
-                   , citeproc
+                   , citeproc >= 0.7
                    , containers
                    , filepath
                    , heist
