@@ -15,8 +15,10 @@ module Org.Exporters.Heist
   , Exporter
   , Spliceable
   , toSplice
+  , module Org.Exporters.Common
   ) where
 import Data.Map.Syntax ((##))
+import Org.Exporters.Common
 import Heist
 import Heist.Interpreted
 import Org.Types
@@ -96,14 +98,17 @@ loadOrgTemplates =
 
 data ExporterState = ExporterState
   { footnoteCounter :: (Int, Map Text Int)
-  , orgExportHeadlineLevels :: Int
+  , exporterSettings :: ExporterSettings
   }
 
 defaultExporterState :: ExporterState
 defaultExporterState = ExporterState
   { footnoteCounter = (1, mempty)
-  , orgExportHeadlineLevels = 3
+  , exporterSettings = defaultExporterSettings
   }
+
+getSetting :: MonadState ExporterState f => (ExporterSettings -> b) -> f b
+getSetting f = f <$> gets exporterSettings
 
 type MonadExporter n = MonadState ExporterState n
 
@@ -155,29 +160,42 @@ removeToBeRemoved =
   replace "</ToBeRemoved>" ("" :: LByteString) .
   replace "<ToBeRemoved xmlhtmlRaw>" ("" :: LByteString)
 
-renderSpliceableToDoc :: Spliceable a => HeistState Exporter -> a -> LByteString
-renderSpliceableToDoc st obj =
+renderSpliceableToDoc ::
+  Spliceable a =>
+  HeistState Exporter ->
+  Maybe ExporterSettings ->
+  a -> LByteString
+renderSpliceableToDoc st exst obj =
   evalHeistT (toSplice obj) (X.TextNode "") st
   & flip evalState defaultExporterState
+  { exporterSettings = fromMaybe defaultExporterSettings exst }
   & trimSpaces True
   & X.HtmlDocument X.UTF8 (Just $ X.DocType "html" X.NoExternalID X.NoInternalSubset)
   & X.render
   & toLazyByteString
   & removeToBeRemoved
 
-renderSpliceable :: Spliceable a => HeistState Exporter -> a -> LByteString
-renderSpliceable st obj =
+renderSpliceable ::
+  Spliceable a =>
+  HeistState Exporter ->
+  Maybe ExporterSettings ->
+  a -> LByteString
+renderSpliceable st exst obj =
   evalHeistT (toSplice obj) (X.TextNode "") st
   & flip evalState defaultExporterState
+  { exporterSettings = fromMaybe defaultExporterSettings exst }
   & trimSpaces True
   & X.renderHtmlFragment X.UTF8
   & toLazyByteString
   & removeToBeRemoved
 
-renderSpliceableIO :: Spliceable a => a -> IO (Either [String] LByteString)
-renderSpliceableIO obj =
+renderSpliceableIO ::
+  Spliceable a =>
+  Maybe ExporterSettings ->
+  a -> IO (Either [String] LByteString)
+renderSpliceableIO exst obj =
   initHeist loadOrgTemplates
-  <&> second (`renderSpliceable` obj)
+  <&> second (\st -> renderSpliceable st exst obj)
 
 renderHtmlIO :: ByteString -> OrgDocument -> IO (Either [String] LByteString)
 renderHtmlIO tplname doc =
@@ -240,9 +258,10 @@ documentSplices doc = do
 
 instance Spliceable OrgSection where
   toSplice section = do
-    hlevels <- gets orgExportHeadlineLevels
+    hlevels <- getSetting orgExportHeadlineLevels
+    hshift <- getSetting headlineLevelShift
     callTemplate' "Section" do
-      "Headline" ## headline hlevels $ runChildrenWith do
+      "Headline" ## headline hlevels hshift $ runChildrenWith do
         "TodoKw" ## spliceOrEmpty (sectionTodo section) todo
         "Priority" ## spliceOrEmpty (sectionPriority section) \p ->
           runChildrenWith $
@@ -259,10 +278,11 @@ instance Spliceable OrgSection where
       todost Todo = "todo"
       priority (LetterPriority c) = T.singleton c
       priority (NumericPriority n) = show n
-      headline hlevels inner =
+      headline hlevels hshift inner =
         if sectionLevel section > hlevels
         then (<> element "br" []) <$> inner
-        else element ("h" <> show (sectionLevel section)) <$> inner
+        else element ("h" <> show (hshift + sectionLevel section))
+             <$> inner
 
 -- * Contents
 
@@ -276,7 +296,7 @@ instance {-# OVERLAPPABLE #-} (Spliceable a, Spliceable b) => Spliceable (a, b) 
 
 children :: [OrgSection] -> Splice Exporter
 children childs = do
-  hlevels <- gets orgExportHeadlineLevels
+  hlevels <- getSetting orgExportHeadlineLevels
   spliceOrEmpty (viaNonEmpty (sectionLevel . head) childs) \ level ->
     if level > hlevels
     then element "ol" <$> mapM (fmap (X.Element "li" []) . toSplice) childs
@@ -289,7 +309,7 @@ instance Spliceable OrgInline where
 
 renderOrgObject :: OrgInline -> Splice Exporter
 renderOrgObject = \case
-  (Plain txt) -> toSplice txt
+  (Plain txt) -> toSplice (doSpecialStrings txt) -- TODO
   SoftBreak -> textSplice " "
   LineBreak -> pure $ element "br" []
   (NBSpace n) -> toSplice (T.replicate n "&nbsp;")
