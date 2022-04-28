@@ -18,26 +18,23 @@ Source-repository    head
 
 common common-options
   default-language:  Haskell2010
-  build-depends:     base >= 4.9
-                   , relude
-                   , aeson
-                   , bytestring
+  build-depends:     base >= 4.14
+                   , aeson >= 1.4
+                   , bytestring >= 0.10
                    , citeproc >= 0.7
-                   , containers
-                   , filepath
-                   , heist
-                   , map-syntax
-                   , megaparsec >= 9
-                   , pandoc-types
-                   , parser-combinators
-                   , skylighting
-                   , slugify
-                   , stringsearch
-                   , syb
-                   , time >= 1.10
+                   , containers >= 0.6
+                   , filepath >= 1.4
+                   , heist >= 1.1
+                   , map-syntax >= 0.3
+                   , megaparsec >= 9.2
+                   , pandoc-types >= 1.22
+                   , relude >= 0.7
+                   , slugify >= 0.1
+                   , stringsearch >= 0.3
+                   , syb >= 0.7
                    , text >= 1.2
-                   , transformers >= 0.5
-                   , xmlhtml
+                   , time >= 1.10
+                   , xmlhtml >= 0.2
   mixins:            base hiding (Prelude)
                    , relude (Relude as Prelude)
                    , relude
@@ -46,6 +43,7 @@ common common-options
     TupleSections
     OverloadedStrings
     ViewPatterns
+    ImportQualifiedPost
     MultiWayIf
     LambdaCase
     ScopedTypeVariables
@@ -60,6 +58,7 @@ library
                      Org.Builder
                      Org.Walk
                      Org.Parser
+                     Org.Exporters.Common
                      Org.Exporters.Heist
                      Org.Exporters.Citeproc
   other-modules:     Org.Parser.Common
@@ -78,7 +77,7 @@ executable org-parser
   hs-source-dirs:    app
   main-is:           org-parser.hs
   build-depends:     org-parser
-                   , optparse-applicative
+                   , optparse-applicative >= 0.17
   ghc-options:       -threaded
 
 test-suite test
@@ -87,15 +86,16 @@ test-suite test
   hs-source-dirs:    src
                      test
   main-is:           test-org-parser.hs
-  build-depends:     Diff
-                   , tasty
-                   , tasty-hunit
-                   , neat-interpolation
-                   , pretty-simple
-                   , pretty
+  build-depends:     Diff >= 0.4
+                   , tasty >= 1.4
+                   , tasty-hunit >= 0.10
+                   , neat-interpolation >= 0.5
+                   , pretty >= 1.1
+                   , pretty-simple >= 4.1
   other-modules:     Org.Types
                      Org.Builder
                      Org.Walk
+                     Org.Exporters.Common
                      Org.Exporters.Heist
                      Org.Exporters.Citeproc
                      Org.Parser.Document
