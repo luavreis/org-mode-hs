@@ -3,7 +3,9 @@
 
 module Org.Exporters.Heist
   ( loadOrgTemplates
+  , renderSplice
   , renderSpliceable
+  , renderSpliceToDoc
   , renderSpliceableToDoc
   , renderSpliceableIO
   , renderHtml
@@ -160,38 +162,50 @@ removeToBeRemoved =
   replace "</ToBeRemoved>" ("" :: LByteString) .
   replace "<ToBeRemoved xmlhtmlRaw>" ("" :: LByteString)
 
-renderSpliceableToDoc ::
-  Spliceable a =>
+renderSpliceToDoc ::
   HeistState Exporter ->
-  Maybe ExporterSettings ->
-  a -> LByteString
-renderSpliceableToDoc st exst obj =
-  evalHeistT (toSplice obj) (X.TextNode "") st
+  ExporterSettings ->
+  Splice Exporter -> LByteString
+renderSpliceToDoc st exst spl =
+  evalHeistT spl (X.TextNode "") st
   & flip evalState defaultExporterState
-  { exporterSettings = fromMaybe defaultExporterSettings exst }
+  { exporterSettings = exst }
   & trimSpaces True
   & X.HtmlDocument X.UTF8 (Just $ X.DocType "html" X.NoExternalID X.NoInternalSubset)
   & X.render
   & toLazyByteString
   & removeToBeRemoved
 
-renderSpliceable ::
+renderSpliceableToDoc ::
   Spliceable a =>
   HeistState Exporter ->
-  Maybe ExporterSettings ->
+  ExporterSettings ->
   a -> LByteString
-renderSpliceable st exst obj =
-  evalHeistT (toSplice obj) (X.TextNode "") st
+renderSpliceableToDoc st exst obj = renderSpliceToDoc st exst (toSplice obj)
+
+renderSplice ::
+  HeistState Exporter ->
+  ExporterSettings ->
+  Splice Exporter -> LByteString
+renderSplice st exst spl =
+  evalHeistT spl (X.TextNode "") st
   & flip evalState defaultExporterState
-  { exporterSettings = fromMaybe defaultExporterSettings exst }
+  { exporterSettings = exst }
   & trimSpaces True
   & X.renderHtmlFragment X.UTF8
   & toLazyByteString
   & removeToBeRemoved
 
+renderSpliceable ::
+  Spliceable a =>
+  HeistState Exporter ->
+  ExporterSettings ->
+  a -> LByteString
+renderSpliceable st exst obj = renderSplice st exst (toSplice obj)
+
 renderSpliceableIO ::
   Spliceable a =>
-  Maybe ExporterSettings ->
+  ExporterSettings ->
   a -> IO (Either [String] LByteString)
 renderSpliceableIO exst obj =
   initHeist loadOrgTemplates
