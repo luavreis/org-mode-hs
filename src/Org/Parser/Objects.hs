@@ -171,12 +171,13 @@ texMathFragment = mark' '$' $ try $ do
 
     post = do
       _ <- char '$'
-      void . lookAhead $
-        satisfy (\x -> isPunctuation x || isSpace x || x == '"')
+      eof <|> (void . lookAhead $
+               satisfy (\x -> isPunctuation x || isSpace x || x == '"'))
 
     inline = try $ do
       lchar <- gets orgStateLastChar
       for_ lchar $ guard . (/= '$')
+      _ <- char '$'
       str <- singleChar <|> moreChars
       pureF $ B.inlMath str
 
@@ -187,12 +188,12 @@ texMathFragment = mark' '$' $ try $ do
       pure str
 
     singleChar = try $ do
-      c <- satisfy (\x -> not (isSpace x) && x `notMember` allowedCharsSet)
+      c <- satisfy (\x -> not (isSpace x) && x `notMember` disallowedCharsSet)
       post
       pure $ one c
 
-    allowedCharsSet :: Set Char
-    allowedCharsSet = fromList ['.',',','?',';','"']
+    disallowedCharsSet :: Set Char
+    disallowedCharsSet = fromList ['.',',','?',';','"']
 
     border1 c = not (isSpace c) && c `notElem` (".,;$" :: String)
     border2 c = not (isSpace c) && c `notElem` (".,$" :: String)

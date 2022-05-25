@@ -43,8 +43,7 @@ testObjects = testGroup "Objects"
 
   , "Targets" ~: target $
     [
-      "<<this is a target>>" =?>
-      B.target "0"
+      "<<this is a target>>" =?> B.target "0"
 
     , "<< not a target>>" =!> ()
 
@@ -57,27 +56,35 @@ testObjects = testGroup "Objects"
     , "<<this > is not a target>>" =!> ()
     ]
 
+  , "TeX Math Fragments" ~: plainMarkupContext texMathFragment $
+    [
+      "$e = mc^2$" =?> B.inlMath "e = mc^2"
+
+    , "$$foo bar$" =?> "$$foo bar$"
+
+    , "$foo bar$a" =?> "$foo bar$a"
+
+    , "($foo bar$)" =?> "(" <> B.inlMath "foo bar" <> ")"
+
+    , "This is $1 buck, not math ($1! so cheap!)" =?> "This is $1 buck, not math ($1! so cheap!)"
+
+    , "two$$always means$$math" =?> "two" <> B.dispMath "always means" <> "math"
+    ]
+
   , "Subscripts and superscripts" ~: plainMarkupContext suscript $
     [
-      "not a _suscript" =?>
-      B.text "not a _suscript"
+      "not a _suscript" =?> "not a _suscript"
 
-    , "not_{{suscript}" =?>
-      B.text "not_{{suscript}"
+    , "not_{{suscript}" =?> "not_{{suscript}"
 
-    , "a_{balanced {suscript} ok}" =?>
-      B.plain "a" <> B.subscript (B.text "balanced {suscript} ok")
+    , "a_{balanced {suscript} ok}" =?> "a" <> B.subscript "balanced {suscript} ok"
 
-    , "a^+strange,suscript," =?>
-      B.plain "a" <> B.superscript (B.text "+strange,suscript") <> B.plain ","
+    , "a^+strange,suscript," =?> "a" <> B.superscript "+strange,suscript" <> ","
 
-    , "a^*suspicious suscript" =?>
-      B.plain "a" <> B.superscript (B.plain "*") <> B.plain "suspicious suscript"
+    , "a^*suspicious suscript" =?> "a" <> B.superscript "*" <> "suspicious suscript"
 
-    , "a_bad,.,.,maleficent, one" =?>
-      B.plain "a" <> B.subscript (B.plain "bad,.,.,maleficent") <> B.text ", one"
+    , "a_bad,.,.,maleficent, one" =?> "a" <> B.subscript "bad,.,.,maleficent" <> ", one"
 
-    , "a_some\\LaTeX" =?>
-      B.plain "a" <> B.subscript (B.plain "some" <> B.fragment "\\LaTeX")
+    , "a_some\\LaTeX" =?> "a" <> B.subscript ("some" <> B.fragment "\\LaTeX")
     ]
   ]
