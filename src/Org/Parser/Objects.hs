@@ -50,6 +50,9 @@ plainMarkupContext = markupContext (pure . B.plain)
 newlineAndClear :: OrgParser Char
 newlineAndClear = newline <* clearLastChar
 
+newlineAndClear' :: OrgParser ()
+newlineAndClear' = newline' <* clearLastChar
+
 emphasisPreChars :: String
 emphasisPreChars = "-\t ('\"{\8203"
 
@@ -336,7 +339,7 @@ inlSrc = mark' 's' . try $ do
 
 linebreak :: Marked OrgParser (F OrgInlines)
 linebreak =  mark' '\\' . try $
-  pure B.linebreak <$ string "\\\\" <* hspace <* newlineAndClear <* hspace
+  pure B.linebreak <$ string "\\\\" <* hspace <* newlineAndClear' <* hspace
 
 
 -- * Links

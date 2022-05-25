@@ -87,4 +87,12 @@ testObjects = testGroup "Objects"
 
     , "a_some\\LaTeX" =?> "a" <> B.subscript ("some" <> B.fragment "\\LaTeX")
     ]
+
+  , "Line breaks" ~: plainMarkupContext linebreak $
+    [
+      "this is a \\\\  \t\n\
+      \line break" =?> "this is a " <> B.linebreak <> "line break"
+
+    , "also linebreak \\\\" =?> "also linebreak " <> B.linebreak
+    ]
   ]
