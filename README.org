@@ -10,9 +10,6 @@
 - [[#exporters][Exporters]]
   - [[#heist-html-exporter][Heist HTML exporter]]
 - [[#comparasion-to-pandoc][Comparasion to Pandoc]]
-- [[#ideas-for-things-to-be-done][Ideas for things to be done]]
-  - [[#elisp-variables][Elisp variables]]
-  - [[#emacs-queries-in-batch-or-client-mode][Emacs queries in batch or client mode]]
 
 * Demo
 [[demo/demo.png]]
@@ -27,7 +24,7 @@ Unfortunately there is no CLI yet, and ~org-parser~ will remain unpublished as a
 
 This assumes you have =cabal= installed.
 
-Clone the parser repository and run =cabal repl test= inside of it. Cabal will be busy downloading dependencies and building for a while. You can then call the convenience function ~prettyParse~ like so:
+Clone the parser repository and run =cabal repl test= inside it. Cabal will be busy downloading dependencies and building for a while. You can then call the convenience function ~prettyParse~ like so:
 
 : prettyParse orgDocument [text|
 : This is a test.
@@ -37,18 +34,16 @@ You can write the contents to be parsed between =[text|= and =|]=. More generall
 
 : prettyParse [parser to parse] [string to parse]
 
-Where =[parser to parse]= can be basically any of the functions from =Org.Parse.Document=, =Org.Parser.Elements= or =Org.Parser.Objects= that have monadic type =OrgParser=. You don't need to import those modules youself as they are already imported in the ~test~ namespace.
+Where =[parser to parse]= can be basically any of the functions from =Org.Parse.Document=, =Org.Parser.Elements= or =Org.Parser.Objects= whose types are wrapped by the =OrgParser= monad. You don't need to import those modules yourself as they are already imported in the ~test~ namespace.
 
 ** Unit tests
 I plan to cover a broad range of the spec in the unit tests under [[test][test]]. Those should follow the same energy as [[https://mirror.las.iastate.edu/tex-archive/info/knuth-pdf/tex/tripman.pdf][A torture test for TeX]], and should touch as much corner cases as possible against org-element. Take for example the parsing of
 : [c​ite:/foo/;/bar/@bef=bof=;/baz/]
 under [[test/Tests/Objects.hs][tests/Tests/Objects.hs]]. This alone tests many things about allowed pre/post chars in markup and the inner parsing of citations (in fact, =foo=, =bar=, =bof= and =baz= are all parsed with markup in this example!).
 
-For now I have mostly been testing as many corner cases as possible manually.
+For now, I have mostly been testing as many corner cases as possible manually.
 
 * Progress
-Thanks @tecosaur for the table 🙂
-
 In the spec terms (see below the table for other features), the following components are implemented:
 | Component           | Type             | Parse | HTML (using Heist) |
 |---------------------+------------------+-------+--------------------|
@@ -109,12 +104,13 @@ In the spec terms (see below the table for other features), the following compon
 | Timestamp           | X                | X     | X                  |
 | Plain               | X                | X     | X                  |
 | Markup              | X                | X     | X                  |
+(Thanks @tecosaur for the table)
 
 ** Going beyond what is listed in the spec
 
 ~org-element-parse-buffer~ does not parse /everything/ that will eventually be parsed or processed when exporting a document written in Org-mode. Examples of Org features that are not handled by the parser alone (so aren't described in the spec) include content from keywords like =#+title:=, that are parsed "later" by the exporter itself, references in lines of =src= or =example= blocks and link resolving, that are done in a post-processing step, and the use of =#+include:= keywords, =TODO= keywords and radio links, that are done in a pre-processing step.
 
-But my motto for writing this parser is: information useful for all exporters should be trivial to get from the AST, and minimal text processing should be done an exporter. Since the aspects listed above are genuine /org-mode features/, and not optional extensions, they should be resolved in the AST outputed by this parser. Below is a table with more Org features that are not listed in the spec but are planned to be supported:
+But my motto for writing this parser is: information useful for all exporters should be trivial to get from the AST, and minimal text processing should be done an exporter. Since the aspects listed above are genuine /org-mode features/, and not optional extensions, they should be resolved in the AST outputted by this parser. Below is a table with more Org features that are not listed in the spec but are planned to be supported:
 
 | Feature                                    | Implemented?                                         |
 |--------------------------------------------+------------------------------------------------------|
@@ -132,9 +128,9 @@ For now there is a highly customizable HTML exporter. I plan to add a Pandoc exp
 Heist is a Haskell templating library that uses raw XML/HTML for templating. You can have a look at the templates used for HTML export in the [[templates][templates]] directory. Those can be customized by the user without having to write Haskell or recompile the library.
 
 * Comparasion to Pandoc
-The main difference between this parser and the Org Reader from Pandoc is that this one parses into a specialized Org-element-like AST, while the reader parses into the =Pandoc= AST, which cannot express all Org elements directly. This has the effect that some Org features are either unsupported by the reader or "projected" onto Pandoc in ways that bundle less information about the Org source. In contrast, this reader aims to represent Org documents more faithfully before "projecting" them into formats like HTML or even the Pandoc AST itself. So you can expect more org-specific features to be parsed, and a hopefully more accurate parsing in general.
+The main difference between =org-parser= and the Pandoc Org Reader is that this one parses into an AST is more similar to the org-element's AST, while Pandoc's parses into the =Pandoc= AST, which cannot express all Org elements directly. This has the effect that some Org features are either unsupported by the reader or "projected" onto =Pandoc= in ways that bundle less information about the Org source. In contrast, this parser aims to represent Org documents more faithfully before "projecting" them into formats like HTML or the Pandoc AST itself. So you can expect more org-specific features to be parsed, and a hopefully more accurate parsing in general.
 
-My initial plan was to fork the Org Reader and make it a standalone package, but this quickly proved infeasible as the reader is heavily tangled with the rest of Pandoc. Also, some accuracy improvements to the reader were impossible to make without deep changes to the parser design. For example, consider the following Org snippet:
+My initial plan was to fork the Org Reader and make it a standalone package, but this quickly proved infeasible as the reader is very tangled with the rest of Pandoc. Also, some accuracy improvements to the reader were hard to make without deeper changes to the parser. For example, consider the following Org snippet:
 #+begin_src org
 This is a single paragraph. Because this single paragraph
 ,#+should not be ended by this funny line, because this funny
@@ -142,22 +138,8 @@ line is not a keyword. Not even this incomplete
 \begin{LaTeX}
 environment should break this paragraph apart.
 #+end_src
-This single paragraph is broken into three by Pandoc, because due the way it works it looks for a new "block start" (the start of a new org element) in each line. If there is a block start, then it aborts the current element (block) and starts the new one. Only later the parser decides if the started block actually parses correctly until its end, which is not the case for the =\begin{LaTeX}= in this example.
+This single paragraph is broken into three by Pandoc, because it looks for a new "block start" (the start of a new org element) in each line. If there is a block start, then it aborts the current element (block) and starts the new one. Only later the parser decides if the started block actually parses correctly until its end, which is not the case for the =\begin{LaTeX}= in this example.
 
-Also, for some reason the Org Reader implements a more complex inline markup logic than the one that is used by Org Mode, and allow for nested markup like =/italic /inside/ italic/=. This is done via a stack in the parser state and implementing it right can be a bit error-prone and tricky. The implementation also has the effect that conflicting markup is right-biased, in the sense that the string =/foo *ba/ r*= is parsed with no italics and with =bar/ r= bold, while I believe left bias would make more sense for this. Indeed, at first I thought this nested parsing could be good, and tried to implement it in a more clear way using recursion. But in the end I was worried this would deviate too much from Org Mode and decided to stick to the Org Mode way.
+Another noteworthy difference is that =haskell-org-parser= uses a different parsing library, ~megaparsec~. Pandoc uses the older ~parsec~, but also bundles many features on its own library.
 
-Another noteworth difference is that =haskell-org-parser= uses a different parsing library, ~megaparsec~, and I'm also experimenting with the faster ~attoparsec~. Pandoc uses ~parsec~, which is an older parsing library with less features and I think worse overall performance (TODO: confirm).
-
-Concisely, while the parser design is inspired by Pandoc, some important overall differences are present and most functions were written from scratch.
-
-* Ideas for things to be done
-** Elisp variables
-Support for setting emacs variables related to parsing and export. These variables should be set either as a parameter to the parsing function or read from the file itself by parsing ~#+bind~ keywords.
-
-** Emacs queries in batch or client mode
-Query emacs for [[*Elisp variables]] or evaluating lisp expressions. Can be done either way, but the second is much faster:
-
-- ~emacs --batch -l path/to/init.el --eval EXPR~
-- ~emacsclient -e EXPR~
-
-If using batch mode we should reuse an open emacs process open as long as possible. 
+Concisely, while the parser is inspired by Pandoc, some important overall differences are present and most functions were written from scratch.
