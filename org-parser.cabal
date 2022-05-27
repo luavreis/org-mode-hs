@@ -33,7 +33,7 @@ common common-options
                    , stringsearch >= 0.3
                    , syb >= 0.7
                    , text >= 1.2
-                   , time >= 1.10
+                   , time >= 1.9.3
                    , xmlhtml >= 0.2
   mixins:            base hiding (Prelude)
                    , relude (Relude as Prelude)
