@@ -527,4 +527,4 @@ parseTimestamp = try $ do
     tsmark :: [Text] -> OrgParser TimestampMark
     tsmark marks = do
       mtype <- (,,) <$> choice (map string marks)
-      mtype <$> integer <*> oneOf ['h', 'm', 'd', 'w']
+      mtype <$> integer <*> oneOf ['h', 'd', 'w', 'm', 'y']
