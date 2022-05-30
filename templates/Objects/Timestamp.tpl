@@ -1,5 +1,6 @@
 <bind tag="Unit:h">hour</bind>
 <bind tag="Unit:d">day</bind>
+<bind tag="Unit:w">week</bind>
 <bind tag="Unit:m">month</bind>
 <bind tag="Unit:y">year</bind>
 
@@ -19,41 +20,14 @@
      You can configure the locale via attributes as below.
      Attribute values are separated by commas,
      whitespace between commas and words is removed. -->
-<bind tag="DefaultTimestamp"
-  ><time
-    ><TSDate weekdays="Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday"
-              shortweekdays="Sun, Mon, Tue, Wed, Thu, Fri, Sat"
-              months="January, February, March, April, May, June, July, August, September, October, November, December"
-              shortmonths="Jan., Feb., Mar., Apr., May, June, July, Aug., Sept., Oct., Nov., Dec."
-      >%a, %B %e, %Y</TSDate
-    ><TSTime ampm="AM,PM"
-      > at %R %P</TSTime
-    ></time
-  ><Repeater
-    >, repeating every <Value /> <Unit /></Repeater
-  ><WarningPeriod
-  >, warning for <Value /> <Unit /></WarningPeriod
-></bind>
+<bind tag="DefaultTimestamp"><time><TSDate>%a, %B %e, %Y</TSDate><TSTime> at %R %P</TSTime></time><Repeater>, repeating every <Value /> <Unit /></Repeater><WarningPeriod>, warning for <Value /> <Unit /></WarningPeriod></bind>
 
-<bind tag="Timestamp:active:single"
-  >(<DefaultTimestamp
-/>)</bind>
+<bind tag="Timestamp:active:single">(<DefaultTimestamp/>)</bind>
 
-<bind tag="Timestamp:inactive:single"
-  ><span class="inactive"
-    ><Timestamp:active:single
-  /></span
-></bind>
+<bind tag="Timestamp:inactive:single"><span class="inactive"><Timestamp:active:single/></span></bind>
 
-<bind tag="Timestamp:active:range"
-  >(<From
-  >from <DefaultTimestamp/></From
-  ><To>to <DefaultTimestamp /></To
->)</bind>
+<bind tag="Timestamp:active:range">(<From>from <DefaultTimestamp/></From><To>to <DefaultTimestamp /></To>)</bind>
 
-<bind tag="Timestamp:inactive:range"
-  ><span class="inactive"
-    ><Timestamp:active:range
-  /></span
-></bind>
+<bind tag="Timestamp:inactive:range"><span class="inactive"><Timestamp:active:range/></span></bind>
+
 <span class="timestamp"><Timestamp /></span>

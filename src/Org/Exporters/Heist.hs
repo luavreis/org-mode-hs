@@ -109,7 +109,7 @@ defaultExporterState = ExporterState
   , exporterSettings = defaultExporterSettings
   }
 
-getSetting :: MonadState ExporterState f => (ExporterSettings -> b) -> f b
+getSetting :: MonadState ExporterState m => (ExporterSettings -> b) -> m b
 getSetting f = f <$> gets exporterSettings
 
 type MonadExporter n = MonadState ExporterState n
@@ -301,11 +301,11 @@ instance Spliceable OrgSection where
 -- * Contents
 
 instance Spliceable OrgContent where
-  toSplice content = do
+  toSplice content =
     liftA2 (<>) (toSplice (fst content)) (children $ snd content)
 
 instance {-# OVERLAPPABLE #-} (Spliceable a, Spliceable b) => Spliceable (a, b) where
-  toSplice content = do
+  toSplice content =
     liftA2 (<>) (toSplice (fst content)) (toSplice (snd content))
 
 children :: [OrgSection] -> Splice Exporter
@@ -402,29 +402,16 @@ timestamp = \case
     tsDate :: Day -> Splices (Splice Exporter)
     tsDate day = "TSDate" ## do
       input <- getParamNode
-      let dtl = defaultTimeLocale
-          getAttr d s = maybe d separate $ X.getAttribute s input
-          wdays'   = getAttr (map fst (wDays dtl)) "weekdays"
-          swdays'  = getAttr (map snd (wDays dtl)) "shortweekdays"
-          months'  = getAttr (map fst (months dtl)) "months"
-          smonths' = getAttr (map snd (months dtl)) "shortmonths"
-          locale = dtl { wDays = zip wdays' swdays'
-                       , months = zip months' smonths'
-                       }
-          format = toString $ X.nodeText input
+      locale <- getSetting timeLocale
+      let format = toString $ X.nodeText input
       toSplice . toText $ formatTime locale format day
 
     tsTime :: Maybe TimeOfDay -> Splices (Splice Exporter)
     tsTime time = "TSTime" ## do
       input <- getParamNode
-      let dtl = defaultTimeLocale
-          ampm' = X.getAttribute "ampm" input >>=
-                  (\case [x,y] -> Just (x,y); _ -> Nothing) . separate
-          locale = dtl { amPm = fromMaybe (amPm dtl) ampm' }
-          format = toString $ X.nodeText input
+      locale <- getSetting timeLocale
+      let format = toString $ X.nodeText input
       spliceOrEmpty time $ textSplice . toText . formatTime locale format
-
-    separate = map (toString . T.strip) . T.split (==',')
 
 latexFragment :: FragmentType -> Text -> Splices (Splice Exporter)
 latexFragment kind txt = do

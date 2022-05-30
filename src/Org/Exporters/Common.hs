@@ -8,19 +8,22 @@ module Org.Exporters.Common
   ) where
 import Org.Types
 import Org.Walk
+import Data.Time (TimeLocale, defaultTimeLocale)
 import Data.Text qualified as T
 
 data ExporterSettings = ExporterSettings
   { orgExportHeadlineLevels :: Int
   , orgExportWithSpecialStrings :: Bool
   , headlineLevelShift :: Int
-  } deriving (Show, Eq, Read)
+  , timeLocale :: TimeLocale
+  } deriving (Eq, Show)
 
 defaultExporterSettings :: ExporterSettings
 defaultExporterSettings = ExporterSettings
   { orgExportHeadlineLevels = 3
   , orgExportWithSpecialStrings = True
   , headlineLevelShift = 0
+  , timeLocale = defaultTimeLocale
   }
 
 doSpecialStrings :: Text -> Text
