@@ -396,7 +396,7 @@ linkToTarget :: Text -> F (LinkTarget, OrgInlines)
 linkToTarget l@(T.stripPrefix  "/" -> Just fp) = pure (URILink "file" ("//" <> fp), B.plain l)
 linkToTarget l@(T.stripPrefix "./" -> Just fp) = pure (URILink "file" fp, B.plain l)
 linkToTarget fp | "../" `T.isPrefixOf` fp      = pure (URILink "file" fp, B.plain fp)
-linkToTarget l@(second T.uncons . T.break (== ':') -> (protocol, Just (_, uri))) = do
+linkToTarget l@(T.break (== ':') -> (T.toLower -> protocol, T.uncons -> Just (_, uri))) = do
   formatters <- asksF orgStateLinkFormatters
   case lookup protocol formatters of
     Just f -> linkToTarget (f uri)
@@ -412,7 +412,7 @@ linkToTarget link = do
 isImgTarget :: LinkTarget -> Bool
 isImgTarget (URILink protocol rest) = hasImgExtension && (protocol `elem` imgProtocols)
  where
-   hasImgExtension = any (\x -> T.cons '.' x `T.isSuffixOf` rest) imgExtensions
+   hasImgExtension = any (`T.isSuffixOf` T.toLower rest) imgExtensions
    imgExtensions = [ ".jpeg", ".jpg", ".png", ".gif", ".svg" ]
    imgProtocols = [ "file", "http", "https", "attachment" ]
 isImgTarget _ = False
