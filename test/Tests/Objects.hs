@@ -95,4 +95,27 @@ testObjects = testGroup "Objects"
 
     , "also linebreak \\\\" =?> "also linebreak " <> B.linebreak
     ]
+
+  , "Image or links" ~: regularLinkOrImage $
+    [
+      "[[./name.jpg]]" =?> B.image (URILink "file" "name.jpg")
+
+    , "[[file:name.jpg]]" =?> B.image (URILink "file" "name.jpg")
+
+    , "[[FILE:name.JPG]]" =?> B.image (URILink "file" "name.JPG")
+
+    , "[[http://blablebli.com]]" =?> B.link (URILink "http" "//blablebli.com") "http://blablebli.com"
+
+    , "[[http://blablebli.com][/uh/ duh! *foo*]]" =?> B.link (URILink "http" "//blablebli.com") (B.italic "uh" <> " duh! " <> B.bold "foo")
+
+    , "[[./name.jpg][a link]]" =?> B.link (URILink "file" "name.jpg") "a link"
+
+    , "[[../name.jpg][a link]]" =?> B.link (URILink "file" "../name.jpg") "a link"
+
+    , "[[/name.jpg][a link]]" =?> B.link (URILink "file" "//name.jpg") "a link"
+
+    , "[[sunset.png][file:dusk.svg]]" =?> B.link (UnresolvedLink "sunset.png") (B.image (URILink "file" "dusk.svg"))
+
+    , "[[./sunset.png][file:dusk.svg]]" =?> B.link (URILink "file" "sunset.png") (B.image (URILink "file" "dusk.svg"))
+    ]
   ]
