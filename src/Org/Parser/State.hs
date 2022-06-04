@@ -27,6 +27,7 @@ defaultOrgOptions = OrgOptions
 -- | Org-mode parser state
 data OrgParserState = OrgParserState
   { orgStateInternalTargets      :: Map Text (Id, F OrgInlines) -- ^ Key is target name and value is (anchor, default alias)
+  , orgStateKnownAnchors         :: Set Id -- ^ This is the set of known anchors, in order to avoid invalid documents.
   , orgStatePendingAffiliated    :: [F (KeywordKey, KeywordValue)]
   , orgStateTargetDescriptionCtx :: Maybe (F OrgInlines)
   , orgStateOptions              :: OrgOptions
@@ -46,6 +47,7 @@ data OrgParserState = OrgParserState
 defaultState :: OrgParserState
 defaultState =  OrgParserState
   { orgStateInternalTargets      = mempty
+  , orgStateKnownAnchors         = mempty
   , orgStatePendingAffiliated    = mempty
   , orgStateTargetDescriptionCtx = Nothing
   , orgStateOptions              = defaultOrgOptions

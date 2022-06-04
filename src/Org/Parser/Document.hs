@@ -13,6 +13,7 @@ import Org.Parser.MarkupContexts
 import qualified Data.Text as T
 import qualified Data.Map as M
 import Relude.Extra (lookup)
+import Text.Slugify (slugify)
 
 -- | Parse input as org document tree.
 orgDocument :: OrgParser OrgDocument
@@ -58,7 +59,10 @@ section lvl = try $ do
       registerAnchorTarget ("#" <> a) a title
       registerAnchorTarget ("*" <> titleTxt) a title
       pure a
-    Nothing -> registerTarget ("*" <> titleTxt) title
+    Nothing -> do
+      let a = slugify titleTxt
+      registerAnchorTarget ("*" <> titleTxt) a title
+      pure a
   return $ do
     title'    <- title
     contents' <- contents
