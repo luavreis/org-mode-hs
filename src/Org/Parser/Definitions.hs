@@ -20,7 +20,8 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Debug
 import Data.Char (isSpace, isPunctuation, isAlphaNum, isLetter, isDigit, isAscii)
-import Relude.Extra (insert, member)
+import Relude.Extra (insert, member, notMember)
+import qualified Data.Set as Set
 
 type Parser = ParsecT Void Text Identity
 
@@ -51,14 +52,23 @@ getSrcLineNum = gets orgStateSrcLineNumber
 registerTarget :: Text -> F OrgInlines -> OrgParser Text
 registerTarget name alias = do
   targets <- gets orgStateInternalTargets
+  anchors <- gets orgStateKnownAnchors
   uid <- popUniqueId
-  updateState \s -> s { orgStateInternalTargets = insert name (uid, alias) targets }
+  updateState \s -> s { orgStateInternalTargets = insert name (uid, alias) targets
+                      , orgStateKnownAnchors    = Set.insert uid anchors }
   pure uid
 
 registerAnchorTarget :: Text -> Text -> F OrgInlines -> OrgParser ()
 registerAnchorTarget name anchor alias = do
   targets <- gets orgStateInternalTargets
-  updateState \s -> s { orgStateInternalTargets = insert name (anchor, alias) targets }
+  anchors <- gets orgStateKnownAnchors
+  let anchor' = if anchor `member` anchors
+                then fromMaybe anchor $
+                     find (`notMember` anchors) $
+                     map (\n -> anchor <> "-" <> show (n :: Int)) [1..]
+                else anchor
+  updateState \s -> s { orgStateInternalTargets = insert name (anchor', alias) targets
+                      , orgStateKnownAnchors    = Set.insert anchor' anchors }
 
 registerKeyword :: F (KeywordKey, KeywordValue) -> OrgParser ()
 registerKeyword kw =
