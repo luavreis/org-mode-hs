@@ -12,7 +12,7 @@
 <!-- Plain list types. All three cases must be defined. -->
 
 <bind tag="PlainList:unordered">
-  <bind tag="Bullet:-">disk</bind>
+  <bind tag="Bullet:-">disc</bind>
   <bind tag="Bullet:+">square</bind>
   <bind tag="Bullet:*">circle</bind>
 
