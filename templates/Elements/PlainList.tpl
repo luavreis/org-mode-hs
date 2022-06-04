@@ -16,7 +16,7 @@
   <bind tag="Bullet:+">square</bind>
   <bind tag="Bullet:*">circle</bind>
 
-  <ul type="${Bullet}">
+  <ul style="list-style-type: ${Bullet};">
     <ListItems>
       <li>
         <Checkbox />
@@ -27,10 +27,10 @@
 </bind>
 
 <bind tag="PlainList:ordered">
-  <bind tag="Counter:num">1</bind>
-  <bind tag="Counter:alpha">a</bind>
+  <bind tag="Counter:num">decimal</bind>
+  <bind tag="Counter:alpha">lower-alpha</bind>
 
-  <ol type="${Counter}">
+  <ol style="list-style-type: ${Counter};">
     <ListItems>
       <li value="${CounterSet}">
         <Checkbox />

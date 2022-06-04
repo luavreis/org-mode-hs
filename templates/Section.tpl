@@ -35,7 +35,7 @@ Available splices:
     </Priority>
     <Title />
     <Tags>
-      <span class="tag ${Tag}"><Tag /></span>
+      <span class="tag tag-${Tag}"><Tag /></span>
     </Tags>
   </Headline>
   <Contents />
