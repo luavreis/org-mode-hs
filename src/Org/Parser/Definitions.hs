@@ -49,11 +49,20 @@ incSrcLineNum n = updateState $ \s ->
 getSrcLineNum :: OrgParser Int
 getSrcLineNum = gets orgStateSrcLineNumber
 
+makeAnchorUnique :: Text -> OrgParser Text
+makeAnchorUnique a = do
+  anchors <- gets orgStateKnownAnchors
+  pure if a `member` anchors
+       then fromMaybe a $
+            find (`notMember` anchors) $
+            map (\n -> a <> "-" <> show (n :: Int)) [1..]
+       else a
+
 registerTarget :: Text -> F OrgInlines -> OrgParser Text
 registerTarget name alias = do
   targets <- gets orgStateInternalTargets
   anchors <- gets orgStateKnownAnchors
-  uid <- popUniqueId
+  uid <- makeAnchorUnique =<< popUniqueId
   updateState \s -> s { orgStateInternalTargets = insert name (uid, alias) targets
                       , orgStateKnownAnchors    = Set.insert uid anchors }
   pure uid
@@ -62,13 +71,8 @@ registerAnchorTarget :: Text -> Text -> F OrgInlines -> OrgParser ()
 registerAnchorTarget name anchor alias = do
   targets <- gets orgStateInternalTargets
   anchors <- gets orgStateKnownAnchors
-  let anchor' = if anchor `member` anchors
-                then fromMaybe anchor $
-                     find (`notMember` anchors) $
-                     map (\n -> anchor <> "-" <> show (n :: Int)) [1..]
-                else anchor
-  updateState \s -> s { orgStateInternalTargets = insert name (anchor', alias) targets
-                      , orgStateKnownAnchors    = Set.insert anchor' anchors }
+  updateState \s -> s { orgStateInternalTargets = insert name (anchor, alias) targets
+                      , orgStateKnownAnchors    = Set.insert anchor anchors }
 
 registerKeyword :: F (KeywordKey, KeywordValue) -> OrgParser ()
 registerKeyword kw =

@@ -60,7 +60,7 @@ section lvl = try $ do
       registerAnchorTarget ("*" <> titleTxt) a title
       pure a
     Nothing -> do
-      let a = slugify titleTxt
+      a <- makeAnchorUnique $ slugify titleTxt
       registerAnchorTarget ("*" <> titleTxt) a title
       pure a
   return $ do
