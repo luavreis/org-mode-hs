@@ -51,17 +51,24 @@ type OrgContent = ([OrgElement], [OrgSection])
 documentContent :: OrgDocument -> OrgContent
 documentContent doc = (documentChildren doc, documentSections doc)
 
-sectionContent :: OrgSection -> OrgContent
-sectionContent sec = (sectionChildren sec, sectionSubsections sec)
-
-mapContent :: (OrgContent -> OrgContent) -> OrgDocument -> OrgDocument
-mapContent f d = let (c', s') = f (documentContent d)
-                 in d { documentChildren = c', documentSections = s' }
-
 mapContentM :: Monad m => (OrgContent -> m OrgContent) -> OrgDocument -> m OrgDocument
 mapContentM f d = do
   (c', s') <- f (documentContent d)
   pure $ d { documentChildren = c', documentSections = s' }
+
+mapContent :: (OrgContent -> OrgContent) -> OrgDocument -> OrgDocument
+mapContent f = runIdentity . mapContentM (Identity . f)
+
+sectionContent :: OrgSection -> OrgContent
+sectionContent sec = (sectionChildren sec, sectionSubsections sec)
+
+mapSectionContentM :: Monad m => (OrgContent -> m OrgContent) -> OrgSection -> m OrgSection
+mapSectionContentM f d = do
+  (c', s') <- f (sectionContent d)
+  pure $ d { sectionChildren = c', sectionSubsections = s' }
+
+mapSectionContent :: (OrgContent -> OrgContent) -> OrgSection -> OrgSection
+mapSectionContent f = runIdentity . mapSectionContentM (Identity . f)
 
 type Tag = Text
 type Tags = [Tag]
