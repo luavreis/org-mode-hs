@@ -1,6 +1,7 @@
 -- |
 
 module Tests.Elements where
+import Org.Types
 import Tests.Helpers
 import Org.Parser.Elements
 import NeatInterpolation
@@ -35,9 +36,44 @@ testElements = testGroup "Elements"
                           <> B.plain ".")
     ]
 
+    , "Affiliated Keywords in Context" ~: elements $
+    [
+      [text|
+         #+attr_html: :width 40px :foo bar:joined space :liz buuz
+         Hi
+      |]
+        =?>
+        let kw = BackendKeyword [ ("width", "40px")
+                                , ("foo", "bar:joined space")
+                                , ("liz", "buuz")]
+        in B.para (fromList [("attr_html", kw)]) "Hi"
+
+    , [text|
+         Some para
+         #+caption: hi /guys/
+         Hi
+      |]
+        =?>
+        let kw = ParsedKeyword [] (toList $ "hi " <> B.italic "guys")
+        in B.para mempty "Some para"
+        <> B.para (fromList [("caption", kw)]) "Hi"
+
+    , [text|
+         #+attr_org: :foo bar
+         #+begin_center
+         Some para
+         #+caption: hi /guys/
+         #+end_center
+         I don't have a caption
+      |]
+        =?>
+        B.greaterBlock (fromList [("attr_org", BackendKeyword [("foo", "bar")])]) Center
+          (B.para mempty "Some para")
+        <> B.para mempty "I don't have a caption"
+    ]
+
+
   -- Add case for affiliated keywords with:
-  --  + aff keyword at end of paragraph acting on next element
-  --  + showing non leaking of aff kw from block to outside
   -- Add case showing preservation of state of end parser
   -- Add case showing preservation of state from inside to outside markupContext
   ]
