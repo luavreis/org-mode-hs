@@ -68,11 +68,20 @@ trimSpaces recursive tpl = foldr go [] tpl
     go (X.Element n a c) r | recursive, n /= "pre", n /= "code" = X.Element n a (trimSpaces True c) : r
     go n r = n : r
 
+whenNonEmpty :: Monad n => Splice n
+whenNonEmpty = do
+  getParamNode <&> X.getAttribute "tag" >>= \case
+    Just tag -> do
+      out <- runNode (X.Element tag [] [])
+      if null out then pure [] else trimSpaces False <$> runChildren
+    _ -> pure []
+
 defaultSplices :: Monad n => Splices (Splice n)
 defaultSplices = do
   ignoreTag ## ignoreImpl
   bindTag ## bindImpl
   applyTag ## applyImpl
+  "WhenNonEmpty" ## whenNonEmpty
 
 caseSplice :: Monad n => Text -> Splice n -> Splice n
 caseSplice caseName splice = getCase =<< getParamNode
@@ -430,10 +439,12 @@ instance Spliceable OrgElement where
 affSplices :: Affiliated -> Splices (Splice Exporter)
 affSplices aff = "WithAffiliated" ## do
   childs <- runChildrenWith $ kwSplice aff "Caption"
-  pure $ flip map childs \case
-    X.Element tag attrs childs' ->
-      X.Element tag (attrs <> affAttrs aff) childs'
-    x -> x
+  pure $ mapFirstEl childs
+  where
+    mapFirstEl [] = []
+    mapFirstEl (X.Element tag attrs childs:xs) =
+      X.Element tag (attrs <> affAttrs aff) childs : xs
+    mapFirstEl (x:xs) = x : mapFirstEl xs
 
 affAttrs :: Affiliated -> [(Text, Text)]
 affAttrs aff = join $ mapMaybe getHtmlAttrs (toPairs aff)
@@ -443,6 +454,7 @@ affAttrs aff = join $ mapMaybe getHtmlAttrs (toPairs aff)
 
 renderOrgElement :: OrgElement -> Splice Exporter
 renderOrgElement = \case
+  (Paragraph aff [Image tgt]) -> callTemplate' "Figure" (affSplices aff <> target tgt)
   (Paragraph aff c) -> one . X.Element "p" (affAttrs aff) <$> toSplice c
   (GreaterBlock aff Quote c) -> callTemplate' "QuoteBlock" (affSplices aff <> contents c)
   (GreaterBlock aff Center c) -> callTemplate' "CenterBlock" (affSplices aff <> contents c)

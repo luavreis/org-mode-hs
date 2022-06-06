@@ -55,6 +55,7 @@ elementNonEmpty = choice [ commentLine      <* clearPendingAffiliated
 
 para :: OrgParser (F OrgElements)
 para = try do
+  hspace
   f <- withAffiliated B.para
   (inls, next) <- withMContext_
                   (mark "\n" end)
@@ -142,6 +143,7 @@ itemTag = try do
 
 indentedPara :: Int -> OrgParser (F OrgElements)
 indentedPara indent = try do
+  hspace
   f <- withAffiliated B.para
   (inls, next) <- withMContext_
                   (mark "\n" end)
@@ -194,7 +196,6 @@ srcBlock = try do
   lang <- option "" $ hspace1 *> someNonSpace
   switches <- blockSwitches
   args <- headerArgs
-  _ <- anyLine
   num <- updateLineNumbers switches
   contents <- rawBlockContents end switches
   pure $ f ?? lang ?? num ?? args ?? contents
@@ -202,15 +203,16 @@ srcBlock = try do
     end = try $ hspace *> string' "#+end_src" <* blankline'
 
 headerArgs :: StateT OrgParserState Parser [(Text, Text)]
-headerArgs = hspace >> fromList <$> headerArg `sepBy` hspace1
+headerArgs = do
+  hspace
+  fromList <$> headerArg `sepBy` hspace1
+    <* anyLine'
   where
     headerArg = liftA2 (,) (char ':' *> someNonSpace)
                            (T.strip . fst <$>
-                            findMarked (mark ":\n" . try $
+                            findMarked (mark " \n" $ try $
                                         lookAhead (newline' <|>
-                                                   char ':'
-                                                   *> (mapM_ (guard . isSpace) =<< gets orgStateLastChar)
-                                                   *> void (satisfy (not . isSpace)))))
+                                                   hspace1 <* char ':')))
 
 exportBlock :: OrgParser (F OrgElements)
 exportBlock = try do
@@ -223,12 +225,12 @@ exportBlock = try do
   where
     end = try $ hspace *> string' "#+end_export" <* blankline'
 
-verseBlock :: OrgParser (F OrgElements)
-verseBlock = try do
-  hspace
-  _ <- string' "#+begin_verse"
-  undefined
-  where
+-- verseBlock :: OrgParser (F OrgElements)
+-- verseBlock = try do
+--   hspace
+--   _ <- string' "#+begin_verse"
+--   undefined
+--   where
     -- end = try $ hspace *> string' "#+end_export" <* blankline'
 
 
@@ -387,16 +389,15 @@ affKeyword :: OrgParser (F OrgElements)
 affKeyword = try do
   hspace
   _ <- string "#+"
-  (<|>) do
+  try do
       (T.toLower -> name) <- liftA2 (<>)
                              (string' "attr_")
                              (takeWhile1P Nothing (\c -> not (isSpace c || c == ':')))
       _ <- char ':'
       args <- headerArgs
-      blankline'
       registerAffiliated $ pure (name, B.attrKeyword args)
       pure mempty
-    do
+    <|> try do
       affkws <- getsO orgElementAffiliatedKeywords
       name <- choice (fmap (\s -> string' s $> s) affkws)
       isdualkw <- (name `elem`) <$> getsO orgElementDualKeywords
