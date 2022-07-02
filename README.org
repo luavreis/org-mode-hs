@@ -1,5 +1,7 @@
 #+title: org-parser
 
+  =org-parser= provides a parser and an HTML exporter for Org Mode documents. The Org document is parsed into an AST similar to =org-element='s, and the HTML exporter is highly configurable using HTML templates.
+
 * Table of contents :TOC:
 - [[#demo][Demo]]
 - [[#how-to-test-and-play-with-it][How to test and play with it]]

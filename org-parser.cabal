@@ -1,8 +1,12 @@
 cabal-version:       2.4
 Name:                org-parser
 version:             0.1
+license:             GPL-3.0-only
 Synopsis:            Parser and exporter for Org Mode documents.
-Description:         todo
+Description:
+  org-parser provides a parser and an HTML exporter for Org Mode documents.
+  The Org document is parsed into an AST similar to org-element's, and the
+  HTML exporter is highly configurable using HTML templates.
 
 Maintainer:          @lucasvreis
 Bug-Reports:         https://github.com/lucasvreis/org-parser/issues
@@ -41,7 +45,7 @@ common common-options
   mixins:            base hiding (Prelude)
                    , relude (Relude as Prelude)
                    , relude
-  ghc-options:      -Wall -fprof-auto
+  ghc-options:      -Wall
   default-extensions:
     TupleSections
     OverloadedStrings
@@ -81,7 +85,7 @@ executable org-parser
   main-is:           org-parser.hs
   build-depends:     org-parser
                    , optparse-applicative >= 0.17
-  ghc-options:       -threaded -fprof-auto
+  ghc-options:       -threaded
 
 test-suite test
   import:            common-options
