@@ -142,7 +142,10 @@ data OrgElement
   | Clock ClockData
   | HorizontalRule
   | Keyword KeywordKey KeywordValue
-  | LaTeXEnvironment Affiliated Text
+  | LaTeXEnvironment
+      Affiliated
+      Text -- ^ Environment name
+      Text -- ^ Environment contents
   | Paragraph Affiliated [OrgInline]
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 

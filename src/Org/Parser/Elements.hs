@@ -132,6 +132,7 @@ checkbox = try $
 
 itemTag :: OrgParser (F OrgInlines)
 itemTag = try do
+  clearLastChar
   st <- getFullState
   (contents, found) <- findMarked end
   guard found
@@ -360,7 +361,6 @@ drawer = try do
   dname <- takeWhile1P (Just "drawer name") (\c -> c /= ':' && c /= '\n')
   hspace <* lookAhead newline
   els <- withMContext end elements
-  clearPendingAffiliated
   return $ B.drawer dname <$> els
   where
     end :: Marked OrgParser ()
@@ -378,7 +378,7 @@ latexEnvironment = try do
   _ <- char '}'
   (str, _) <- findMarked (end ename)
   f <- withAffiliated B.latexEnvironment
-  pure $ f ?? "\\begin{" <> ename <> "}" <> str <> "\\end{" <> ename <> "}"
+  pure $ f ?? ename ?? "\\begin{" <> ename <> "}" <> str <> "\\end{" <> ename <> "}"
   where
     end :: Text -> Marked OrgParser ()
     end name = mark "\\" . try $ string ("\\end{" <> name <> "}") *> blankline'

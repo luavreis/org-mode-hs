@@ -1,4 +1,3 @@
-import NeatInterpolation
 :set prompt      "λ: "
 :set prompt-cont "λ| "
 :set +m
