@@ -9,7 +9,7 @@ Bug-Reports:         https://github.com/lucasvreis/org-parser/issues
 Copyright:           (c) 2022 lucasvreis
 Category:            Text
 Build-type:          Simple
-Tested-With:         GHC == 8.10.7
+Tested-With:         GHC == 8.10.7 || == 9.0.2 || == 9.2.2
 data-dir:            data
 data-files:          **/*.tpl
                      **/*.html
