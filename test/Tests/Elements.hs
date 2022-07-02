@@ -72,8 +72,19 @@ testElements = testGroup "Elements"
         <> B.para mempty "I don't have a caption"
     ]
 
-
   -- Add case for affiliated keywords with:
   -- Add case showing preservation of state of end parser
   -- Add case showing preservation of state from inside to outside markupContext
+
+    , "Descriptive Lists" ~: plainList $
+    [
+      "- foo :: bar" =?> B.list mempty Descriptive
+      [ListItem (Bullet '-') Nothing Nothing (toList $ B.plain "foo") [Paragraph mempty (toList $ B.plain "bar")]]
+
+    , "- /foo/ :: bar" =?> B.list mempty Descriptive
+      [ListItem (Bullet '-') Nothing Nothing (toList $ B.italic "foo") [Paragraph mempty (toList $ B.plain "bar")]]
+
+    , "- [[foo][bar]] :: bar" =?> B.list mempty Descriptive
+      [ListItem (Bullet '-') Nothing Nothing (toList $ B.link (UnresolvedLink "foo") "bar") [Paragraph mempty (toList $ B.plain "bar")]]
+    ]
   ]

@@ -8,7 +8,7 @@
 - [[#progress][Progress]]
   - [[#going-beyond-what-is-listed-in-the-spec][Going beyond what is listed in the spec]]
 - [[#exporters][Exporters]]
-  - [[#heist-html-exporter][Heist HTML exporter]]
+  - [[#ondim-html-exporter][Ondim HTML exporter]]
 - [[#comparasion-to-pandoc][Comparasion to Pandoc]]
 
 * Demo
@@ -37,15 +37,11 @@ You can write the contents to be parsed between =[text|= and =|]=. More generall
 Where =[parser to parse]= can be basically any of the functions from =Org.Parse.Document=, =Org.Parser.Elements= or =Org.Parser.Objects= whose types are wrapped by the =OrgParser= monad. You don't need to import those modules yourself as they are already imported in the ~test~ namespace.
 
 ** Unit tests
-I plan to cover a broad range of the spec in the unit tests under [[test][test]]. Those should follow the same energy as [[https://mirror.las.iastate.edu/tex-archive/info/knuth-pdf/tex/tripman.pdf][A torture test for TeX]], and should touch as much corner cases as possible against org-element. Take for example the parsing of
-: [c​ite:/foo/;/bar/@bef=bof=;/baz/]
-under [[test/Tests/Objects.hs][tests/Tests/Objects.hs]]. This alone tests many things about allowed pre/post chars in markup and the inner parsing of citations (in fact, =foo=, =bar=, =bof= and =baz= are all parsed with markup in this example!).
-
-For now, I have mostly been testing as many corner cases as possible manually.
+You can view the unit tests under [[test][test]]. They aim to touch as much corner cases as possible against org-element, so you can take a look there to see what already works, and how well it works.
 
 * Progress
 In the spec terms (see below the table for other features), the following components are implemented:
-| Component           | Type             | Parse | HTML (using Heist) |
+| Component           | Type             | Parse | HTML (via Ondim)   |
 |---------------------+------------------+-------+--------------------|
 | Heading             | X                | X     | X                  |
 | Section             | X                | X     | X                  |
@@ -122,15 +118,17 @@ But my motto for writing this parser is: information useful for all exporters sh
 | Per-file TODO keywords                     | no                                                   |
 
 * Exporters
-For now there is a highly customizable HTML exporter. I plan to add a Pandoc exporter in the future, so that it's possible to convert Org documents to other types of markup with this more specialized parser.
+For now there is a highly customizable HTML exporter. It's possible to add a Pandoc exporter in the future, allowing conversions from Org documents to other types of markup.
 
-** Heist HTML exporter
-Heist is a Haskell templating library that uses raw XML/HTML for templating. You can have a look at the templates used for HTML export in the [[templates][templates]] directory. Those can be customized by the user without having to write Haskell or recompile the library.
+** Ondim HTML exporter
+Ondim is a Haskell templating library that uses raw XML/HTML for templating. You can have a look at the templates used for HTML export in the [[data][data/templates]] directory. Those can be customized by the user without having to write Haskell or recompile the library.
 
 * Comparasion to Pandoc
 The main difference between =org-parser= and the Pandoc Org Reader is that this one parses into an AST is more similar to the org-element's AST, while Pandoc's parses into the =Pandoc= AST, which cannot express all Org elements directly. This has the effect that some Org features are either unsupported by the reader or "projected" onto =Pandoc= in ways that bundle less information about the Org source. In contrast, this parser aims to represent Org documents more faithfully before "projecting" them into formats like HTML or the Pandoc AST itself. So you can expect more org-specific features to be parsed, and a hopefully more accurate parsing in general.
 
-My initial plan was to fork the Org Reader and make it a standalone package, but this quickly proved infeasible as the reader is very tangled with the rest of Pandoc. Also, some accuracy improvements to the reader were hard to make without deeper changes to the parser. For example, consider the following Org snippet:
+Also, if you are developer mainly interested in rendering Org documents to HTML, Pandoc is a very big library to depend upon, with very long build times (at least in my computer, sadly).
+
+Indeed, my initial plan was to fork the Org Reader and make it a standalone package, but this quickly proved infeasible as the reader is very tangled with the rest of Pandoc. Also, some accuracy improvements to the reader were hard to make without deeper changes to the parser. For example, consider the following Org snippet:
 #+begin_src org
 This is a single paragraph. Because this single paragraph
 ,#+should not be ended by this funny line, because this funny
@@ -142,4 +140,3 @@ This single paragraph is broken into three by Pandoc, because it looks for a new
 
 Another noteworthy difference is that =haskell-org-parser= uses a different parsing library, ~megaparsec~. Pandoc uses the older ~parsec~, but also bundles many features on its own library.
 
-Concisely, while the parser is inspired by Pandoc, some important overall differences are present and most functions were written from scratch.

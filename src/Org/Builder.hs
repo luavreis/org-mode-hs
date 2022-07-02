@@ -100,8 +100,9 @@ drawer name = one . Drawer name . toList
 latexEnvironment ::
   Affiliated ->
   Text ->
+  Text ->
   OrgElements
-latexEnvironment aff = one . LaTeXEnvironment aff
+latexEnvironment aff name = one . LaTeXEnvironment aff name
 
 list ::
   Affiliated ->

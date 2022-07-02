@@ -6,7 +6,6 @@ module Main
  , module Org.Parser.Document
  , module Org.Parser.Elements
  , module Org.Parser.Objects
- , module Org.Exporters.Heist
  ) where
 
 import Test.Tasty
@@ -17,7 +16,6 @@ import Tests.Elements
 import Org.Parser.Document
 import Org.Parser.Elements
 import Org.Parser.Objects
-import Org.Exporters.Heist
 
 tests :: TestTree
 tests = testGroup "Org parser tests"
