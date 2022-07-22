@@ -1,8 +1,6 @@
 packages: org-parser.cabal
-          -- /home/lucas/dados/projetos/codigo/haskell/ondim/
-optimization: 2
 
 source-repository-package
   type: git
   location: https://gitlab.com/lucasvreis/ondim
-  tag: fd3b4f508ed47137c9ef7cef94945f4b13edcf9a
+  tag: dbb0b8033a727fec288a4f575459f3aeef76d7f7

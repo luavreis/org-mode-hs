@@ -8,8 +8,6 @@ import Org.Walk
 import Citeproc hiding (Citation, toText)
 import qualified Citeproc as C
 import Data.Aeson (decode)
-import qualified Data.Map as M
-import System.FilePath (isAbsolute, (</>))
 
 toCslJson :: [OrgInline] -> CslJson Text
 toCslJson [] = CslEmpty
@@ -136,8 +134,8 @@ processCitations opt sty lang refs doc =
 
 loadStyle :: MonadIO m => FilePath -> m (Style (CslJson Text))
 loadStyle fp = do
-  xml <- readFileText fp
-  parseStyle (\_ -> pure "") xml >>= \case
+  xml <- readFileBS fp
+  parseStyle (\_ -> pure "") (decodeUtf8 xml) >>= \case
     Left e -> error $ prettyCiteprocError e
     Right s -> pure s
 
@@ -148,44 +146,45 @@ loadBibliography fp = do
     Just r -> pure r
     Nothing -> error $ "Could not parse CSL JSON bibliography at " <> toText fp
 
-processCitationsInDoc ::
-  MonadIO m =>
-  CiteprocOptions ->
-  FilePath ->
-  [FilePath] ->
-  Maybe FilePath ->
-  OrgDocument ->
-  m OrgDocument
-processCitationsInDoc cpOpt root ocGlobalBib defStyle doc = do
-  let bibFp = (ocGlobalBib ++) $
-              lookupKeyword "bibliography" doc
-              & mapMaybe justText
-              & map (makeAbsolute . toString)
-      styFp = (lookupKeyword "cite_export" doc
-               & mapMaybe justText
-               & find (maybe False (("" /=) . T.strip) . T.stripPrefix "csl ")
-               & fmap (makeAbsolute . toString))
-              <|> defStyle
-      lang = case lookupKeyword "language" doc
-                  & mapMaybe justText
-                  & viaNonEmpty head
-                  & fmap parseLang of
-               Just (Right l) -> Just l
-               _ -> Nothing
-  bib <- foldMapM (loadBibliography . toString) bibFp
-  sty <- loadStyle (maybe (error "No CSL style supplied for citations!") toString styFp)
-  let (doc', refs, _errs) = processCitations cpOpt sty lang bib doc
-      bibSection =
-        PlainList
-          (M.singleton "attr_html" (BackendKeyword [("class","csl-bib-body")]))
-          (Unordered '-')
-          (ListItem (Bullet '-') Nothing Nothing [] . one . ExportBlock "html" <$> refs)
-      doc'' = flip walk doc' \case
-        Keyword "print_bibliography" _ -> bibSection
-        x -> x
-  pure doc''
-  where
-    makeAbsolute fp | isAbsolute fp = root </> fp
-                    | otherwise = fp
-    justText (ValueKeyword _ t) = Just t
-    justText _ = Nothing
+-- TODO: the code below is very bad. Handling should happen during export!
+-- processCitationsInDoc ::
+--   MonadIO m =>
+--   CiteprocOptions ->
+--   FilePath ->
+--   [FilePath] ->
+--   Maybe FilePath ->
+--   OrgDocument ->
+--   m OrgDocument
+-- processCitationsInDoc cpOpt root ocGlobalBib defStyle doc = do
+--   let bibFp = (ocGlobalBib ++) $
+--               lookupKeyword "bibliography" doc
+--               & mapMaybe justText
+--               & map (makeAbsolute . toString)
+--       styFp = (lookupKeyword "cite_export" doc
+--                & mapMaybe justText
+--                & find (maybe False (("" /=) . T.strip) . T.stripPrefix "csl ")
+--                & fmap (makeAbsolute . toString))
+--               <|> defStyle
+--       lang = case lookupKeyword "language" doc
+--                   & mapMaybe justText
+--                   & viaNonEmpty head
+--                   & fmap parseLang of
+--                Just (Right l) -> Just l
+--                _ -> Nothing
+--   bib <- foldMapM (loadBibliography . toString) bibFp
+--   sty <- loadStyle (maybe (error "No CSL style supplied for citations!") toString styFp)
+--   let (doc', refs, _errs) = processCitations cpOpt sty lang bib doc
+--       bibSection =
+--         PlainList
+--           (M.singleton "attr_html" (BackendKeyword [("class","csl-bib-body")]))
+--           (Unordered '-')
+--           (ListItem (Bullet '-') Nothing Nothing [] . one . ExportBlock "html" <$> refs)
+--       doc'' = flip walk doc' \case
+--         Keyword "print_bibliography" _ -> bibSection
+--         x -> x
+--   pure doc''
+--   where
+--     makeAbsolute fp | isAbsolute fp = root </> fp
+--                     | otherwise = fp
+--     justText (ValueKeyword _ t) = Just t
+--     justText _ = Nothing

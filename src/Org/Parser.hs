@@ -15,7 +15,7 @@ parseOrg opt = parse (evalStateT orgDocument defaultState { orgStateOptions = op
 
 parseOrgIO :: MonadIO m => OrgOptions -> FilePath -> m OrgDocument
 parseOrgIO opt fp = do
-  out <- parseOrg opt fp <$> readFileText fp
-  case out of
+  text <- readFileBS fp
+  case parseOrg opt fp $ decodeUtf8 text of
     Left e -> error . toText $ errorBundlePretty e
     Right d -> pure d

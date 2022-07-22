@@ -25,23 +25,21 @@ common common-options
   default-language:  Haskell2010
   build-depends:     base >= 4.14 && < 5
                    , aeson >= 1.4
-                   , bytestring >= 0.10
+                   , bytestring
                    , citeproc >= 0.7
-                   , containers >= 0.6
+                   , containers
                    , dir-traverse
                    , directory
-                   , filepath >= 1.4
+                   , filepath
                    , ondim
-                   , map-syntax >= 0.3
-                   , megaparsec >= 9.2
+                   , map-syntax
+                   , megaparsec
                    , pandoc-types >= 1.22
-                   , relude >= 0.7
-                   , slugify >= 0.1
-                   , stringsearch >= 0.3
-                   , syb >= 0.7
-                   , text >= 1.2
-                   , time >= 1.9.3
-                   , xmlhtml >= 0.2
+                   , relude
+                   , slugify
+                   , text
+                   , time
+                   , xmlhtml
   mixins:            base hiding (Prelude)
                    , relude (Relude as Prelude)
                    , relude

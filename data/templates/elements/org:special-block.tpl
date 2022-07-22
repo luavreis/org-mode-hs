@@ -2,10 +2,12 @@
      by using a Switch tag:
 
        <switch tag="special-name">
-         <case proof/>
+         <case proof>
            Your custom proof environment
-         <default/>
+         </case>
+         <default>
            Default case
+         </default>
        </switch>
 
 -->
