@@ -3,7 +3,6 @@
 
 module Org.Types where
 
-import Data.Generics (Data)
 import Data.Char (isDigit)
 import qualified Data.Text as T
 import qualified Data.Map as M
@@ -16,7 +15,7 @@ data OrgDocument = OrgDocument
   , documentFootnotes  :: Map Text [OrgElement]
   , documentChildren   :: [OrgElement]
   , documentSections   :: [OrgSection]
-  } deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  } deriving (Eq, Ord, Read, Show, Generic)
 
 lookupProperty :: Text -> OrgDocument -> Maybe Text
 lookupProperty k = M.lookup k . documentProperties
@@ -41,7 +40,7 @@ data OrgSection = OrgSection
   , sectionAnchor      :: Id
   , sectionChildren    :: [OrgElement]
   , sectionSubsections :: [OrgSection]
-  } deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  } deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 lookupSectionProperty :: Text -> OrgSection -> Maybe Text
 lookupSectionProperty k = M.lookup k . sectionProperties
@@ -75,19 +74,19 @@ type Tags = [Tag]
 
 -- | The states in which a todo item can be
 data TodoState = Todo | Done
-  deriving (Eq, Ord, Show, Data, Read, Generic)
+  deriving (Eq, Ord, Show, Read, Generic)
 
 -- | A to-do keyword like @TODO@ or @DONE@.
 data TodoKeyword = TodoKeyword
   { todoState :: TodoState
   , todoName  :: Text
   }
-  deriving (Show, Eq, Ord, Read, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Generic)
 
 data Priority
   = LetterPriority Char
   | NumericPriority Int
-  deriving (Show, Eq, Ord, Read, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Generic)
 
 type Date = (Int, Int, Int, Maybe Text)
 
@@ -101,7 +100,7 @@ type DateTime = (Date, Maybe Time, Maybe TimestampMark, Maybe TimestampMark)
 data TimestampData
   = TimestampData Bool DateTime
   | TimestampRange Bool DateTime DateTime
-  deriving (Show, Eq, Ord, Read, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Generic)
 
 -- | Planning information for a subtree/headline.
 data PlanningInfo = PlanningInfo
@@ -109,7 +108,7 @@ data PlanningInfo = PlanningInfo
   , planningDeadline  :: Maybe TimestampData
   , planningScheduled :: Maybe TimestampData
   }
-  deriving (Show, Eq, Ord, Read, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Generic)
 
 type Properties = Map Text Text
 
@@ -147,10 +146,10 @@ data OrgElement
       Text -- ^ Environment name
       Text -- ^ Environment contents
   | Paragraph Affiliated [OrgInline]
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 data QuoteType = SingleQuote | DoubleQuote
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 data SrcLine
   = SrcLine Text
@@ -158,7 +157,7 @@ data SrcLine
       Id -- ^ Reference id (its anchor)
       Text -- ^ Reference name (how it appears)
       Text -- ^ Line contents
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 srcLineContent :: SrcLine -> Text
 srcLineContent (SrcLine c) = c
@@ -176,7 +175,7 @@ data KeywordValue
   = ValueKeyword Text Text
   | ParsedKeyword [OrgInline] [OrgInline]
   | BackendKeyword [(Text, Text)]
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 instance Semigroup KeywordValue where
   (ValueKeyword o1 t1) <> (ValueKeyword o2 t2) = ValueKeyword (o1 <> "\n" <> o2) (t1 <> "\n" <> t2)
@@ -195,16 +194,16 @@ type Affiliated = Keywords
 -- Greater Blocks
 
 data GreaterBlockType = Center | Quote | Special Text
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 
 -- Lists
 
 data ListType = Ordered OrderedStyle | Descriptive | Unordered Char
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 data OrderedStyle = OrderedNum | OrderedAlpha
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 orderedStyle :: Text -> OrderedStyle
 orderedStyle (T.any isDigit -> True) = OrderedNum
@@ -213,13 +212,13 @@ orderedStyle _ = OrderedAlpha
 -- | One item of a list. Parameters are bullet, counter cookie, checkbox and
 -- tag.
 data ListItem = ListItem Bullet (Maybe Int) (Maybe Checkbox) [OrgInline] [OrgElement]
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 data Bullet = Bullet Char | Counter Text Char
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 data Checkbox = BoolBox Bool | PartialBox
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 listItemType :: ListItem -> ListType
 listItemType (ListItem (Counter t _) _ _ _ _) = Ordered (orderedStyle t)
@@ -232,7 +231,7 @@ listItemType (ListItem (Bullet c) _ _ _ _) = Unordered c
 data ClockData
   = ClockSimple DateTime
   | ClockRange DateTime DateTime Time
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 
 -- Babel call
@@ -243,7 +242,7 @@ data BabelCall = BabelCall
   , babelCallHeader2 :: Text
   , babelCallArguments :: Text
   }
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 -- * Objects (inline elements)
 
@@ -278,7 +277,7 @@ data OrgInline -- TODO rename to OrgObject
   | Macro -- ^ Org inline macro (e.g. @{{{poem(red,blue)}}}@)
       Text -- ^ Macro name (e.g. @"poem"@)
       [Text] -- ^ Arguments (e.g. @["red", "blue"]@)
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 type Protocol = Text
 
@@ -288,13 +287,13 @@ data LinkTarget
   = URILink Protocol Text
   | InternalLink Id
   | UnresolvedLink Text
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 data FragmentType
   = RawFragment
   | InlMathFragment
   | DispMathFragment
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 data Citation = Citation
   { citationStyle      :: Text
@@ -303,11 +302,11 @@ data Citation = Citation
   , citationSuffix     :: [OrgInline]
   , citationReferences :: [CiteReference]
   }
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 data CiteReference = CiteReference
   { refId      :: Text
   , refPrefix  :: [OrgInline]
   , refSuffix  :: [OrgInline]
   }
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Generic)

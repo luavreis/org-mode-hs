@@ -7,7 +7,6 @@ module Org.Exporters.Ondim where
 import Org.Types
 import Org.Exporters.Common
 import Ondim
-import Data.Tree
 import Ondim.HTML
 import Ondim.Extra
 import Data.Map.Syntax
@@ -25,7 +24,7 @@ import Data.ByteString.Builder (toLazyByteString)
 newtype TemplateLoadingError = TemplateLoadingException String
   deriving (Eq, Show, Exception)
 
-type OrgOndimS = OndimS Exporter HTMLNode
+type OrgOndimS = OndimS Exporter X.Node
 
 loadOrgTemplates :: IO OrgOndimS
 loadOrgTemplates = do
@@ -36,7 +35,36 @@ loadOrgTemplates = do
     case X.parseHTML file text of
       Left s -> throwIO (TemplateLoadingException s)
       Right t -> pure (fromString name, fromDocument t)
-  pure $ OndimS (fromList templates <> defaultExpansions) 0 [] id
+  pure $ emptyOndimS { expansions = fromList templates <> defaultExpansions
+                     , afterExpansion = trimSpaces
+                     }
+
+trimSpaces :: [X.Node] -> [X.Node]
+trimSpaces tpl = removeEmpty tpl &
+                 concatContents &
+                 changeLast (mapText T.stripEnd) &
+                 changeFst (mapText T.stripStart)
+  where
+    removeEmpty = filter notEmpty
+      where
+        notEmpty (X.TextNode "") = False
+        notEmpty X.Comment {} = False
+        notEmpty _ = True
+
+    concatContents (X.TextNode t1 : X.TextNode t2 : xs) =
+      concatContents (X.TextNode (t1 <> t2) : xs)
+    concatContents (x : xs) = x : concatContents xs
+    concatContents [] = []
+
+    changeLast _ [] = []
+    changeLast f [x] = [f x]
+    changeLast f (x:xs) = x : changeLast f xs
+
+    changeFst _ [] = []
+    changeFst f (x:xs) = f x : xs
+
+    mapText f (X.TextNode t) = X.TextNode (f t)
+    mapText _ x = x
 
 renderExpanded ::
   OrgOndimS ->
@@ -45,7 +73,6 @@ renderExpanded ::
 renderExpanded st exst spl =
   runOndimT spl st
   & flip evalState defaultExporterState { exporterSettings = exst }
-  <&> mapMaybe fromTree
   <&> X.renderHtmlFragment X.UTF8
   <&> toLazyByteString
 
@@ -58,7 +85,7 @@ renderExpansible st exst obj = renderExpanded st exst (expand obj)
 
 renderDocWithLayout :: OrgOndimS -> X.Document -> OrgDocument -> Either OndimException LByteString
 renderDocWithLayout st layout doc =
-  expandDocument layout `bindingExpansions'` (documentExpansions doc)
+  expandDocument layout `bindingExpansions` (documentExpansions doc)
   & flip runOndimT st
   & flip evalState st'
   <&> X.render
@@ -91,14 +118,14 @@ getFootnoteRef label = do
 
 type Exporter = State ExporterState
 
-type Expanded = OndimHtmlT Exporter (Forest HTMLNode)
+type Expanded = OndimHtmlT Exporter [X.Node]
 
-type HTMLExpansion = Expansion Exporter HTMLNode
+type HTMLExpansion = Expansion Exporter X.Node
 
-type HTMLExpansions = Expansions' Exporter HTMLNode
+type HTMLExpansions = Expansions' Exporter X.Node
 
-element :: Text -> Forest HTMLNode -> Tree HTMLNode
-element name c = Node (Element name) c
+element :: Text -> [X.Node] -> X.Node
+element name c = X.Element name [] c
 
 class CanExpand a where
   expand :: a -> Expanded
@@ -110,7 +137,7 @@ instance (CanExpand a, CanExpand b) => CanExpand (Either a b) where
   expand = either expand expand
 
 instance CanExpand Text where
-  expand t = pure [leaf (Content t)]
+  expand t = pure [X.TextNode t]
 
 instance CanExpand OrgInline where
   expand = expandOrgObject
@@ -131,11 +158,11 @@ instance CanExpand OrgSection where
     hlevels <- getSetting orgExportHeadlineLevels
     hshift <- getSetting headlineLevelShift
     callExpansion "org:section"
-      `bindingExpansions'` do
-        "headline" ## headline hlevels hshift . runChildrenWith' do
+      `bindingExpansions` do
+        "headline" ## headline hlevels hshift . runChildrenWith do
           maybe (switchCases "no-todo") todo (sectionTodo section)
-          "priority" ## flip (maybe silence) (sectionPriority section) \p ->
-            runChildrenWith' $
+          "priority" ## flip (maybe ignore) (sectionPriority section) \p ->
+            runChildrenWith $
               "value" ## const $ expand (priority p)
           "headline-title" ## const $ expand (sectionTitle section)
           "tags" ## \inner -> join <$> forM (sectionTags section) (`tags` inner)
@@ -168,17 +195,16 @@ documentExpansions doc = do
     if not (null fns)
     then do
       callExpansion "org:footnotes"
-        `bindingExpansions'` do
+        `bindingExpansions` do
           "footnote-defs" ## \inner ->
             join <$> forM fns \(fn, i) ->
-              (children <$> inner)
-                `bindingExpansions'` do
+              (`runChildrenWith` inner) do
                   "number" ## const $ expand (show i :: Text)
                   contents fn
     else pure []
 
 tags :: Tag -> HTMLExpansion
-tags tag = runChildrenWith' $
+tags tag = runChildrenWith $
   "tag" ## const $ expand tag
 
 contents :: (CanExpand a) => a -> HTMLExpansions
@@ -203,20 +229,20 @@ target tgt = do
 kwExps :: Affiliated -> Text -> HTMLExpansions
 kwExps kws prefix =
   flip foldMap (toPairs kws) \(name, kw) ->
-    fromText (prefix <> name) ##
+    (prefix <> name) ##
       case kw of
         ValueKeyword _ txt -> const $ expand txt
         ParsedKeyword _ c -> const $ expand c
-        _ -> silence
+        _ -> ignore
 
-affAttrExp :: Affiliated -> AttrExpansions Exporter
+affAttrExp :: Affiliated -> AttrExpansions' Exporter X.Node
 affAttrExp aff =
   "affiliated" ## const . pure $ affAttrs aff
 
-affAttrs :: Affiliated -> [Attribute]
+affAttrs :: Affiliated -> [(Text, Text)]
 affAttrs aff = join $ mapMaybe getHtmlAttrs (toPairs aff)
   where
-    getHtmlAttrs ("attr_html", BackendKeyword x) = Just (map Attr x)
+    getHtmlAttrs ("attr_html", BackendKeyword x) = Just x
     getHtmlAttrs _ = Nothing
 
 expandOrgObject :: OrgInline -> Expanded
@@ -228,7 +254,7 @@ expandOrgObject = \case
   LineBreak ->
     pure . one $ element "br" []
   (NBSpace n) ->
-    pure [leaf (RawContent $ T.replicate n "&nbsp;")]
+    pure [rawNode $ T.replicate n "&nbsp;"]
   (Italic objs) ->
     one . element "i" <$> expand objs
   (Underline objs) ->
@@ -245,10 +271,10 @@ expandOrgObject = \case
     one . element "q" <$> expand objs
   (Code txt) ->
     callExpansion "org:code"
-    `bindingExpansions'` contents txt
+    `bindingExpansions` contents txt
   (Verbatim txt) ->
     callExpansion "org:verbatim"
-    `bindingExpansions'` contents txt
+    `bindingExpansions` contents txt
   (Timestamp tsdata) ->
     timestamp tsdata
   (Entity name) ->
@@ -256,27 +282,27 @@ expandOrgObject = \case
   (LaTeXFragment k c) ->
     latexFragment k c
   (ExportSnippet "html" c) ->
-    pure [leaf (RawContent c)]
+    pure [rawNode c]
   ExportSnippet {} ->
     pure []
   (FootnoteRef label) ->
     callExpansion "org:footnote-ref"
-    `bindingExpansions'` footnoteRef label
+    `bindingExpansions` footnoteRef label
   (Cite _) -> expand ("(unresolved citation)" :: Text)
   InlBabelCall {} ->
     pure []
   (Src lang _ txt) ->
     callExpansion "org:src"
-    `bindingExpansions'` do
+    `bindingExpansions` do
       "language" ## const $ expand lang
       contents txt
   (Link tgt inl) ->
     callExpansion "org:link"
-    `bindingExpansions'` (target tgt <> contents inl)
+    `bindingExpansions` (target tgt <> contents inl)
   (Image tgt) ->
-    callExpansion "org:image" `bindingExpansions'` (target tgt)
+    callExpansion "org:image" `bindingExpansions` (target tgt)
   (Target uid) ->
-    pure [toTree $ X.Element "a" [("id", uid)] []]
+    pure [X.Element "a" [("id", uid)] []]
   Macro {} ->
     pure []
 
@@ -284,46 +310,46 @@ expandOrgElement :: OrgElement -> Expanded
 expandOrgElement = \case
   (Paragraph aff [Image tgt]) ->
     callExpansion "org:figure"
-    `bindingExpansions` affAttrExp aff
-    `bindingExpansions'` (kwExps aff "kw:" <> target tgt)
+    `bindingAttrExpansions` affAttrExp aff
+    `bindingExpansions` (kwExps aff "kw:" <> target tgt)
   (Paragraph aff c) ->
     callExpansion "org:paragraph"
-    `bindingExpansions` affAttrExp aff
-    `bindingExpansions'` contents c
+    `bindingAttrExpansions` affAttrExp aff
+    `bindingExpansions` contents c
   (GreaterBlock aff Quote c) ->
     callExpansion "org:quote-block"
-    `bindingExpansions` affAttrExp aff
-    `bindingExpansions'` contents c
+    `bindingAttrExpansions` affAttrExp aff
+    `bindingExpansions` contents c
   (GreaterBlock aff Center c) ->
     callExpansion "org:center-block"
-    `bindingExpansions` affAttrExp aff
-    `bindingExpansions'` contents c
+    `bindingAttrExpansions` affAttrExp aff
+    `bindingExpansions` contents c
   (GreaterBlock aff (Special cls) c) ->
     callExpansion "org:special-block"
-    `bindingExpansions` affAttrExp aff
-    `bindingExpansions'` do
+    `bindingAttrExpansions` affAttrExp aff
+    `bindingExpansions` do
       "special-name" ## const $ expand cls
       contents c
   (PlainList aff k i) -> plainList k i
-    `bindingExpansions` affAttrExp aff
+    `bindingAttrExpansions` affAttrExp aff
   (DynamicBlock _ _ els) -> expand els
   (Drawer _ els) -> expand els
-  (ExportBlock "html" c) -> pure [leaf (RawContent c)]
+  (ExportBlock "html" c) -> pure [rawNode c]
   (ExportBlock _ _) -> pure []
   (ExampleBlock aff st c) ->
     callExpansion "org:example-block"
-    `bindingExpansions` affAttrExp aff
-    `bindingExpansions'` srcOrExample st c
+    `bindingAttrExpansions` affAttrExp aff
+    `bindingExpansions` srcOrExample st c
   (SrcBlock aff lang st _ c) ->
     callExpansion "org:src-block"
-    `bindingExpansions` affAttrExp aff
-    `bindingExpansions'` do
+    `bindingAttrExpansions` affAttrExp aff
+    `bindingExpansions` do
        "language" ## const $ expand lang
        srcOrExample st c
   (LaTeXEnvironment aff _ text) ->
     callExpansion "org:latex-environment"
-    `bindingExpansions` affAttrExp aff
-    `bindingExpansions'` contents text
+    `bindingAttrExpansions` affAttrExp aff
+    `bindingExpansions` contents text
   HorizontalRule -> pure . one $ element "hr" []
   Keyword {} -> pure []
   VerseBlock {} -> error "not impl"
@@ -341,19 +367,19 @@ sectChildren childs = do
 
 plainList :: ListType -> [ListItem] -> Expanded
 plainList kind items = do
-  switch plainListTag $ Node emptyValue <$> callExpansion "org:plain-list"
-    `bindingExpansions'` do
-      "list-items" ## listItems
-      "bullet" ## const bullet
-      "counter" ## const counter
+  callExpansion "org:plain-list"
+  `bindingExpansions` do
+    "list-items" ## listItems
+    "bullet" ## const bullet
+    "counter" ## const counter
+    switchCases plainListTag
   where
     listItems :: HTMLExpansion
     listItems inner =
       join <$> forM items \(ListItem _ i cbox t c) ->
-        (children <$> inner)
-        `bindingExpansions'` do
-          "counter-set" ## maybe silence counterSet i
-          "checkbox" ## maybe silence checkbox cbox
+        (`runChildrenWith` inner) do
+          "counter-set" ## maybe ignore counterSet i
+          "checkbox" ## maybe ignore checkbox cbox
           "tag" ## const $ expand t
           "contents" ## const $ expand $ cropRenderElements c
       where
@@ -372,7 +398,7 @@ plainList kind items = do
       Unordered _ -> "unordered"
 
     bullet = case kind of
-      Unordered b -> callExpansion (fromText $ "bullet:" `T.snoc` b)
+      Unordered b -> callExpansion ("bullet:" `T.snoc` b)
       _ -> pure []
 
     counter = case kind of
@@ -386,21 +412,21 @@ srcOrExample stNumber lins = do
   where
     runLines :: HTMLExpansion
     runLines inner =
-      intersperse (leaf (Content "\n")) <$>
+      intersperse (X.TextNode "\n") <$>
       foldMapM (flip lineSplices inner) (zip [0..] lins)
 
     lineNumber offset = do
       "line-number" ##
-        flip (maybe silence) ((offset +) <$> stNumber) \n ->
-          runChildrenWith' ("number" ## const $ expand (show n :: Text))
+        flip (maybe ignore) ((offset +) <$> stNumber) \n ->
+          runChildrenWith ("number" ## const $ expand (show n :: Text))
 
     lineSplices (offset, SrcLine c) inner = switch "plain" inner
-      `bindingExpansions'` do
+      `bindingExpansions` do
         lineNumber offset
         contents c
 
     lineSplices (offset, RefLine i ref c) inner = switch "ref" inner
-      `bindingExpansions'` do
+      `bindingExpansions` do
         lineNumber offset
         "ref" ## const $ expand ref
         "id"  ## const $ expand i
@@ -413,23 +439,23 @@ footnoteRef label = do
 timestamp :: TimestampData -> Expanded
 timestamp = \case
   TimestampData a (dateToDay -> d, fmap toTime -> t, r, w) ->
-    switch (active a <> "-single") $ Node emptyValue <$>
-      callExpansion "org:timestamp"
-      `bindingExpansions'` dtExps d t r w
+    callExpansion "org:timestamp"
+    `bindingExpansions` do
+      dtExps d t r w
+      switchCases (active a <> "-single")
   TimestampRange a (dateToDay -> d1, fmap toTime -> t1, r1, w1)
                    (dateToDay -> d2, fmap toTime -> t2, r2, w2) ->
-    switch (active a <> "-range") $ Node emptyValue <$>
-      callExpansion "org:timestamp"
-      `bindingExpansions'` do
-        "from" ## runChildrenWith' (dtExps d1 t1 r1 w1)
-        "to"   ## runChildrenWith' (dtExps d2 t2 r2 w2)
+    callExpansion "org:timestamp"
+    `bindingExpansions` do
+      "from" ## runChildrenWith (dtExps d1 t1 r1 w1)
+      "to"   ## runChildrenWith (dtExps d2 t2 r2 w2)
+      switchCases (active a <> "-range")
   where
     dtExps d t r w = do
-      "repeater" ## maybe silence (runChildrenWith' . tsMark) r
-      "warning-period" ## maybe silence (runChildrenWith' . tsMark) w
-      mapV fromReprExpansion $ do
-        tsDate d
-        tsTime t
+      "repeater" ## maybe ignore (runChildrenWith . tsMark) r
+      "warning-period" ## maybe ignore (runChildrenWith . tsMark) w
+      tsDate d
+      tsTime t
 
     active True = "active"
     active False = "inactive"
@@ -437,19 +463,19 @@ timestamp = \case
     tsMark :: TimestampMark -> HTMLExpansions
     tsMark (_,v,c) = do
       "value" ## const $ expand (show v :: Text)
-      "unit" ## const $ callExpansion (fromText $ "unit:" `T.snoc` c)
+      "unit" ## const $ callExpansion ("unit:" `T.snoc` c)
 
     dateToDay (y,m,d,_) = fromGregorian (toInteger y) m d
     toTime (h,m) = TimeOfDay h m 0
 
-    tsDate :: Day -> NodeExpansions Exporter
+    tsDate :: Day -> HTMLExpansions
     tsDate day = "ts-date" ## \input' -> do
       input <- input'
       locale <- getSetting timeLocale
       let format = toString $ X.nodeText input
       pure . one . X.TextNode . toText $ formatTime locale format day
 
-    tsTime :: Maybe TimeOfDay -> NodeExpansions Exporter
+    tsTime :: Maybe TimeOfDay -> HTMLExpansions
     tsTime time = "ts-time" ## \input' -> do
       input <- input'
       locale <- getSetting timeLocale
@@ -458,10 +484,11 @@ timestamp = \case
 
 latexFragment :: FragmentType -> Text -> Expanded
 latexFragment kind txt =
-  switch (case kind of
-            InlMathFragment -> "inline"
-            DispMathFragment -> "display"
-            RawFragment -> "raw") $
-  Node emptyValue <$>
   callExpansion "org:latex-fragment"
-  `bindingExpansions'` contents txt
+  `bindingExpansions` do
+    contents txt
+    switchCases $
+      case kind of
+        InlMathFragment -> "inline"
+        DispMathFragment -> "display"
+        RawFragment -> "raw"

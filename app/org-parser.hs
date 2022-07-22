@@ -6,7 +6,6 @@ import Org.Parser
 import Org.Exporters.Ondim
 import Org.Exporters.Common
 import Org.Types
-import Ondim
 
 filepath :: Parser FilePath
 filepath = strOption
