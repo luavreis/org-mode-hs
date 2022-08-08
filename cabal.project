@@ -2,5 +2,5 @@ packages: org-parser.cabal
 
 source-repository-package
   type: git
-  location: https://gitlab.com/lucasvreis/ondim
-  tag: 111f572ee35cf5b81901144cc2a142c389fd0031
+  location: https://github.com/lucasvreis/ondim
+  tag: 6f61a88bfcb70a7d72ca630ac70a713dbf43bdd2

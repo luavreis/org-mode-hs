@@ -3,7 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="generator" content="ondim" />
-    <title><meta:title/></title>
+    <if-bound tag="meta:title">
+      <title><meta:title/></title>
+    </if-bound>
     <style type="text/css" media="screen">
      .todokw {
          font-family: monospace;

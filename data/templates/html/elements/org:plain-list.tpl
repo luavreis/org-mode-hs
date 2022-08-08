@@ -9,9 +9,9 @@
 </bind>
 
 <case unordered>
-  <bind tag="bullet:-">disc</bind>
-  <bind tag="bullet:+">square</bind>
-  <bind tag="bullet:*">circle</bind>
+  <bind-text tag="bullet:-">disc</bind-text>
+  <bind-text tag="bullet:+">square</bind-text>
+  <bind-text tag="bullet:*">circle</bind-text>
 
   <ul style="list-style-type: ${bullet};" affiliated>
     <list-items>
@@ -24,8 +24,8 @@
 </case>
 
 <case ordered>
-  <bind tag="counter:num">decimal</bind>
-  <bind tag="counter:alpha">lower-alpha</bind>
+  <bind-text tag="counter:num">decimal</bind-text>
+  <bind-text tag="counter:alpha">lower-alpha</bind-text>
 
   <ol style="list-style-type: ${counter};" affiliated>
     <list-items>
