@@ -139,7 +139,7 @@ findMarked end = try $
     str <- takeWhileP
            (Just $ "insides of mcontext (not " ++
             getMDescription end ++ ")")
-           (not . getMPred end)
+           (not . getMarks end)
     setLastChar (snd <$> T.unsnoc str)
     ((str,) <$> try (getParser end) <?> "end of mcontext")
       <|> (do c <- anySingle <?> "insides of mcontext (single)"

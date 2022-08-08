@@ -430,7 +430,7 @@ keyword = try do
   -- regexes: "#+abc:d:e :f" is a valid keyword of key "abc:d" and value "e :f".
   name <- T.toLower . fst <$> fix \me -> do -- a joke?
     res@(name, ended) <- findMarked $
-      Marked (Any . isSpace <> Any . (== ':')) ["space", ":"] . try $
+      Marked (ap2 (||) isSpace (== ':')) ["space", ":"] . try $
         (newline' <|> void (satisfy isSpace)) $> False
         <|> char ':' *> notFollowedBy me $> True
     guard (not $ T.null name)

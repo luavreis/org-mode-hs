@@ -69,7 +69,7 @@ markupContext :: Monoid k
 markupContext f elems = go
   where
     go = try $ do
-      let specials = getMPred elems
+      let specials = getMarks elems
       str <- optional $ takeWhile1P
              (Just $ "insides of markup (not " <>
               getMDescription elems <> ")")

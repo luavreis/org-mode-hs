@@ -191,12 +191,12 @@ texMathFragment = mark' '$' $ try $ do
       pure str
 
     singleChar = try $ do
-      c <- satisfy (\x -> not (isSpace x) && x `notMember` disallowedCharsSet)
+      c <- satisfy (\x -> not (isSpace x) && x `notElem` disallowedCharsSet)
       post
       pure $ one c
 
-    disallowedCharsSet :: Set Char
-    disallowedCharsSet = fromList ['.',',','?',';','"']
+    disallowedCharsSet :: [Char]
+    disallowedCharsSet = ['.',',','?',';','"']
 
     border1 c = not (isSpace c) && c `notElem` (".,;$" :: String)
     border2 c = not (isSpace c) && c `notElem` (".,$" :: String)
@@ -456,7 +456,7 @@ suscript = mark "_^" $ try do
       plainMarkupContext entityOrFragment
 
     plainEnd :: Marked OrgParser ()
-    plainEnd = Marked (Any . not . isAlphaNum)
+    plainEnd = Marked (not . isAlphaNum)
                ["non-alphanum chars"] $ try do
       lookAhead $ eof
         <|> try (some (oneOf [',', '.', '\\']) *> notFollowedBy (satisfy isAlphaNum))
