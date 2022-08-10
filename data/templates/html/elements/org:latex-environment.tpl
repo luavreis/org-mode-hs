@@ -1,3 +1,3 @@
 <div class="latex-environment" affiliated>
-  \[<contents />\]
+  \[<content />\]
 </div>

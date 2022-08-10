@@ -1,1 +1,1 @@
-<code class="code"><contents/></code>
+<code class="code"><content /></code>

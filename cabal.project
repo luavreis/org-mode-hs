@@ -1,6 +1,7 @@
 packages: org-parser.cabal
+          ~/dados/projetos/codigo/haskell/ondim/
 
-source-repository-package
-  type: git
-  location: https://github.com/lucasvreis/ondim
-  tag: 6f61a88bfcb70a7d72ca630ac70a713dbf43bdd2
+-- source-repository-package
+--   type: git
+--   location: https://github.com/lucasvreis/ondim
+--   tag: 6f61a88bfcb70a7d72ca630ac70a713dbf43bdd2

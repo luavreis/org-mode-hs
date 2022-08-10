@@ -1,1 +1,1 @@
-<code class="verbatim"><contents/></code>
+<code class="verbatim"><content /></code>

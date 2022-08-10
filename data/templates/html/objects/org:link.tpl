@@ -1,1 +1,1 @@
-<a href="${target}"><contents /></a>
+<a href="${target}"><content /></a>

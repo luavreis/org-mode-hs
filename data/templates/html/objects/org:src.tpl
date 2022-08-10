@@ -1,1 +1,1 @@
-<code class="src-${language}"><contents/></code>
+<code class="src-${language}"><content /></code>

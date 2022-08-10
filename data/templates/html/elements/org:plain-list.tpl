@@ -1,37 +1,47 @@
-<bind tag="checkbox:true">
-  <code>[X]</code>
-</bind>
-<bind tag="checkbox:false">
-  <code>[ ]</code>
-</bind>
-<bind tag="checkbox:partial">
-  <code>[-]</code>
+<bind checkbox-def>
+  <switch checkbox>
+    <case true><code>[X]</code></case>
+    <case false><code>[ ]</code></case>
+    <case partial><code>[-]</code></case>
+  </switch>
 </bind>
 
 <case unordered>
-  <bind-text tag="bullet:-">disc</bind-text>
-  <bind-text tag="bullet:+">square</bind-text>
-  <bind-text tag="bullet:*">circle</bind-text>
+  <bind-text bullet-style>
+    <switch bullet>
+      <case tag="-">disc</case>
+      <case tag="+">square</case>
+      <case tag="*">circle</case>
+    </switch>
+  </bind-text>
 
-  <ul style="list-style-type: ${bullet};" affiliated>
+  <ul style="list-style-type: ${bullet-style};" affiliated>
     <list-items>
       <li>
-        <checkbox />
-        <contents />
+        <checkbox-def />
+        <list-item-content />
       </li>
     </list-items>
   </ul>
 </case>
 
-<case ordered>
-  <bind-text tag="counter:num">decimal</bind-text>
-  <bind-text tag="counter:alpha">lower-alpha</bind-text>
-
-  <ol style="list-style-type: ${counter};" affiliated>
+<case ordered-num>
+  <ol style="list-style-type: decimal;" affiliated>
     <list-items>
       <li value="${counter-set}">
-        <checkbox />
-        <contents />
+        <checkbox-def />
+        <list-item-content />
+      </li>
+    </list-items>
+  </ol>
+</case>
+
+<case ordered-alpha>
+  <ol style="list-style-type: lower-alpha;" affiliated>
+    <list-items>
+      <li value="${counter-set}">
+        <checkbox-def />
+        <list-item-content />
       </li>
     </list-items>
   </ol>
@@ -40,8 +50,8 @@
 <case descriptive>
   <dl affiliated>
     <list-items>
-      <dt><checkbox /><tag /></dt>
-      <dd><contents /></dd>
+      <dt><checkbox-def /><descriptive-tag /></dt>
+      <dd><list-item-content /></dd>
     </list-items>
   </dl>
 </case>

@@ -35,6 +35,7 @@ common common-options
                    , map-syntax
                    , megaparsec
                    , pandoc-types >= 1.22
+                   , pandoc
                    , relude
                    , slugify
                    , text
@@ -64,7 +65,8 @@ library
                      Org.Walk
                      Org.Parser
                      Org.Exporters.Common
-                     Org.Exporters.Ondim
+                     Org.Exporters.HTML
+                     Org.Exporters.Pandoc
                      Org.Exporters.Citeproc
   other-modules:     Org.Parser.Common
                      Org.Parser.State
@@ -101,7 +103,8 @@ test-suite test
                      Org.Builder
                      Org.Walk
                      Org.Exporters.Common
-                     Org.Exporters.Ondim
+                     Org.Exporters.HTML
+                     Org.Exporters.Pandoc
                      Org.Exporters.Citeproc
                      Org.Parser.Document
                      Org.Parser.Elements

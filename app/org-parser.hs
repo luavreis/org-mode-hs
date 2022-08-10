@@ -17,7 +17,9 @@ main :: IO ()
 main = do
   d <- parseOrgIO defaultOrgOptions =<< execParser opts
   st <- loadOrgTemplates
-  print $ renderExpansible st defaultExporterSettings (documentSections d)
+  either print putBS $
+    second toStrict $
+    renderExpansible defaultExporterSettings st (documentSections d)
   where
     opts = info (filepath <**> helper)
            ( fullDesc

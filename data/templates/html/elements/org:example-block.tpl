@@ -1,12 +1,5 @@
-<bind tag="number-marker"><line-number><span class="linenumber"><number /></span></line-number></bind>
+<bind line-number><if-bound number><span class="line-number"><number /></span></if-bound></bind>
 
-<pre class="example" affiliated><src-lines>
-  <case plain>
-    <code class="line-of-code"><number-marker /><contents /></code>
-  </case>
-  <case ref>
-    <span id="${id}" class="coderef-target">
-      <code class="line-of-code"><number-marker /><contents /></code><span class="coderef">(<ref />)</span>
-    </span>
-  </case>
-</src-lines></pre>
+<bind line-of-code><code class="line-of-code"><line-number /><content /></code></bind>
+
+<pre class="example" affiliated><src-lines><case plain><line-of-code /></case><case ref><span id="${id}" class="coderef-target"><line-of-code /><span class="coderef">(<ref />)</span></span></case></src-lines></pre>

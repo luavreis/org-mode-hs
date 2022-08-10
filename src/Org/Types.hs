@@ -251,7 +251,6 @@ data OrgInline -- TODO rename to OrgObject
   = Plain Text
   | SoftBreak
   | LineBreak
-  | NBSpace Int
   | Italic [OrgInline]
   | Underline [OrgInline]
   | Bold [OrgInline]

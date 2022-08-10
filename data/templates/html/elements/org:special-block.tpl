@@ -12,5 +12,5 @@
 
 -->
 <div class="${special-name}" affiliated>
-  <contents/>
+  <content />
 </div>

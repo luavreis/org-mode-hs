@@ -1,1 +1,3 @@
-<p affiliated><contents/></p>
+<p affiliated>
+  <content />
+</p>

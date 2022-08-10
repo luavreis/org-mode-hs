@@ -1,7 +1,6 @@
 module Org.Exporters.Citeproc where
 import Org.Types
 import Citeproc.CslJson
-import qualified Data.Text as T
 import Relude.Extra (lookup)
 import Org.Data.Entities (defaultEntitiesMap, utf8Replacement)
 import Org.Walk
@@ -16,7 +15,6 @@ toCslJson (x : xs) = to x <> toCslJson xs
     to (Plain t) = CslText t
     to SoftBreak = CslText " "
     to LineBreak = CslText " "
-    to (NBSpace n) = CslText $ T.replicate n " "
     to (Italic o) = CslItalic $ toCslJson o
     to (Underline o) = CslUnderline $ toCslJson o
     to (Bold o) = CslBold $ toCslJson o

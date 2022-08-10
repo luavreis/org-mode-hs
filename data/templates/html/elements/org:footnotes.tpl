@@ -3,7 +3,7 @@
   <footnote-defs>
     <div class="footdef">
       <a id="fn.${number}" href="#fnr.${number}">[<number />]</a>
-      <contents />
+      <content />
     </div>
   </footnote-defs>
 </div>
