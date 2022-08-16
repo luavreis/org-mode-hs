@@ -8,7 +8,7 @@ import Citeproc hiding (Citation, toText)
 import qualified Citeproc as C
 import Data.Aeson (decode)
 
-toCslJson :: [OrgInline] -> CslJson Text
+toCslJson :: [OrgObject] -> CslJson Text
 toCslJson [] = CslEmpty
 toCslJson (x : xs) = to x <> toCslJson xs
   where
@@ -105,7 +105,7 @@ citeToCiteproc cite = C.Citation Nothing Nothing $
     nonEmpty' x = Just x
 
 processCitations ::
-  Walkable OrgInline a =>
+  Walkable OrgObject a =>
   CiteprocOptions ->
   Style (CslJson Text) ->
   Maybe Lang ->

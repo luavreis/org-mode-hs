@@ -3,7 +3,7 @@
 module Org.Parser.State where
 
 import Org.Types
-import Org.Builder (OrgElements, OrgInlines)
+import Org.Builder (OrgElements, OrgObjects)
 
 type F = Ap (Reader OrgParserState)
 
@@ -26,10 +26,10 @@ defaultOrgOptions = OrgOptions
 
 -- | Org-mode parser state
 data OrgParserState = OrgParserState
-  { orgStateInternalTargets      :: Map Text (Id, F OrgInlines) -- ^ Key is target name and value is (anchor, default alias)
+  { orgStateInternalTargets      :: Map Text (Id, F OrgObjects) -- ^ Key is target name and value is (anchor, default alias)
   , orgStateKnownAnchors         :: Set Id -- ^ This is the set of known anchors, in order to avoid invalid documents.
   , orgStatePendingAffiliated    :: [F (KeywordKey, KeywordValue)]
-  , orgStateTargetDescriptionCtx :: Maybe (F OrgInlines)
+  , orgStateTargetDescriptionCtx :: Maybe (F OrgObjects)
   , orgStateOptions              :: OrgOptions
   , orgStateIdStack              :: [Id]
   , orgStateLastChar             :: Maybe Char

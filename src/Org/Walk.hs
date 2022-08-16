@@ -13,27 +13,27 @@ import Data.Bitraversable (bimapM)
 
 -- Objects
 
-instance Walkable OrgInline OrgDocument where
+instance Walkable OrgObject OrgDocument where
   walkM f x = walkDocumentM f x
   query f x = queryDocument f x
 
-instance Walkable OrgInline OrgSection where
+instance Walkable OrgObject OrgSection where
   walkM f x = walkSectionM f x
   query f x = querySection f x
 
-instance Walkable OrgInline OrgElement where
+instance Walkable OrgObject OrgElement where
   walkM f x = walkElementM f x
   query f x = queryElement f x
 
-instance Walkable OrgInline OrgInline where
+instance Walkable OrgObject OrgObject where
   walkM f x = walkObjectM f x >>= f
   query f x = f x <> queryObject f x
 
-instance Walkable OrgInline KeywordValue where
+instance Walkable OrgObject KeywordValue where
   walkM f x = walkKeywordM f x
   query f x = queryKeyword f x
 
-instance Walkable OrgInline Citation where
+instance Walkable OrgObject Citation where
   walkM f x = walkCitationM f x
   query f x = queryCitation f x
 
@@ -51,7 +51,7 @@ instance Walkable OrgElement OrgElement where
   walkM f x = walkElementM f x >>= f
   query f x = f x <> queryElement f x
 
-instance Walkable OrgElement OrgInline where
+instance Walkable OrgElement OrgObject where
   walkM f x = walkObjectM f x
   query f x = queryObject f x
 
@@ -77,7 +77,7 @@ instance Walkable OrgSection OrgElement where
   walkM f x = walkElementM f x
   query f x = queryElement f x
 
-instance Walkable OrgSection OrgInline where
+instance Walkable OrgSection OrgObject where
   walkM f x = walkObjectM f x
   query f x = queryObject f x
 
@@ -93,7 +93,7 @@ instance Walkable OrgSection Citation where
 
 -- Objects
 
-walkObjectM :: (Monad m, Walkable a OrgInline, Walkable a Citation) => (a -> m a) -> OrgInline -> m OrgInline
+walkObjectM :: (Monad m, Walkable a OrgObject, Walkable a Citation) => (a -> m a) -> OrgObject -> m OrgObject
 walkObjectM f (Italic o) = Italic <$> walkM f o
 walkObjectM f (Underline o) = Underline <$> walkM f o
 walkObjectM f (Bold o) = Bold <$> walkM f o
@@ -119,7 +119,7 @@ walkObjectM _ x@Macro {} = pure x
 walkObjectM _ x@Image {} = pure x
 walkObjectM _ x@Target {} = pure x
 
-queryObject :: (Monoid c, Walkable a OrgInline, Walkable a Citation) => (a -> c) -> OrgInline -> c
+queryObject :: (Monoid c, Walkable a OrgObject, Walkable a Citation) => (a -> c) -> OrgObject -> c
 queryObject f (Italic o) = query f o
 queryObject f (Underline o) = query f o
 queryObject f (Bold o) = query f o
@@ -150,7 +150,7 @@ queryObject _ Target {} = mempty
 
 walkElementM
   :: ( Monad m
-     , Walkable a OrgInline
+     , Walkable a OrgObject
      , Walkable a OrgElement
      , Walkable a KeywordValue
      )
@@ -174,7 +174,7 @@ walkElementM _ x@HorizontalRule {} = pure x
 
 queryElement
   :: ( Monoid c
-     , Walkable a OrgInline
+     , Walkable a OrgObject
      , Walkable a OrgElement
      , Walkable a KeywordValue
      )
@@ -226,7 +226,7 @@ queryDocument f (OrgDocument _ k fn c s) =
 
 walkSectionM
   :: ( Monad m
-     , Walkable a OrgInline
+     , Walkable a OrgObject
      , Walkable a OrgElement
      , Walkable a OrgSection
      )
@@ -238,7 +238,7 @@ walkSectionM f (OrgSection i p t pr ttl tgs pl an c s) =
 
 querySection
   :: ( Monoid c
-     , Walkable a OrgInline
+     , Walkable a OrgObject
      , Walkable a OrgElement
      , Walkable a OrgSection
      )
@@ -252,7 +252,7 @@ querySection f (OrgSection _ _ _ _ ttl _ _ _ c s) =
 
 walkKeywordM
   :: ( Monad m
-     , Walkable a OrgInline
+     , Walkable a OrgObject
      )
   => (a -> m a)
   -> KeywordValue
@@ -263,7 +263,7 @@ walkKeywordM _ x@BackendKeyword {} = pure x
 
 queryKeyword
   :: ( Monoid c
-     , Walkable a OrgInline
+     , Walkable a OrgObject
      )
   => (a -> c)
   -> KeywordValue
@@ -276,7 +276,7 @@ queryKeyword _ BackendKeyword {} = mempty
 
 walkCitationM
   :: ( Monad m
-     , Walkable a OrgInline
+     , Walkable a OrgObject
      )
   => (a -> m a)
   -> Citation
@@ -291,7 +291,7 @@ walkCitationM f (Citation cs cv cpf csf cr) = do
 
 queryCitation
   :: ( Monoid c
-     , Walkable a OrgInline
+     , Walkable a OrgObject
      )
   => (a -> c)
   -> Citation

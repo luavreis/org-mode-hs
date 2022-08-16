@@ -23,7 +23,7 @@ lookupProperty k = M.lookup k . documentProperties
 lookupKeyword :: Text -> OrgDocument -> [KeywordValue]
 lookupKeyword k = map snd . filter ((k ==) . fst) . documentKeywords
 
-documentTitle :: OrgDocument -> [OrgInline]
+documentTitle :: OrgDocument -> [OrgObject]
 documentTitle doc = foldMap justParsed (lookupKeyword "title" doc)
   where
     justParsed (ParsedKeyword _ o) = o
@@ -34,7 +34,7 @@ data OrgSection = OrgSection
   , sectionProperties  :: Properties
   , sectionTodo        :: Maybe TodoKeyword
   , sectionPriority    :: Maybe Priority
-  , sectionTitle       :: [OrgInline]
+  , sectionTitle       :: [OrgObject]
   , sectionTags        :: Tags
   , sectionPlanning    :: PlanningInfo
   , sectionAnchor      :: Id
@@ -123,7 +123,7 @@ data OrgElement
       [OrgElement] -- ^ Drawer elements
   | DynamicBlock Text (Map Text Text) [OrgElement]
   | PlainList Affiliated ListType [ListItem]
-  -- Table Affiliated [OrgInline] [ColSpec] TableHead [TableBody] TableFoot
+  -- Table Affiliated [OrgObject] [ColSpec] TableHead [TableBody] TableFoot
   | ExportBlock
       Text -- ^ Format
       Text -- ^ Contents
@@ -137,7 +137,7 @@ data OrgElement
       (Maybe Int) -- ^ Starting line number
       [(Text, Text)] -- ^ Header arguments
       [SrcLine] -- ^ Contents
-  | VerseBlock Affiliated [[OrgInline]]
+  | VerseBlock Affiliated [[OrgObject]]
   | Clock ClockData
   | HorizontalRule
   | Keyword KeywordKey KeywordValue
@@ -145,7 +145,7 @@ data OrgElement
       Affiliated
       Text -- ^ Environment name
       Text -- ^ Environment contents
-  | Paragraph Affiliated [OrgInline]
+  | Paragraph Affiliated [OrgObject]
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 data QuoteType = SingleQuote | DoubleQuote
@@ -173,7 +173,7 @@ type KeywordKey = Text
 
 data KeywordValue
   = ValueKeyword Text Text
-  | ParsedKeyword [OrgInline] [OrgInline]
+  | ParsedKeyword [OrgObject] [OrgObject]
   | BackendKeyword [(Text, Text)]
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
@@ -211,7 +211,7 @@ orderedStyle _ = OrderedAlpha
 
 -- | One item of a list. Parameters are bullet, counter cookie, checkbox and
 -- tag.
-data ListItem = ListItem Bullet (Maybe Int) (Maybe Checkbox) [OrgInline] [OrgElement]
+data ListItem = ListItem Bullet (Maybe Int) (Maybe Checkbox) [OrgObject] [OrgElement]
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 data Bullet = Bullet Char | Counter Text Char
@@ -246,18 +246,18 @@ data BabelCall = BabelCall
 
 -- * Objects (inline elements)
 
--- | Objects (inline elements). Derived from Pandoc's Inline.
-data OrgInline -- TODO rename to OrgObject
+-- | Objects (inline elements).
+data OrgObject
   = Plain Text
   | SoftBreak
   | LineBreak
-  | Italic [OrgInline]
-  | Underline [OrgInline]
-  | Bold [OrgInline]
-  | Strikethrough [OrgInline]
-  | Superscript [OrgInline]
-  | Subscript [OrgInline]
-  | Quoted QuoteType [OrgInline]
+  | Italic [OrgObject]
+  | Underline [OrgObject]
+  | Bold [OrgObject]
+  | Strikethrough [OrgObject]
+  | Superscript [OrgObject]
+  | Subscript [OrgObject]
+  | Quoted QuoteType [OrgObject]
   | Code Text
   | Verbatim Text
   | Timestamp TimestampData
@@ -270,7 +270,7 @@ data OrgInline -- TODO rename to OrgObject
   | Cite Citation
   | InlBabelCall BabelCall
   | Src Text Text Text
-  | Link LinkTarget [OrgInline]
+  | Link LinkTarget [OrgObject]
   | Image LinkTarget
   | Target Id
   | Macro -- ^ Org inline macro (e.g. @{{{poem(red,blue)}}}@)
@@ -297,15 +297,15 @@ data FragmentType
 data Citation = Citation
   { citationStyle      :: Text
   , citationVariant    :: Text
-  , citationPrefix     :: [OrgInline]
-  , citationSuffix     :: [OrgInline]
+  , citationPrefix     :: [OrgObject]
+  , citationSuffix     :: [OrgObject]
   , citationReferences :: [CiteReference]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 data CiteReference = CiteReference
   { refId      :: Text
-  , refPrefix  :: [OrgInline]
-  , refSuffix  :: [OrgInline]
+  , refPrefix  :: [OrgObject]
+  , refSuffix  :: [OrgObject]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Generic)

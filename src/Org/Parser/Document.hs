@@ -80,7 +80,7 @@ section lvl = try $ do
       , sectionSubsections = children'
       }
  where
-   titleObjects :: OrgParser (F OrgInlines, Tags, Text)
+   titleObjects :: OrgParser (F OrgObjects, Tags, Text)
    titleObjects = option mempty $
      withMContext__
      (mark " \n" endOfTitle)

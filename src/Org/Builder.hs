@@ -22,13 +22,13 @@ instance IsList (Many a) where
 
 deriving instance Generic (Many a)
 
-type OrgInlines = Many OrgInline
+type OrgObjects = Many OrgObject
 type OrgElements  = Many OrgElement
 
 deriving instance Semigroup OrgElements
 deriving instance Monoid OrgElements
 
-instance Semigroup OrgInlines where
+instance Semigroup OrgObjects where
   (Many xs) <> (Many ys) =
     case (viewr xs, viewl ys) of
       (EmptyR, _) -> Many ys
@@ -53,16 +53,16 @@ instance Semigroup OrgInlines where
               (SoftBreak, SoftBreak) -> xs' |> SoftBreak
               _                  -> xs' |> x |> y
 
-instance Monoid OrgInlines where
+instance Monoid OrgObjects where
   mempty = Many mempty
   mappend = (<>)
 
-instance IsString OrgInlines where
+instance IsString OrgObjects where
    fromString = text . T.pack
 
 -- * Element builders
 
-para :: Affiliated -> OrgInlines -> OrgElements
+para :: Affiliated -> OrgObjects -> OrgElements
 para aff = one . Paragraph aff . toList
 
 export :: Text -> Text -> OrgElements
@@ -112,13 +112,13 @@ list ::
 list aff kind = one . PlainList aff kind
 
 parsedKeyword ::
-  OrgInlines ->
-  OrgInlines ->
+  OrgObjects ->
+  OrgObjects ->
   KeywordValue
 parsedKeyword i = ParsedKeyword (toList i) . toList
 
 parsedKeyword' ::
-  OrgInlines ->
+  OrgObjects ->
   KeywordValue
 parsedKeyword' = parsedKeyword mempty
 
@@ -146,7 +146,7 @@ keyword key = one . Keyword key
 
 -- * Object builders
 
-text :: Text -> OrgInlines
+text :: Text -> OrgObjects
 text = fromList . map conv . breakByNewline
   where breakByNewline = T.groupBy sameCategory
         sameCategory x y = is_newline x == is_newline y
@@ -156,90 +156,90 @@ text = fromList . map conv . breakByNewline
         is_newline '\n' = True
         is_newline _    = False
 
-plain :: Text -> OrgInlines
+plain :: Text -> OrgObjects
 plain = one . Plain
 
-italic :: OrgInlines -> OrgInlines
+italic :: OrgObjects -> OrgObjects
 italic = one . Italic . toList
 
-underline :: OrgInlines -> OrgInlines
+underline :: OrgObjects -> OrgObjects
 underline = one . Underline . toList
 
-bold :: OrgInlines -> OrgInlines
+bold :: OrgObjects -> OrgObjects
 bold = one . Bold . toList
 
-strikethrough :: OrgInlines -> OrgInlines
+strikethrough :: OrgObjects -> OrgObjects
 strikethrough = one . Strikethrough . toList
 
-superscript :: OrgInlines -> OrgInlines
+superscript :: OrgObjects -> OrgObjects
 superscript = one . Superscript . toList
 
-subscript :: OrgInlines -> OrgInlines
+subscript :: OrgObjects -> OrgObjects
 subscript = one . Subscript . toList
 
-singleQuoted :: OrgInlines -> OrgInlines
+singleQuoted :: OrgObjects -> OrgObjects
 singleQuoted = quoted SingleQuote
 
-doubleQuoted :: OrgInlines -> OrgInlines
+doubleQuoted :: OrgObjects -> OrgObjects
 doubleQuoted = quoted DoubleQuote
 
-quoted :: QuoteType -> OrgInlines -> OrgInlines
+quoted :: QuoteType -> OrgObjects -> OrgObjects
 quoted qt = one . Quoted qt . toList
 
-citation :: Citation -> OrgInlines
+citation :: Citation -> OrgObjects
 citation = one . Cite
 
-citation' :: Text -> Text -> OrgInlines -> OrgInlines -> [CiteReference] -> OrgInlines
+citation' :: Text -> Text -> OrgObjects -> OrgObjects -> [CiteReference] -> OrgObjects
 citation' style variant prefix suffix = one . Cite . Citation style variant (toList prefix) (toList suffix)
 
-timestamp :: TimestampData -> OrgInlines
+timestamp :: TimestampData -> OrgObjects
 timestamp = one . Timestamp
 
 -- | Plain inline code.
-code :: Text -> OrgInlines
+code :: Text -> OrgObjects
 code = one . Code
 
 -- | Inline verbatim.
-verbatim :: Text -> OrgInlines
+verbatim :: Text -> OrgObjects
 verbatim = one . Verbatim
 
-softbreak :: OrgInlines
+softbreak :: OrgObjects
 softbreak = one SoftBreak
 
-linebreak :: OrgInlines
+linebreak :: OrgObjects
 linebreak = one LineBreak
 
-entity :: Text -> OrgInlines
+entity :: Text -> OrgObjects
 entity = one . Entity
 
-fragment :: Text -> OrgInlines
+fragment :: Text -> OrgObjects
 fragment = one . LaTeXFragment RawFragment
 
-inlMath :: Text -> OrgInlines
+inlMath :: Text -> OrgObjects
 inlMath = one . LaTeXFragment InlMathFragment
 
-dispMath :: Text -> OrgInlines
+dispMath :: Text -> OrgObjects
 dispMath = one . LaTeXFragment DispMathFragment
 
-exportSnippet :: Text -> Text -> OrgInlines
+exportSnippet :: Text -> Text -> OrgObjects
 exportSnippet backend = one . ExportSnippet backend
 
-inlBabel :: Text -> Text -> Text -> Text -> OrgInlines
+inlBabel :: Text -> Text -> Text -> Text -> OrgObjects
 inlBabel name h1 h2 args = one $ InlBabelCall (BabelCall name h1 h2 args)
 
-inlSrc :: Text -> Text -> Text -> OrgInlines
+inlSrc :: Text -> Text -> Text -> OrgObjects
 inlSrc name headers = one . Src name headers
 
-link :: LinkTarget -> OrgInlines -> OrgInlines
+link :: LinkTarget -> OrgObjects -> OrgObjects
 link tgt = one . Link tgt . toList
 
-uriLink :: Text -> Text -> OrgInlines -> OrgInlines
+uriLink :: Text -> Text -> OrgObjects -> OrgObjects
 uriLink protocol tgt = one . Link (URILink protocol tgt) . toList
 
-image :: LinkTarget -> OrgInlines
+image :: LinkTarget -> OrgObjects
 image = one . Image
 
-target :: Id -> OrgInlines
+target :: Id -> OrgObjects
 target = one . Target
 
 horizontalRule :: OrgElements

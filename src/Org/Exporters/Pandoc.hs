@@ -141,10 +141,10 @@ expandOrgSections sections@(OrgSection{sectionLevel = level} : _) = do
       (LetterPriority c) -> T.singleton c
       (NumericPriority n) -> show n
 
-expandOrgObjects :: [OrgInline] -> Ondim PTag B.Inlines
+expandOrgObjects :: [OrgObject] -> Ondim PTag B.Inlines
 expandOrgObjects = foldMapM expandOrgObject
 
-expandOrgObject :: OrgInline -> Ondim PTag B.Inlines
+expandOrgObject :: OrgObject -> Ondim PTag B.Inlines
 expandOrgObject = \case
   (Plain txt) ->
     pure $ B.text (doSpecialStrings txt) -- TODO

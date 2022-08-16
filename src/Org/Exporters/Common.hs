@@ -79,10 +79,10 @@ doSpecialStrings txt =
       & T.replace "..." "…"
       & T.replace "\\-" "\173"
 
-processSpecialStrings :: Walkable OrgInline a => a -> a
+processSpecialStrings :: Walkable OrgObject a => a -> a
 processSpecialStrings = walk process
   where
-    process :: OrgInline -> OrgInline
+    process :: OrgObject -> OrgObject
     process (Plain txt) = Plain $ doSpecialStrings txt
     process x = x
 
@@ -92,7 +92,7 @@ justOrIgnore = flip (maybe ignore)
 tags :: HasAttrChild tag t => Tag -> Expansion tag t
 tags tag x = children x `bindingText` ("tag" ## pure tag)
 
-parsedKwExpansions :: ([OrgInline] -> Ondim tag [t]) -> Affiliated -> Text -> Expansions' tag t
+parsedKwExpansions :: ([OrgObject] -> Ondim tag [t]) -> Affiliated -> Text -> Expansions' tag t
 parsedKwExpansions f kws prefix =
   forM_ parsedKws \(name, t) ->
     (prefix <> name) ## const $ f t

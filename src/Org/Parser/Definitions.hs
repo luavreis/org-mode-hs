@@ -15,7 +15,7 @@ module Org.Parser.Definitions
 import Prelude hiding (State)
 import Org.Types
 import Org.Parser.State
-import Org.Builder (OrgElements, OrgInlines)
+import Org.Builder (OrgElements, OrgObjects)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Debug
@@ -58,7 +58,7 @@ makeAnchorUnique a = do
             map (\n -> a <> "-" <> show (n :: Int)) [1..]
        else a
 
-registerTarget :: Text -> F OrgInlines -> OrgParser Text
+registerTarget :: Text -> F OrgObjects -> OrgParser Text
 registerTarget name alias = do
   targets <- gets orgStateInternalTargets
   anchors <- gets orgStateKnownAnchors
@@ -67,7 +67,7 @@ registerTarget name alias = do
                       , orgStateKnownAnchors    = Set.insert uid anchors }
   pure uid
 
-registerAnchorTarget :: Text -> Text -> F OrgInlines -> OrgParser ()
+registerAnchorTarget :: Text -> Text -> F OrgObjects -> OrgParser ()
 registerAnchorTarget name anchor alias = do
   targets <- gets orgStateInternalTargets
   anchors <- gets orgStateKnownAnchors
@@ -93,7 +93,7 @@ withAffiliated f = do
   (f . keywordsFromList <$> affs)
     <$ clearPendingAffiliated
 
-withTargetDescription :: F OrgInlines -> OrgParser a -> OrgParser a
+withTargetDescription :: F OrgObjects -> OrgParser a -> OrgParser a
 withTargetDescription descr f = do
   updateState \s -> s { orgStateTargetDescriptionCtx = Just descr }
   f <* updateState \s -> s { orgStateTargetDescriptionCtx = Nothing }

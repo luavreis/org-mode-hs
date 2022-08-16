@@ -130,7 +130,7 @@ checkbox = try $
            char 'X' $> BoolBox True  <|>
            char '-' $> PartialBox
 
-itemTag :: OrgParser (F OrgInlines)
+itemTag :: OrgParser (F OrgObjects)
 itemTag = try do
   clearLastChar
   st <- getFullState

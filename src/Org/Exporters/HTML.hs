@@ -139,10 +139,10 @@ documentExpansions doc = do
                 "footnote-def" ## const $ expandOrgElements fn
     else pure []
 
-expandOrgObjects :: [OrgInline] -> Ondim HTag [HtmlNode]
+expandOrgObjects :: [OrgObject] -> Ondim HTag [HtmlNode]
 expandOrgObjects = foldMapM expandOrgObject
 
-expandOrgObject :: OrgInline -> Ondim HTag [HtmlNode]
+expandOrgObject :: OrgObject -> Ondim HTag [HtmlNode]
 expandOrgObject = \case
   (Plain txt) ->
     pure . one $ TextNode (doSpecialStrings txt) -- TODO
