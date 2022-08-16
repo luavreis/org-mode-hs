@@ -68,14 +68,14 @@ library
                      Org.Exporters.HTML
                      Org.Exporters.Pandoc
                      Org.Exporters.Citeproc
-  other-modules:     Org.Parser.Common
-                     Org.Parser.State
                      Org.Parser.Definitions
                      Org.Parser.Document
                      Org.Parser.Elements
                      Org.Parser.Objects
-                     Org.Parser.MarkupContexts
                      Org.Data.Entities
+  other-modules:     Org.Parser.Common
+                     Org.Parser.State
+                     Org.Parser.MarkupContexts
                      Paths_org_parser
   autogen-modules:   Paths_org_parser
 
@@ -85,40 +85,24 @@ executable org-parser
   main-is:           org-parser.hs
   build-depends:     org-parser
                    , optparse-applicative >= 0.17
-  ghc-options:       -threaded
+  ghc-options:      -threaded
 
 test-suite test
   import:            common-options
   type:              exitcode-stdio-1.0
-  hs-source-dirs:    src
-                     test
+  hs-source-dirs:    test
   main-is:           test-org-parser.hs
-  build-depends:     Diff >= 0.4
+  build-depends:     org-parser
+                   , Diff >= 0.4
                    , tasty >= 1.4
                    , tasty-hunit >= 0.10
                    , neat-interpolation >= 0.5
                    , pretty >= 1.1
                    , pretty-simple >= 4.1
-  other-modules:     Org.Types
-                     Org.Builder
-                     Org.Walk
-                     Org.Exporters.Common
-                     Org.Exporters.HTML
-                     Org.Exporters.Pandoc
-                     Org.Exporters.Citeproc
-                     Org.Parser.Document
-                     Org.Parser.Elements
-                     Org.Parser.Objects
-                     Org.Parser.Common
-                     Org.Parser.State
-                     Org.Parser.Definitions
-                     Org.Parser.MarkupContexts
-                     Org.Data.Entities
-                     Tests.Document
+  other-modules:     Tests.Document
                      Tests.Objects
                      Tests.Elements
                      Tests.Helpers
-                     Paths_org_parser
   ghc-options:      -threaded -with-rtsopts=-N
   default-extensions:
     QuasiQuotes
