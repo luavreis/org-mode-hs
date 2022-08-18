@@ -155,8 +155,8 @@ jobs:
           cat >> cabal.project <<EOF
           source-repository-package
             type:     git
-            location: https://gitlab.com/lucasvreis/ondim
-            tag:      111f572ee35cf5b81901144cc2a142c389fd0031
+            location: https://github.com/lucasvreis/ondim
+            tag:      e69e22f024f69e328ce727cbad1ff1d4b871724a
           EOF
           $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: $_ installed\n" unless /^(org-parser)$/; }' >> cabal.project.local
           cat cabal.project

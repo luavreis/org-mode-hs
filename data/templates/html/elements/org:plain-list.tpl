@@ -15,7 +15,7 @@
     </switch>
   </bind-text>
 
-  <ul style="list-style-type: ${bullet-style};" affiliated>
+  <ul style="list-style-type: !(bullet-style);" affiliated>
     <list-items>
       <li>
         <checkbox-def />
@@ -28,7 +28,7 @@
 <case ordered-num>
   <ol style="list-style-type: decimal;" affiliated>
     <list-items>
-      <li value="${counter-set}">
+      <li value="!(counter-set)">
         <checkbox-def />
         <list-item-content />
       </li>
@@ -39,7 +39,7 @@
 <case ordered-alpha>
   <ol style="list-style-type: lower-alpha;" affiliated>
     <list-items>
-      <li value="${counter-set}">
+      <li value="!(counter-set)">
         <checkbox-def />
         <list-item-content />
       </li>

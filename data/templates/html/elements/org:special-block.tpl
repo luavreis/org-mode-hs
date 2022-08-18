@@ -11,6 +11,6 @@
        </switch>
 
 -->
-<div class="${special-name}" affiliated>
+<div class="!(special-name)" affiliated>
   <content />
 </div>

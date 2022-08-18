@@ -1,1 +1,1 @@
-[[]{#content}](!(target))
+[[]{.e:content}](!(target))

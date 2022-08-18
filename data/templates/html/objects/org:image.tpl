@@ -1,1 +1,1 @@
-<img src="${target}">
+<img src="!(target)">
