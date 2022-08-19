@@ -1,11 +1,10 @@
 -- |
-
 module Org.Parser.Common where
 
-import Prelude hiding (many, some, State)
-import Org.Parser.Definitions
 import Data.Char (digitToInt, isAsciiLower, isAsciiUpper)
-import qualified Data.Text as T
+import Data.Text qualified as T
+import Org.Parser.Definitions
+import Prelude hiding (State, many, some)
 
 digitIntChar :: MonadParser m => m Int
 digitIntChar = digitToInt <$> digitChar
@@ -16,19 +15,18 @@ digits = takeWhile1P (Just "digits") isDigit
 integer :: MonadParser m => m Int
 integer = try $ do
   digits' <- reverse <$> some digitIntChar
-  let toInt (x:xs) = 10 * toInt xs + x
+  let toInt (x : xs) = 10 * toInt xs + x
       toInt [] = 0
   pure $ toInt digits'
 
-number
-  :: Int
-  -> OrgParser Int
+number ::
+  Int ->
+  OrgParser Int
 number 1 = digitIntChar
 number n | n > 1 = try $ do
-             d <- digitIntChar
-             (10 ^ (n - 1) * d +) <$> number (n - 1)
+  d <- digitIntChar
+  (10 ^ (n - 1) * d +) <$> number (n - 1)
 number _ = error "Number of digits to parse must be positive!"
-
 
 -- * ASCII alphabet character classes
 
@@ -49,24 +47,31 @@ asciiAlpha' :: MonadParser m => m Int
 asciiAlpha' = lowerAscii' <|> upperAscii'
 
 upperAscii :: MonadParser m => m Char
-upperAscii = satisfy isAsciiUpper
-             <?> "uppercase A-Z character"
+upperAscii =
+  satisfy isAsciiUpper
+    <?> "uppercase A-Z character"
 
 lowerAscii :: MonadParser m => m Char
-lowerAscii = satisfy isAsciiLower
-             <?> "lowercase a-z character"
+lowerAscii =
+  satisfy isAsciiLower
+    <?> "lowercase a-z character"
 
 asciiAlpha :: MonadParser m => m Char
-asciiAlpha = satisfy isAsciiAlpha
-              <?> "a-z or A-Z character"
+asciiAlpha =
+  satisfy isAsciiAlpha
+    <?> "a-z or A-Z character"
 
 manyAsciiAlpha :: MonadParser m => m Text
-manyAsciiAlpha = takeWhileP (Just "a-z or A-Z characters")
-                 isAsciiAlpha
+manyAsciiAlpha =
+  takeWhileP
+    (Just "a-z or A-Z characters")
+    isAsciiAlpha
 
 someAsciiAlpha :: MonadParser m => m Text
-someAsciiAlpha = takeWhile1P (Just "a-z or A-Z characters")
-                 isAsciiAlpha
+someAsciiAlpha =
+  takeWhile1P
+    (Just "a-z or A-Z characters")
+    isAsciiAlpha
 
 someNonSpace :: MonadParser m => m Text
 someNonSpace = takeWhile1P (Just "not whitespace") (not . isSpace)
@@ -101,7 +106,7 @@ skipSpaces = void $ takeWhileP (Just "space or tab whitespace") isSpaceOrTab
 -- error message.
 guardMaybe :: (MonadFail m, MonadParser m) => String -> Maybe a -> m a
 guardMaybe _ (Just x) = pure x
-guardMaybe err _      = fail err
+guardMaybe err _ = fail err
 
 -- | Parse a newline or EOF. Consumes no input at EOF!
 newline' :: MonadParser m => m ()
@@ -109,14 +114,16 @@ newline' = void newline <|> eof
 
 -- | Parse the rest of line, returning the contents without the final newline.
 anyLine :: MonadParser m => m (Tokens Text)
-anyLine = takeWhileP (Just "rest of line") (/= '\n')
-          <* newline
+anyLine =
+  takeWhileP (Just "rest of line") (/= '\n')
+    <* newline
 
 -- | Parse the rest of line, returning the contents without the final newline or EOF.
 -- Consumes no input at EOF!
 anyLine' :: MonadParser m => m (Tokens Text)
-anyLine' = takeWhileP (Just "rest of line") (/= '\n')
-          <* newline'
+anyLine' =
+  takeWhileP (Just "rest of line") (/= '\n')
+    <* newline'
 
 -- | Consumes the rest of input
 takeInput :: MonadParser m => m Text
@@ -131,19 +138,27 @@ blankline = try $ hspace <* newline
 blankline' :: MonadParser m => m ()
 blankline' = try $ hspace <* newline'
 
-findMarked :: forall b.
-  Marked OrgParser b
-  -> OrgParser (Text, b)
+findMarked ::
+  forall b.
+  Marked OrgParser b ->
+  OrgParser (Text, b)
 findMarked end = try $
   fix $ \search -> do
-    str <- takeWhileP
-           (Just $ "insides of mcontext (not " ++
-            getMDescription end ++ ")")
-           (not . getMarks end)
+    str <-
+      takeWhileP
+        ( Just $
+            "insides of mcontext (not "
+              ++ getMDescription end
+              ++ ")"
+        )
+        (not . getMarks end)
     setLastChar (snd <$> T.unsnoc str)
     ((str,) <$> try (getParser end) <?> "end of mcontext")
-      <|> (do c <- anySingle <?> "insides of mcontext (single)"
-              first (T.snoc str c <>) <$> search)
+      <|> ( do
+              c <- anySingle <?> "insides of mcontext (single)"
+              first (T.snoc str c <>) <$> search
+          )
+
 -- {-# INLINE findMarked #-}
 
 findChars2 :: MonadParser m => Char -> Char -> Maybe String -> m Text
@@ -157,35 +172,46 @@ findChars2 needle post descr = try $
 parseFromText :: FullState -> Text -> OrgParser b -> OrgParser b
 parseFromText (prevPS, prevOS) txt parser = do
   (cPS, cOS) <- getFullState
-  setFullState ( prevPS { stateInput = txt }
-               , cOS { orgStateLastChar = -- NOTE: using cOS instead of prevOS
-                                          -- is an implementation quirk. We
-                                          -- don't want neither the changes of
-                                          -- state done by the end parser in
-                                          -- markupContext nor the ones in the
-                                          -- fromText parser to be lost. But
-                                          -- this will have the effect of
-                                          -- commuting the change of state: the
-                                          -- end changes will be registered
-                                          -- before the body ones. This is not a
-                                          -- problem because most of state
-                                          -- building is commutative and most
-                                          -- querying is done in Future anyway.
-                                          -- The problematic ones are either
-                                          -- irrelevant to a paragraph (like the
-                                          -- order in which title keywords are
-                                          -- concatenated) or must be handled
-                                          -- manually like affiliated keywords.
-                       orgStateLastChar prevOS
-                     , orgStatePendingAffiliated =
-                       orgStatePendingAffiliated prevOS } )
+  setFullState
+    ( prevPS {stateInput = txt},
+      cOS
+        { orgStateLastChar -- NOTE: using cOS instead of prevOS
+        -- is an implementation quirk. We
+        -- don't want neither the changes of
+        -- state done by the end parser in
+        -- markupContext nor the ones in the
+        -- fromText parser to be lost. But
+        -- this will have the effect of
+        -- commuting the change of state: the
+        -- end changes will be registered
+        -- before the body ones. This is not a
+        -- problem because most of state
+        -- building is commutative and most
+        -- querying is done in Future anyway.
+        -- The problematic ones are either
+        -- irrelevant to a paragraph (like the
+        -- order in which title keywords are
+        -- concatenated) or must be handled
+        -- manually like affiliated keywords.
+          =
+            orgStateLastChar prevOS,
+          orgStatePendingAffiliated =
+            orgStatePendingAffiliated prevOS
+        }
+    )
   result <- parser
   (aPS, aOS) <- getFullState
-  setFullState ( cPS { stateParseErrors =
-                       stateParseErrors cPS ++
-                       stateParseErrors aPS }
-               , aOS { orgStateLastChar =
-                       orgStateLastChar cOS
-                     , orgStatePendingAffiliated =
-                       orgStatePendingAffiliated cOS } )
+  setFullState
+    ( cPS
+        { stateParseErrors =
+            stateParseErrors cPS
+              ++ stateParseErrors aPS
+        },
+      aOS
+        { orgStateLastChar =
+            orgStateLastChar cOS,
+          orgStatePendingAffiliated =
+            orgStatePendingAffiliated cOS
+        }
+    )
   pure result

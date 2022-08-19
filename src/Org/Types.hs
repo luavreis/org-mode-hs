@@ -1,21 +1,24 @@
-{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Org.Types where
 
 import Data.Char (isDigit)
-import qualified Data.Text as T
-import qualified Data.Map as M
+import Data.Map qualified as M
+import Data.Text qualified as T
 
 -- * Document, Sections and Headings
 
 data OrgDocument = OrgDocument
-  { documentProperties :: Properties
-  , documentKeywords   :: [(KeywordKey, KeywordValue)]
-  , documentFootnotes  :: Map Text [OrgElement]
-  , documentChildren   :: [OrgElement]
-  , documentSections   :: [OrgSection]
-  } deriving (Eq, Ord, Read, Show, Generic)
+  { documentProperties :: Properties,
+    documentKeywords :: [(KeywordKey, KeywordValue)],
+    documentFootnotes :: Map Text [OrgElement],
+    documentChildren :: [OrgElement],
+    documentSections :: [OrgSection]
+  }
+  deriving (Eq, Ord, Read, Show, Generic)
 
 lookupProperty :: Text -> OrgDocument -> Maybe Text
 lookupProperty k = M.lookup k . documentProperties
@@ -30,17 +33,18 @@ documentTitle doc = foldMap justParsed (lookupKeyword "title" doc)
     justParsed _ = []
 
 data OrgSection = OrgSection
-  { sectionLevel       :: Int
-  , sectionProperties  :: Properties
-  , sectionTodo        :: Maybe TodoKeyword
-  , sectionPriority    :: Maybe Priority
-  , sectionTitle       :: [OrgObject]
-  , sectionTags        :: Tags
-  , sectionPlanning    :: PlanningInfo
-  , sectionAnchor      :: Id
-  , sectionChildren    :: [OrgElement]
-  , sectionSubsections :: [OrgSection]
-  } deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  { sectionLevel :: Int,
+    sectionProperties :: Properties,
+    sectionTodo :: Maybe TodoKeyword,
+    sectionPriority :: Maybe Priority,
+    sectionTitle :: [OrgObject],
+    sectionTags :: Tags,
+    sectionPlanning :: PlanningInfo,
+    sectionAnchor :: Id,
+    sectionChildren :: [OrgElement],
+    sectionSubsections :: [OrgSection]
+  }
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 lookupSectionProperty :: Text -> OrgSection -> Maybe Text
 lookupSectionProperty k = M.lookup k . sectionProperties
@@ -53,7 +57,7 @@ documentContent doc = (documentChildren doc, documentSections doc)
 mapContentM :: Monad m => (OrgContent -> m OrgContent) -> OrgDocument -> m OrgDocument
 mapContentM f d = do
   (c', s') <- f (documentContent d)
-  pure $ d { documentChildren = c', documentSections = s' }
+  pure $ d {documentChildren = c', documentSections = s'}
 
 mapContent :: (OrgContent -> OrgContent) -> OrgDocument -> OrgDocument
 mapContent f = runIdentity . mapContentM (Identity . f)
@@ -64,12 +68,13 @@ sectionContent sec = (sectionChildren sec, sectionSubsections sec)
 mapSectionContentM :: Monad m => (OrgContent -> m OrgContent) -> OrgSection -> m OrgSection
 mapSectionContentM f d = do
   (c', s') <- f (sectionContent d)
-  pure $ d { sectionChildren = c', sectionSubsections = s' }
+  pure $ d {sectionChildren = c', sectionSubsections = s'}
 
 mapSectionContent :: (OrgContent -> OrgContent) -> OrgSection -> OrgSection
 mapSectionContent f = runIdentity . mapSectionContentM (Identity . f)
 
 type Tag = Text
+
 type Tags = [Tag]
 
 -- | The states in which a todo item can be
@@ -78,8 +83,8 @@ data TodoState = Todo | Done
 
 -- | A to-do keyword like @TODO@ or @DONE@.
 data TodoKeyword = TodoKeyword
-  { todoState :: TodoState
-  , todoName  :: Text
+  { todoState :: TodoState,
+    todoName :: Text
   }
   deriving (Show, Eq, Ord, Read, Generic)
 
@@ -104,14 +109,13 @@ data TimestampData
 
 -- | Planning information for a subtree/headline.
 data PlanningInfo = PlanningInfo
-  { planningClosed    :: Maybe TimestampData
-  , planningDeadline  :: Maybe TimestampData
-  , planningScheduled :: Maybe TimestampData
+  { planningClosed :: Maybe TimestampData,
+    planningDeadline :: Maybe TimestampData,
+    planningScheduled :: Maybe TimestampData
   }
   deriving (Show, Eq, Ord, Read, Generic)
 
 type Properties = Map Text Text
-
 
 -- * Elements
 
@@ -119,32 +123,46 @@ type Properties = Map Text Text
 data OrgElement
   = GreaterBlock Affiliated GreaterBlockType [OrgElement]
   | Drawer
-      Text -- ^ Drawer name
-      [OrgElement] -- ^ Drawer elements
+      Text
+      -- ^ Drawer name
+      [OrgElement]
+      -- ^ Drawer elements
   | DynamicBlock Text (Map Text Text) [OrgElement]
   | PlainList Affiliated ListType [ListItem]
-  -- Table Affiliated [OrgObject] [ColSpec] TableHead [TableBody] TableFoot
-  | ExportBlock
-      Text -- ^ Format
-      Text -- ^ Contents
+  | -- Table Affiliated [OrgObject] [ColSpec] TableHead [TableBody] TableFoot
+    ExportBlock
+      Text
+      -- ^ Format
+      Text
+      -- ^ Contents
   | ExampleBlock
-      Affiliated -- ^ Affiliated keywords
-      (Maybe Int) -- ^ Starting line number
-      [SrcLine] -- ^ Contents
+      Affiliated
+      -- ^ Affiliated keywords
+      (Maybe Int)
+      -- ^ Starting line number
+      [SrcLine]
+      -- ^ Contents
   | SrcBlock
-      Affiliated -- ^ Affiliated keywords
-      Text -- ^ Language
-      (Maybe Int) -- ^ Starting line number
-      [(Text, Text)] -- ^ Header arguments
-      [SrcLine] -- ^ Contents
+      Affiliated
+      -- ^ Affiliated keywords
+      Text
+      -- ^ Language
+      (Maybe Int)
+      -- ^ Starting line number
+      [(Text, Text)]
+      -- ^ Header arguments
+      [SrcLine]
+      -- ^ Contents
   | VerseBlock Affiliated [[OrgObject]]
   | Clock ClockData
   | HorizontalRule
   | Keyword KeywordKey KeywordValue
   | LaTeXEnvironment
       Affiliated
-      Text -- ^ Environment name
-      Text -- ^ Environment contents
+      Text
+      -- ^ Environment name
+      Text
+      -- ^ Environment contents
   | Paragraph Affiliated [OrgObject]
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
@@ -154,9 +172,12 @@ data QuoteType = SingleQuote | DoubleQuote
 data SrcLine
   = SrcLine Text
   | RefLine
-      Id -- ^ Reference id (its anchor)
-      Text -- ^ Reference name (how it appears)
-      Text -- ^ Line contents
+      Id
+      -- ^ Reference id (its anchor)
+      Text
+      -- ^ Reference name (how it appears)
+      Text
+      -- ^ Line contents
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 srcLineContent :: SrcLine -> Text
@@ -190,12 +211,10 @@ keywordsFromList = M.fromListWith (flip (<>))
 
 type Affiliated = Keywords
 
-
 -- Greater Blocks
 
 data GreaterBlockType = Center | Quote | Special Text
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
-
 
 -- Lists
 
@@ -222,9 +241,8 @@ data Checkbox = BoolBox Bool | PartialBox
 
 listItemType :: ListItem -> ListType
 listItemType (ListItem (Counter t _) _ _ _ _) = Ordered (orderedStyle t)
-listItemType (ListItem (Bullet '-') _ _ (_:_) _) = Descriptive
+listItemType (ListItem (Bullet '-') _ _ (_ : _) _) = Descriptive
 listItemType (ListItem (Bullet c) _ _ _ _) = Unordered c
-
 
 -- Clock
 
@@ -233,14 +251,13 @@ data ClockData
   | ClockRange DateTime DateTime Time
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
-
 -- Babel call
 
 data BabelCall = BabelCall
-  { babelCallName :: Text
-  , babelCallHeader1 :: Text
-  , babelCallHeader2 :: Text
-  , babelCallArguments :: Text
+  { babelCallName :: Text,
+    babelCallHeader1 :: Text,
+    babelCallHeader2 :: Text,
+    babelCallArguments :: Text
   }
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
@@ -261,21 +278,28 @@ data OrgObject
   | Code Text
   | Verbatim Text
   | Timestamp TimestampData
-  | Entity -- ^ Replacement commands (e.g. @\alpha{}@)
-      Text -- ^ Entity name (e.g. @"alpha"@)
+  | -- | Replacement commands (e.g. @\alpha{}@)
+    Entity
+      Text
+      -- ^ Entity name (e.g. @"alpha"@)
   | LaTeXFragment FragmentType Text
   | ExportSnippet Text Text
-  | FootnoteRef -- ^ Footnote reference.
-      Text -- ^ Label, or autogenerated id (for unlabeled footnotes).
+  | -- | Footnote reference.
+    FootnoteRef
+      Text
+      -- ^ Label, or autogenerated id (for unlabeled footnotes).
   | Cite Citation
   | InlBabelCall BabelCall
   | Src Text Text Text
   | Link LinkTarget [OrgObject]
   | Image LinkTarget
   | Target Id
-  | Macro -- ^ Org inline macro (e.g. @{{{poem(red,blue)}}}@)
-      Text -- ^ Macro name (e.g. @"poem"@)
-      [Text] -- ^ Arguments (e.g. @["red", "blue"]@)
+  | -- | Org inline macro (e.g. @{{{poem(red,blue)}}}@)
+    Macro
+      Text
+      -- ^ Macro name (e.g. @"poem"@)
+      [Text]
+      -- ^ Arguments (e.g. @["red", "blue"]@)
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 type Protocol = Text
@@ -295,17 +319,17 @@ data FragmentType
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 data Citation = Citation
-  { citationStyle      :: Text
-  , citationVariant    :: Text
-  , citationPrefix     :: [OrgObject]
-  , citationSuffix     :: [OrgObject]
-  , citationReferences :: [CiteReference]
+  { citationStyle :: Text,
+    citationVariant :: Text,
+    citationPrefix :: [OrgObject],
+    citationSuffix :: [OrgObject],
+    citationReferences :: [CiteReference]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 data CiteReference = CiteReference
-  { refId      :: Text
-  , refPrefix  :: [OrgObject]
-  , refSuffix  :: [OrgObject]
+  { refId :: Text,
+    refPrefix :: [OrgObject],
+    refSuffix :: [OrgObject]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Generic)

@@ -1,16 +1,16 @@
 -- | This module used to define a "subparsing" monad but this was later
 -- absorbed into OrgState. Maybe I should move its contents elsewhere.
-
 module Org.Parser.MarkupContexts where
 
+import Data.Text qualified as T
 import Org.Parser.Common
 import Org.Parser.Definitions
-import qualified Data.Text as T
 
-withMContext__ :: forall a b.
-  Marked OrgParser b
-  -> OrgParser a
-  -> OrgParser (a, b, Text)
+withMContext__ ::
+  forall a b.
+  Marked OrgParser b ->
+  OrgParser a ->
+  OrgParser (a, b, Text)
 withMContext__ end p = try do
   clearLastChar
   st <- getFullState
@@ -19,61 +19,70 @@ withMContext__ end p = try do
   -- traceM $ "parsing in substring: " ++ show str
   -- traceM $ "with last char: " ++ show ctx
   -- traceM $ "with last char after substring: " ++ show ctx'
-  (, final, str) <$> parseFromText st str p
+  (,final,str) <$> parseFromText st str p
 
-withMContext_ :: forall a b.
-  Marked OrgParser b
-  -> OrgParser a
-  -> OrgParser (a, b)
+withMContext_ ::
+  forall a b.
+  Marked OrgParser b ->
+  OrgParser a ->
+  OrgParser (a, b)
 withMContext_ end p =
   withMContext__ end p
-  <&> \ ~(x,y,_) -> (x,y)
+    <&> \ ~(x, y, _) -> (x, y)
 
 withMContext ::
-  Marked OrgParser b
-  -> OrgParser a
-  -> OrgParser a
+  Marked OrgParser b ->
+  OrgParser a ->
+  OrgParser a
 withMContext end = fmap fst . withMContext_ end
 
 withBalancedContext ::
-  Char
-  -> Char
-  -> (Char -> All) -- ^ Allowed
-  -> OrgParser a
-  -> OrgParser a
+  Char ->
+  Char ->
+  -- | Allowed
+  (Char -> All) ->
+  OrgParser a ->
+  OrgParser a
 withBalancedContext lchar rchar ((getAll .) -> allowed) p = try do
   _ <- char lchar
-  let
-    find' :: StateT Int OrgParser Text
-    find' = do
-      str <- takeWhileP
-             (Just "insides of markup")
-             (\c -> allowed c && c /= lchar && c /= rchar)
-      c <- satisfy allowed <?> "balanced delimiters";
-      when (c == lchar) $ modify (+ 1)
-      when (c == rchar) $ modify (subtract 1)
-      balance <- get
-      if | balance == 0 -> pure str
-         | balance > 0  -> (T.snoc str c <>) <$> find'
-         | otherwise    -> fail "unbalaced delimiters"
+  let find' :: StateT Int OrgParser Text
+      find' = do
+        str <-
+          takeWhileP
+            (Just "insides of markup")
+            (\c -> allowed c && c /= lchar && c /= rchar)
+        c <- satisfy allowed <?> "balanced delimiters"
+        when (c == lchar) $ modify (+ 1)
+        when (c == rchar) $ modify (subtract 1)
+        balance <- get
+        if
+            | balance == 0 -> pure str
+            | balance > 0 -> (T.snoc str c <>) <$> find'
+            | otherwise -> fail "unbalaced delimiters"
   st <- getFullState
   str <- evalStateT find' 1
   -- traceM $ "balanced parsing in substring: " ++ show str
   parseFromText st str p
     <* setLastChar (Just rchar)
 
-markupContext :: Monoid k
-  => (Text -> k)
-  -> Marked OrgParser k
-  -> OrgParser k
+markupContext ::
+  Monoid k =>
+  (Text -> k) ->
+  Marked OrgParser k ->
+  OrgParser k
 markupContext f elems = go
   where
     go = try $ do
       let specials = getMarks elems
-      str <- optional $ takeWhile1P
-             (Just $ "insides of markup (not " <>
-              getMDescription elems <> ")")
-             (not . specials)
+      str <-
+        optional $
+          takeWhile1P
+            ( Just $
+                "insides of markup (not "
+                  <> getMDescription elems
+                  <> ")"
+            )
+            (not . specials)
       -- traceM $ "consumed: " ++ show str
       let self = maybe mempty f str
       setLastChar (T.last <$> str)

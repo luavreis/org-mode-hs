@@ -1,48 +1,49 @@
 -- |
-
 module Org.Parser.Objects where
 
-import Prelude hiding (many, some)
+import Data.Text qualified as T
+import Org.Builder qualified as B
+import Org.Data.Entities (defaultEntitiesNames)
 import Org.Parser.Common
 import Org.Parser.Definitions
 import Org.Parser.MarkupContexts
-import Org.Data.Entities (defaultEntitiesNames)
 import Relude.Extra
-import qualified Org.Builder as B
-import qualified Data.Text as T
+import Prelude hiding (many, some)
 
 -- * Sets of objects
 
 minimalSet :: Marked OrgParser (F OrgObjects)
 minimalSet =
-  mconcat [ endline
-          , code
-          , verbatim
-          , italic
-          , underline
-          , bold
-          , striketrough
-          , entityOrFragment
-          , mathFragment
-          , texMathFragment
-          , singleQuoted
-          , doubleQuoted
-          , suscript
-          ]
+  mconcat
+    [ endline,
+      code,
+      verbatim,
+      italic,
+      underline,
+      bold,
+      striketrough,
+      entityOrFragment,
+      mathFragment,
+      texMathFragment,
+      singleQuoted,
+      doubleQuoted,
+      suscript
+    ]
 
-standardSet ::  Marked OrgParser (F OrgObjects)
+standardSet :: Marked OrgParser (F OrgObjects)
 standardSet =
-  mconcat [ minimalSet -- TODO optimize with ordering? in minimal too
-          , citation
-          , timestamp
-          , exportSnippet
-          , inlBabel
-          , inlSrc
-          , linebreak
-          , target
-          , angleLink
-          , regularLinkOrImage
-          ]
+  mconcat
+    [ minimalSet, -- TODO optimize with ordering? in minimal too
+      citation,
+      timestamp,
+      exportSnippet,
+      inlBabel,
+      inlSrc,
+      linebreak,
+      target,
+      angleLink,
+      regularLinkOrImage
+    ]
 
 plainMarkupContext :: Marked OrgParser (F OrgObjects) -> OrgParser (F OrgObjects)
 plainMarkupContext = markupContext (pure . B.plain)
@@ -60,13 +61,14 @@ emphasisPostChars :: String
 emphasisPostChars = " ,.-\t\n:!?;'\")}[\8203"
 
 emphasisPost :: Char -> Marked OrgParser ()
-emphasisPost e = mark [e] $ try $ do
-  lchar <- gets orgStateLastChar
-  for_ lchar $ guard . not . isSpace
-  _ <- char e
-  setLastChar (Just e)
-  lookAhead
-    (eof <|> void (satisfy (`elem` emphasisPostChars)))
+emphasisPost e = mark [e] $
+  try $ do
+    lchar <- gets orgStateLastChar
+    for_ lchar $ guard . not . isSpace
+    _ <- char e
+    setLastChar (Just e)
+    lookAhead
+      (eof <|> void (satisfy (`elem` emphasisPostChars)))
 
 emphasisPre :: Char -> OrgParser ()
 emphasisPre s = try $ do
@@ -77,23 +79,29 @@ emphasisPre s = try $ do
   notFollowedBy spaceChar
 
 markup ::
-  (OrgObjects -> OrgObjects)
-  -> Char
-  -> Marked OrgParser (F OrgObjects)
-markup f c = mark [c] $ try $ do
-  emphasisPre c
-  f <<$>> withMContext (emphasisPost c)
-    (plainMarkupContext standardSet)
+  (OrgObjects -> OrgObjects) ->
+  Char ->
+  Marked OrgParser (F OrgObjects)
+markup f c = mark [c] $
+  try $ do
+    emphasisPre c
+    f
+      <<$>> withMContext
+        (emphasisPost c)
+        (plainMarkupContext standardSet)
 
 rawMarkup ::
-  (Text -> OrgObjects)
-  -> Char
-  -> Marked OrgParser (F OrgObjects)
-rawMarkup f d = mark [d] $ try $ do
-  emphasisPre d
-  str <- withMContext (emphasisPost d)
-         getInput
-  pureF $ f str
+  (Text -> OrgObjects) ->
+  Char ->
+  Marked OrgParser (F OrgObjects)
+rawMarkup f d = mark [d] $
+  try $ do
+    emphasisPre d
+    str <-
+      withMContext
+        (emphasisPost d)
+        getInput
+    pureF $ f str
 
 code :: Marked OrgParser (F OrgObjects)
 code = rawMarkup B.code '~'
@@ -120,18 +128,21 @@ doubleQuoted :: Marked OrgParser (F OrgObjects)
 doubleQuoted = markup B.doubleQuoted '"'
 
 -- | An endline character that can be treated as a space, not a line break.
-endline ::  Marked OrgParser (F OrgObjects)
-endline = mark' '\n' $ try $
-  newlineAndClear
-  *> hspace
-  $> pure B.softbreak
+endline :: Marked OrgParser (F OrgObjects)
+endline =
+  mark' '\n' $
+    try $
+      newlineAndClear
+        *> hspace
+        $> pure B.softbreak
 
 -- * Entities and LaTeX fragments
 
 entityOrFragment :: Marked OrgParser (F OrgObjects)
-entityOrFragment = mark' '\\' $ try $ do
-  _ <- char '\\'
-  entity <|> fragment
+entityOrFragment = mark' '\\' $
+  try $ do
+    _ <- char '\\'
+    entity <|> fragment
   where
     entity :: MonadParser m => m (F OrgObjects)
     entity = try $ do
@@ -153,29 +164,40 @@ entityOrFragment = mark' '\\' $ try $ do
       pure $ open `T.cons` str `T.snoc` close
 
 mathFragment :: Marked OrgParser (F OrgObjects)
-mathFragment = mark' '\\' $ try $ do
-  _ <- char '\\'
-  open <- satisfy (\c -> c == '(' || c == '[')
-  str <- findChars2 '\\' (if open == '(' then ')' else ']')
-         (Just "insides of math fragment")
-  pureF $ if open == '('
-    then B.inlMath str
-    else B.dispMath str
+mathFragment = mark' '\\' $
+  try $ do
+    _ <- char '\\'
+    open <- satisfy (\c -> c == '(' || c == '[')
+    str <-
+      findChars2
+        '\\'
+        (if open == '(' then ')' else ']')
+        (Just "insides of math fragment")
+    pureF $
+      if open == '('
+        then B.inlMath str
+        else B.dispMath str
 
 texMathFragment :: Marked OrgParser (F OrgObjects)
-texMathFragment = mark' '$' $ try $ do
-  display <|> inline
+texMathFragment = mark' '$' $
+  try $ do
+    display <|> inline
   where
     display = try $ do
       _ <- string "$$"
-      str <- findChars2 '$' '$'
-             (Just "insides of math fragment")
+      str <-
+        findChars2
+          '$'
+          '$'
+          (Just "insides of math fragment")
       pureF $ B.dispMath str
 
     post = do
       _ <- char '$'
-      eof <|> (void . lookAhead $
-               satisfy (\x -> isPunctuation x || isSpace x || x == '"'))
+      eof
+        <|> ( void . lookAhead $
+                satisfy (\x -> isPunctuation x || isSpace x || x == '"')
+            )
 
     inline = try $ do
       lchar <- gets orgStateLastChar
@@ -196,7 +218,7 @@ texMathFragment = mark' '$' $ try $ do
       pure $ one c
 
     disallowedCharsSet :: [Char]
-    disallowedCharsSet = ['.',',','?',';','"']
+    disallowedCharsSet = ['.', ',', '?', ';', '"']
 
     border1 c = not (isSpace c) && c `notElem` (".,;$" :: String)
     border2 c = not (isSpace c) && c `notElem` (".,$" :: String)
@@ -206,19 +228,22 @@ texMathFragment = mark' '$' $ try $ do
 exportSnippet :: Marked OrgParser (F OrgObjects)
 exportSnippet = mark' '@' . try $ do
   _ <- string "@@"
-  backend <- takeWhile1P (Just "export snippet backend")
-             (\c -> isAsciiAlpha c || isDigit c || c == '-')
+  backend <-
+    takeWhile1P
+      (Just "export snippet backend")
+      (\c -> isAsciiAlpha c || isDigit c || c == '-')
   _ <- char ':'
-  pure . B.exportSnippet backend <$>
-    findChars2 '@' '@' (Just "export snippet contents")
+  pure . B.exportSnippet backend
+    <$> findChars2 '@' '@' (Just "export snippet contents")
 
 -- * Citations
 
 -- The following code for org-cite citations was adapted and improved upon pandoc's.
 
 citation :: Marked OrgParser (F OrgObjects)
-citation = mark' '[' $
-  B.citation <<$>> withBalancedContext '[' ']' mempty orgCite
+citation =
+  mark' '[' $
+    B.citation <<$>> withBalancedContext '[' ']' mempty orgCite
 
 -- | A citation in org-cite style
 orgCite :: OrgParser (F Citation)
@@ -236,13 +261,14 @@ orgCite = try $ do
     prefix' <- globalPrefix
     suffix' <- globalSuffix
     refs' <- items
-    return Citation
-      { citationStyle = style
-      , citationVariant = variant
-      , citationPrefix = toList prefix'
-      , citationSuffix = toList suffix'
-      , citationReferences = refs'
-      }
+    return
+      Citation
+        { citationStyle = style,
+          citationVariant = variant,
+          citationPrefix = toList prefix',
+          citationSuffix = toList suffix',
+          citationReferences = refs'
+        }
 
 citeStyle :: OrgParser (Tokens Text, Tokens Text)
 citeStyle = do
@@ -250,12 +276,16 @@ citeStyle = do
   vars <- option "" $ try variants
   return (sty, vars)
   where
-    style = char '/' *>
-            takeWhileP (Just "alphaNum, '_' or '-' characters")
-            (\c -> isAlphaNum c || c == '_' || c == '-')
-    variants = char '/' *>
-               takeWhileP (Just "alphaNum, '_', '-' or '/' characters")
-               (\c -> isAlphaNum c || c == '_' || c == '-' || c == '/')
+    style =
+      char '/'
+        *> takeWhileP
+          (Just "alphaNum, '_' or '-' characters")
+          (\c -> isAlphaNum c || c == '_' || c == '-')
+    variants =
+      char '/'
+        *> takeWhileP
+          (Just "alphaNum, '_', '-' or '/' characters")
+          (\c -> isAlphaNum c || c == '_' || c == '-' || c == '/')
 
 citeItems :: OrgParser (F [CiteReference])
 citeItems = sequence <$> (citeItem `sepBy1'` char ';')
@@ -270,26 +300,31 @@ citeItem = do
   return $ do
     pre' <- pref
     suf' <- suff
-    return CiteReference
-      { refId     = itemKey
-      , refPrefix = toList pre'
-      , refSuffix = toList suf'
-      }
+    return
+      CiteReference
+        { refId = itemKey,
+          refPrefix = toList pre',
+          refSuffix = toList suf'
+        }
 
 citePrefix :: OrgParser (F OrgObjects)
 citePrefix = try $ do
   clearLastChar
   withMContext
-    (mark "@;" $ try $
-      eof <|> void (lookAhead $ oneOf ['@', ';']))
+    ( mark "@;" $
+        try $
+          eof <|> void (lookAhead $ oneOf ['@', ';'])
+    )
     (plainMarkupContext minimalSet)
 
 citeSuffix :: OrgParser (F OrgObjects)
 citeSuffix = try $ do
   clearLastChar
   withMContext
-    (mark ";" $ try $
-      eof <|> void (lookAhead $ single ';'))
+    ( mark ";" $
+        try $
+          eof <|> void (lookAhead $ single ';')
+    )
     (plainMarkupContext minimalSet)
 
 orgCiteKey :: OrgParser Text
@@ -299,18 +334,43 @@ orgCiteKey = do
 
 orgCiteKeyChar :: Char -> Bool
 orgCiteKeyChar c =
-  isAlphaNum c || c `elem` ['.',':','?','!','`','\'','/','*','@','+','|',
-                            '(',')','{','}','<','>','&','_','^','$','#',
-                            '%','~','-']
-
+  isAlphaNum c || c
+    `elem` [ '.',
+             ':',
+             '?',
+             '!',
+             '`',
+             '\'',
+             '/',
+             '*',
+             '@',
+             '+',
+             '|',
+             '(',
+             ')',
+             '{',
+             '}',
+             '<',
+             '>',
+             '&',
+             '_',
+             '^',
+             '$',
+             '#',
+             '%',
+             '~',
+             '-'
+           ]
 
 -- * Inline Babel calls
 
 inlBabel :: Marked OrgParser (F OrgObjects)
 inlBabel = mark' 'c' . try $ do
   _ <- string "call_"
-  name <- takeWhile1P (Just "babel call name")
-          (\c -> not (isSpace c) && c `notElem` ['[', ']', '(', ')'])
+  name <-
+    takeWhile1P
+      (Just "babel call name")
+      (\c -> not (isSpace c) && c `notElem` ['[', ']', '(', ')'])
   header1 <- option "" header
   args <- arguments
   header2 <- option "" header
@@ -319,14 +379,15 @@ inlBabel = mark' 'c' . try $ do
     header = withBalancedContext '[' ']' (All . (/= '\n')) getInput
     arguments = withBalancedContext '(' ')' (All . (/= '\n')) getInput
 
-
 -- * Inline source blocks
 
 inlSrc :: Marked OrgParser (F OrgObjects)
 inlSrc = mark' 's' . try $ do
   _ <- string "src_"
-  name <- takeWhile1P (Just "babel call name")
-          (\c -> not (isSpace c) && c /= '{' && c /= '[')
+  name <-
+    takeWhile1P
+      (Just "babel call name")
+      (\c -> not (isSpace c) && c /= '{' && c /= '[')
   headers <- option "" header
   str <- body
   pureF $ B.inlSrc name headers str
@@ -334,13 +395,12 @@ inlSrc = mark' 's' . try $ do
     header = withBalancedContext '[' ']' (All . (/= '\n')) getInput
     body = withBalancedContext '{' '}' (All . (/= '\n')) getInput
 
-
 -- * Line breaks
 
 linebreak :: Marked OrgParser (F OrgObjects)
-linebreak =  mark' '\\' . try $
-  pure B.linebreak <$ string "\\\\" <* hspace <* newlineAndClear' <* hspace
-
+linebreak =
+  mark' '\\' . try $
+    pure B.linebreak <$ string "\\\\" <* hspace <* newlineAndClear' <* hspace
 
 -- * Links
 
@@ -350,31 +410,38 @@ angleLink = mark' '<' . try $ do
   protocol <- manyAsciiAlpha
   _ <- char ':'
   tgt <- fix $ \search -> do
-    partial <- takeWhile1P (Just "angle link target")
-               (\c -> c /= '\n' && c /= '>')
+    partial <-
+      takeWhile1P
+        (Just "angle link target")
+        (\c -> c /= '\n' && c /= '>')
     char '>' $> partial
       <|> newline *> hspace *> ((T.stripEnd partial <>) <$> search)
   pureF $ B.uriLink protocol tgt (B.plain $ protocol <> ":" <> tgt)
 
 regularLinkOrImage :: Marked OrgParser (F OrgObjects)
-regularLinkOrImage = mark "[" . try $ do
-  _ <- string "[["
-  str <- linkTarget
-  optional linkDescr >>= \case
-    Just descr -> pure $ liftA2 B.link (fst <$> linkToTarget str) descr
-    Nothing -> do
-      _ <- char ']'
-      return $ do
-        (tgt, alias) <- linkToTarget str
-        pure $ if isImgTarget tgt
-               then B.image tgt
-               else B.link tgt alias
-  <* setLastChar (Just ']')
+regularLinkOrImage =
+  mark "[" . try $
+    do
+      _ <- string "[["
+      str <- linkTarget
+      optional linkDescr >>= \case
+        Just descr -> pure $ liftA2 B.link (fst <$> linkToTarget str) descr
+        Nothing -> do
+          _ <- char ']'
+          return $ do
+            (tgt, alias) <- linkToTarget str
+            pure $
+              if isImgTarget tgt
+                then B.image tgt
+                else B.link tgt alias
+      <* setLastChar (Just ']')
   where
     linkTarget :: MonadParser m => m Text
     linkTarget = fix $ \rest -> do
-      partial <- takeWhileP (Just "link target")
-                  (\c -> c /= ']' && c /= '[' && c /= '\\' && c /= '\n')
+      partial <-
+        takeWhileP
+          (Just "link target")
+          (\c -> c /= ']' && c /= '[' && c /= '\\' && c /= '\n')
       oneOf ['[', ']'] $> partial
         <|> char '\\' *> liftA2 T.cons (option '\\' $ oneOf ['[', ']']) rest
         <|> newline *> hspace *> ((T.stripEnd partial `T.snoc` ' ' <>) <$> rest)
@@ -384,18 +451,19 @@ regularLinkOrImage = mark "[" . try $ do
       _ <- char '['
       st <- getFullState
       str <- findChars2 ']' ']' (Just "link description")
-      parsed <- parseFromText st str $
-                plainMarkupContext standardSet -- FIXME this is not the right set but... whatever
+      parsed <-
+        parseFromText st str $
+          plainMarkupContext standardSet -- FIXME this is not the right set but... whatever
       return $ do
         (tgt', _) <- linkToTarget str
         if isImgTarget tgt'
-        then pure $ B.image tgt'
-        else parsed
+          then pure $ B.image tgt'
+          else parsed
 
 linkToTarget :: Text -> F (LinkTarget, OrgObjects)
-linkToTarget l@(T.stripPrefix  "/" -> Just fp) = pure (URILink "file" ("//" <> fp), B.plain l)
+linkToTarget l@(T.stripPrefix "/" -> Just fp) = pure (URILink "file" ("//" <> fp), B.plain l)
 linkToTarget l@(T.stripPrefix "./" -> Just fp) = pure (URILink "file" fp, B.plain l)
-linkToTarget fp | "../" `T.isPrefixOf` fp      = pure (URILink "file" fp, B.plain fp)
+linkToTarget fp | "../" `T.isPrefixOf` fp = pure (URILink "file" fp, B.plain fp)
 linkToTarget l@(T.break (== ':') -> (T.toLower -> protocol, T.uncons -> Just (_, uri))) = do
   formatters <- asksF orgStateLinkFormatters
   case lookup protocol formatters of
@@ -411,12 +479,11 @@ linkToTarget link = do
 -- for simplicity I may leave it like this anyway.
 isImgTarget :: LinkTarget -> Bool
 isImgTarget (URILink protocol rest) = hasImgExtension && (protocol `elem` imgProtocols)
- where
-   hasImgExtension = any (`T.isSuffixOf` T.toLower rest) imgExtensions
-   imgExtensions = [ ".jpeg", ".jpg", ".png", ".gif", ".svg" ]
-   imgProtocols = [ "file", "http", "https", "attachment" ]
+  where
+    hasImgExtension = any (`T.isSuffixOf` T.toLower rest) imgExtensions
+    imgExtensions = [".jpeg", ".jpg", ".png", ".gif", ".svg"]
+    imgProtocols = ["file", "http", "https", "attachment"]
 isImgTarget _ = False
-
 
 -- * Targets and radio targets
 
@@ -427,11 +494,11 @@ target = mark' '<' $ try do
   guard (not (isSpace $ T.head str))
   guard (not (isSpace $ T.last str))
   _ <- string ">>"
-  descr <- fromMaybe (pure $ B.text "No description for this link") <$>
-           gets orgStateTargetDescriptionCtx
+  descr <-
+    fromMaybe (pure $ B.text "No description for this link")
+      <$> gets orgStateTargetDescriptionCtx
   uid <- registerTarget str descr
   pureF $ B.target uid
-
 
 -- * Subscripts and superscripts
 
@@ -447,25 +514,28 @@ suscript = mark "_^" $ try do
   where
     asterisk = pure . B.plain . one <$> char '*'
 
-    balanced = withBalancedContext '{' '}' (const $ All True) $
-      plainMarkupContext minimalSet
+    balanced =
+      withBalancedContext '{' '}' (const $ All True) $
+        plainMarkupContext minimalSet
 
     sign = pure <$> option mempty (B.plain . one <$> oneOf ['+', '-'])
 
-    plain = liftA2 (<>) sign $ withMContext plainEnd $
-      plainMarkupContext entityOrFragment
+    plain =
+      liftA2 (<>) sign $
+        withMContext plainEnd $
+          plainMarkupContext entityOrFragment
 
     plainEnd :: Marked OrgParser ()
-    plainEnd = Marked (not . isAlphaNum)
-               ["non-alphanum chars"] $ try do
-      lookAhead $ eof
-        <|> try (some (oneOf [',', '.', '\\']) *> notFollowedBy (satisfy isAlphaNum))
-        <|> void (noneOf [',', '.', '\\'])
-
+    plainEnd = Marked
+      (not . isAlphaNum)
+      ["non-alphanum chars"]
+      $ try do
+        lookAhead $
+          eof
+            <|> try (some (oneOf [',', '.', '\\']) *> notFollowedBy (satisfy isAlphaNum))
+            <|> void (noneOf [',', '.', '\\'])
 
 -- * Macros
-
-
 
 -- * Timestamps
 
@@ -482,13 +552,13 @@ parseTimestamp = try $ do
   (d1, t1, r1, w1) <- component delims
   optional (try $ string "--" *> component delims)
     >>= \case
-    Just (d2, t2, r2, w2) ->
-      pure $ TimestampRange isActive (d1, fst <$> t1, r1, w1) (d2, fst <$> t2, r2, w2)
-    Nothing -> case t1 of
-      Just (t1', Just t1'') ->
-        pure $ TimestampRange isActive (d1, Just t1', r1, w1) (d1, Just t1'', r1, w1)
-      _ ->
-        pure $ TimestampData isActive (d1, fst <$> t1, r1, w1)
+      Just (d2, t2, r2, w2) ->
+        pure $ TimestampRange isActive (d1, fst <$> t1, r1, w1) (d2, fst <$> t2, r2, w2)
+      Nothing -> case t1 of
+        Just (t1', Just t1'') ->
+          pure $ TimestampRange isActive (d1, Just t1', r1, w1) (d1, Just t1'', r1, w1)
+        _ ->
+          pure $ TimestampData isActive (d1, fst <$> t1, r1, w1)
   where
     component delims = do
       _ <- char (fst delims)
@@ -506,9 +576,9 @@ parseTimestamp = try $ do
 
     parseDate :: OrgParser Date
     parseDate = do
-      year  <- number 4 <* char '-'
+      year <- number 4 <* char '-'
       month <- number 2 <* char '-'
-      day   <- number 2
+      day <- number 2
       dayName <- optional $ try do
         hspace1
         takeWhile1P (Just "dayname characters") isLetter
@@ -516,7 +586,7 @@ parseTimestamp = try $ do
 
     parseTime :: OrgParser Time
     parseTime = do
-      hour   <- (number 2 <|> number 1) <* char ':'
+      hour <- (number 2 <|> number 1) <* char ':'
       minute <- number 2
       pure (hour, minute)
 

@@ -1,27 +1,29 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 -- |
-
 module Org.Parser.Definitions
-  ( module Org.Parser.Definitions
-  , module Org.Types
-  , module Org.Builder
-  , module Org.Parser.State
-  , module Text.Megaparsec
-  , module Text.Megaparsec.Char
-  , module Text.Megaparsec.Debug
-  , module Data.Char
-  ) where
+  ( module Org.Parser.Definitions,
+    module Org.Types,
+    module Org.Builder,
+    module Org.Parser.State,
+    module Text.Megaparsec,
+    module Text.Megaparsec.Char,
+    module Text.Megaparsec.Debug,
+    module Data.Char,
+  )
+where
 
-import Prelude hiding (State)
-import Org.Types
-import Org.Parser.State
+import Data.Char (isAlphaNum, isAscii, isDigit, isLetter, isPunctuation, isSpace)
+import Data.Set qualified as Set
 import Org.Builder (OrgElements, OrgObjects)
+import Org.Parser.State
+import Org.Types
+import Relude.Extra (insert, member, notMember)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Debug
-import Data.Char (isSpace, isPunctuation, isAlphaNum, isLetter, isDigit, isAscii)
-import Relude.Extra (insert, member, notMember)
-import qualified Data.Set as Set
+import Prelude hiding (State)
 
 type Parser = ParsecT Void Text Identity
 
@@ -35,16 +37,16 @@ popUniqueId :: OrgParser Text
 popUniqueId = do
   ids <- gets orgStateIdStack
   case ids of
-    (x:xs) -> x <$ updateState (\s -> s {orgStateIdStack = xs})
+    (x : xs) -> x <$ updateState (\s -> s {orgStateIdStack = xs})
     [] -> error "something's wrong. out of unique ids"
 
 setSrcLineNum :: Int -> OrgParser ()
 setSrcLineNum n = updateState $ \s ->
-  s { orgStateSrcLineNumber = n }
+  s {orgStateSrcLineNumber = n}
 
 incSrcLineNum :: Int -> OrgParser ()
 incSrcLineNum n = updateState $ \s ->
-  s { orgStateSrcLineNumber = orgStateSrcLineNumber s + n }
+  s {orgStateSrcLineNumber = orgStateSrcLineNumber s + n}
 
 getSrcLineNum :: OrgParser Int
 getSrcLineNum = gets orgStateSrcLineNumber
@@ -52,40 +54,54 @@ getSrcLineNum = gets orgStateSrcLineNumber
 makeAnchorUnique :: Text -> OrgParser Text
 makeAnchorUnique a = do
   anchors <- gets orgStateKnownAnchors
-  pure if a `member` anchors
-       then fromMaybe a $
-            find (`notMember` anchors) $
-            map (\n -> a <> "-" <> show (n :: Int)) [1..]
-       else a
+  pure
+    if a `member` anchors
+      then
+        fromMaybe a $
+          find (`notMember` anchors) $
+            map (\n -> a <> "-" <> show (n :: Int)) [1 ..]
+      else a
 
 registerTarget :: Text -> F OrgObjects -> OrgParser Text
 registerTarget name alias = do
   targets <- gets orgStateInternalTargets
   anchors <- gets orgStateKnownAnchors
   uid <- makeAnchorUnique =<< popUniqueId
-  updateState \s -> s { orgStateInternalTargets = insert name (uid, alias) targets
-                      , orgStateKnownAnchors    = Set.insert uid anchors }
+  updateState \s ->
+    s
+      { orgStateInternalTargets = insert name (uid, alias) targets,
+        orgStateKnownAnchors = Set.insert uid anchors
+      }
   pure uid
 
 registerAnchorTarget :: Text -> Text -> F OrgObjects -> OrgParser ()
 registerAnchorTarget name anchor alias = do
   targets <- gets orgStateInternalTargets
   anchors <- gets orgStateKnownAnchors
-  updateState \s -> s { orgStateInternalTargets = insert name (anchor, alias) targets
-                      , orgStateKnownAnchors    = Set.insert anchor anchors }
+  updateState \s ->
+    s
+      { orgStateInternalTargets = insert name (anchor, alias) targets,
+        orgStateKnownAnchors = Set.insert anchor anchors
+      }
 
 registerKeyword :: F (KeywordKey, KeywordValue) -> OrgParser ()
 registerKeyword kw =
-  updateState \s -> s { orgStateKeywords =
-                        kw : orgStateKeywords s }
+  updateState \s ->
+    s
+      { orgStateKeywords =
+          kw : orgStateKeywords s
+      }
 
 registerAffiliated :: F (KeywordKey, KeywordValue) -> OrgParser ()
 registerAffiliated kw =
-  updateState \s -> s { orgStatePendingAffiliated =
-                        kw : orgStatePendingAffiliated s }
+  updateState \s ->
+    s
+      { orgStatePendingAffiliated =
+          kw : orgStatePendingAffiliated s
+      }
 
 clearPendingAffiliated :: OrgParser ()
-clearPendingAffiliated = modify (\s -> s { orgStatePendingAffiliated = [] })
+clearPendingAffiliated = modify (\s -> s {orgStatePendingAffiliated = []})
 
 withAffiliated :: (Affiliated -> a) -> OrgParser (F a)
 withAffiliated f = do
@@ -95,21 +111,20 @@ withAffiliated f = do
 
 withTargetDescription :: F OrgObjects -> OrgParser a -> OrgParser a
 withTargetDescription descr f = do
-  updateState \s -> s { orgStateTargetDescriptionCtx = Just descr }
-  f <* updateState \s -> s { orgStateTargetDescriptionCtx = Nothing }
+  updateState \s -> s {orgStateTargetDescriptionCtx = Just descr}
+  f <* updateState \s -> s {orgStateTargetDescriptionCtx = Nothing}
 
 -- * Last char
 
 setLastChar :: Maybe Char -> OrgParser ()
 setLastChar lchar =
-  modify (\c -> c { orgStateLastChar = lchar <|> orgStateLastChar c })
+  modify (\c -> c {orgStateLastChar = lchar <|> orgStateLastChar c})
 
 clearLastChar :: OrgParser ()
-clearLastChar = modify (\c -> c { orgStateLastChar = Nothing })
+clearLastChar = modify (\c -> c {orgStateLastChar = Nothing})
 
 putLastChar :: Maybe Char -> OrgParser ()
-putLastChar lchar = modify (\c -> c { orgStateLastChar = lchar })
-
+putLastChar lchar = modify (\c -> c {orgStateLastChar = lchar})
 
 -- * State and Future convenience functions
 
@@ -141,13 +156,12 @@ asksF f = Ap $ asks f
 pureF :: Monad m => a -> m (F a)
 pureF = pure . pure
 
-
 -- * Marked parsers
 
 data Marked m a = Marked
-  { getMarks :: Char -> Bool
-  , getDescr :: [String]
-  , getParser :: m a
+  { getMarks :: Char -> Bool,
+    getDescr :: [String],
+    getParser :: m a
   }
 
 mapParser :: (m1 a -> m2 a) -> Marked m1 a -> Marked m2 a
@@ -163,7 +177,7 @@ ap2 :: (a -> b -> c) -> (d -> a) -> (d -> b) -> d -> c
 ap2 f g h x = f (g x) (h x)
 
 instance Functor m => Functor (Marked m) where
-  fmap f x@(Marked _ _ p) = x { getParser = fmap f p }
+  fmap f x@(Marked _ _ p) = x {getParser = fmap f p}
 
 instance Alternative m => Semigroup (Marked m a) where
   Marked s1 d1 p1 <> Marked s2 d2 p2 =
@@ -171,9 +185,11 @@ instance Alternative m => Semigroup (Marked m a) where
 
 instance Alternative m => Monoid (Marked m a) where
   mempty = Marked (const False) [] empty
-  mconcat ms = Marked (\x -> foldr (\m b -> b || getMarks m x) False ms)
-                      (foldMap getDescr ms)
-                      (choice $ map getParser ms)
+  mconcat ms =
+    Marked
+      (\x -> foldr (\m b -> b || getMarks m x) False ms)
+      (foldMap getDescr ms)
+      (choice $ map getParser ms)
 
 getMDescription :: Marked m a -> String
 getMDescription = intercalate " or " . getDescr

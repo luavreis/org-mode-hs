@@ -1,15 +1,14 @@
 -- |
-
 module Org.Data.Entities where
 
 data Entity = Entity
-  { entityName :: Text
-  , latexReplacement :: Text
-  , latexMathP :: Bool
-  , htmlReplacement :: Text
-  , asciiReplacement :: Text
-  , latin1Replacement :: Text
-  , utf8Replacement :: Text
+  { entityName :: Text,
+    latexReplacement :: Text,
+    latexMathP :: Bool,
+    htmlReplacement :: Text,
+    asciiReplacement :: Text,
+    latin1Replacement :: Text,
+    utf8Replacement :: Text
   }
 
 {-
@@ -34,417 +33,417 @@ defaultEntitiesMap = fromList $ map (\e -> (entityName e, e)) defaultEntities
 
 defaultEntities :: [Entity]
 defaultEntities =
-  [ Entity "Agrave" "\\`{A}" False "&Agrave;" "A" "À" "À"
-  , Entity "agrave" "\\`{a}" False "&agrave;" "a" "à" "à"
-  , Entity "Aacute" "\\'{A}" False "&Aacute;" "A" "Á" "Á"
-  , Entity "aacute" "\\'{a}" False "&aacute;" "a" "á" "á"
-  , Entity "Acirc" "\\^{A}" False "&Acirc;" "A" "Â" "Â"
-  , Entity "acirc" "\\^{a}" False "&acirc;" "a" "â" "â"
-  , Entity "Amacr" "\\={A}" False "&Amacr;" "A" "Ã" "Ã"
-  , Entity "amacr" "\\={a}" False "&amacr;" "a" "ã" "ã"
-  , Entity "Atilde" "\\~{A}" False "&Atilde;" "A" "Ã" "Ã"
-  , Entity "atilde" "\\~{a}" False "&atilde;" "a" "ã" "ã"
-  , Entity "Auml" "\\\"{A}" False "&Auml;" "Ae" "Ä" "Ä"
-  , Entity "auml" "\\\"{a}" False "&auml;" "ae" "ä" "ä"
-  , Entity "Aring" "\\AA{}" False "&Aring;" "A" "Å" "Å"
-  , Entity "AA" "\\AA{}" False "&Aring;" "A" "Å" "Å"
-  , Entity "aring" "\\aa{}" False "&aring;" "a" "å" "å"
-  , Entity "AElig" "\\AE{}" False "&AElig;" "AE" "Æ" "Æ"
-  , Entity "aelig" "\\ae{}" False "&aelig;" "ae" "æ" "æ"
-  , Entity "Ccedil" "\\c{C}" False "&Ccedil;" "C" "Ç" "Ç"
-  , Entity "ccedil" "\\c{c}" False "&ccedil;" "c" "ç" "ç"
-  , Entity "Egrave" "\\`{E}" False "&Egrave;" "E" "È" "È"
-  , Entity "egrave" "\\`{e}" False "&egrave;" "e" "è" "è"
-  , Entity "Eacute" "\\'{E}" False "&Eacute;" "E" "É" "É"
-  , Entity "eacute" "\\'{e}" False "&eacute;" "e" "é" "é"
-  , Entity "Ecirc" "\\^{E}" False "&Ecirc;" "E" "Ê" "Ê"
-  , Entity "ecirc" "\\^{e}" False "&ecirc;" "e" "ê" "ê"
-  , Entity "Euml" "\\\"{E}" False "&Euml;" "E" "Ë" "Ë"
-  , Entity "euml" "\\\"{e}" False "&euml;" "e" "ë" "ë"
-  , Entity "Igrave" "\\`{I}" False "&Igrave;" "I" "Ì" "Ì"
-  , Entity "igrave" "\\`{i}" False "&igrave;" "i" "ì" "ì"
-  , Entity "Iacute" "\\'{I}" False "&Iacute;" "I" "Í" "Í"
-  , Entity "iacute" "\\'{i}" False "&iacute;" "i" "í" "í"
-  , Entity "Idot" "\\.{I}" False "&idot;" "I" "İ" "İ"
-  , Entity "inodot" "\\i" False "&inodot;" "i" "ı" "ı"
-  , Entity "Icirc" "\\^{I}" False "&Icirc;" "I" "Î" "Î"
-  , Entity "icirc" "\\^{i}" False "&icirc;" "i" "î" "î"
-  , Entity "Iuml" "\\\"{I}" False "&Iuml;" "I" "Ï" "Ï"
-  , Entity "iuml" "\\\"{i}" False "&iuml;" "i" "ï" "ï"
-  , Entity "Ntilde" "\\~{N}" False "&Ntilde;" "N" "Ñ" "Ñ"
-  , Entity "ntilde" "\\~{n}" False "&ntilde;" "n" "ñ" "ñ"
-  , Entity "Ograve" "\\`{O}" False "&Ograve;" "O" "Ò" "Ò"
-  , Entity "ograve" "\\`{o}" False "&ograve;" "o" "ò" "ò"
-  , Entity "Oacute" "\\'{O}" False "&Oacute;" "O" "Ó" "Ó"
-  , Entity "oacute" "\\'{o}" False "&oacute;" "o" "ó" "ó"
-  , Entity "Ocirc" "\\^{O}" False "&Ocirc;" "O" "Ô" "Ô"
-  , Entity "ocirc" "\\^{o}" False "&ocirc;" "o" "ô" "ô"
-  , Entity "Otilde" "\\~{O}" False "&Otilde;" "O" "Õ" "Õ"
-  , Entity "otilde" "\\~{o}" False "&otilde;" "o" "õ" "õ"
-  , Entity "Ouml" "\\\"{O}" False "&Ouml;" "Oe" "Ö" "Ö"
-  , Entity "ouml" "\\\"{o}" False "&ouml;" "oe" "ö" "ö"
-  , Entity "Oslash" "\\O" False "&Oslash;" "O" "Ø" "Ø"
-  , Entity "oslash" "\\o{}" False "&oslash;" "o" "ø" "ø"
-  , Entity "OElig" "\\OE{}" False "&OElig;" "OE" "OE" "Œ"
-  , Entity "oelig" "\\oe{}" False "&oelig;" "oe" "oe" "œ"
-  , Entity "Scaron" "\\v{S}" False "&Scaron;" "S" "S" "Š"
-  , Entity "scaron" "\\v{s}" False "&scaron;" "s" "s" "š"
-  , Entity "szlig" "\\ss{}" False "&szlig;" "ss" "ß" "ß"
-  , Entity "Ugrave" "\\`{U}" False "&Ugrave;" "U" "Ù" "Ù"
-  , Entity "ugrave" "\\`{u}" False "&ugrave;" "u" "ù" "ù"
-  , Entity "Uacute" "\\'{U}" False "&Uacute;" "U" "Ú" "Ú"
-  , Entity "uacute" "\\'{u}" False "&uacute;" "u" "ú" "ú"
-  , Entity "Ucirc" "\\^{U}" False "&Ucirc;" "U" "Û" "Û"
-  , Entity "ucirc" "\\^{u}" False "&ucirc;" "u" "û" "û"
-  , Entity "Uuml" "\\\"{U}" False "&Uuml;" "Ue" "Ü" "Ü"
-  , Entity "uuml" "\\\"{u}" False "&uuml;" "ue" "ü" "ü"
-  , Entity "Yacute" "\\'{Y}" False "&Yacute;" "Y" "Ý" "Ý"
-  , Entity "yacute" "\\'{y}" False "&yacute;" "y" "ý" "ý"
-  , Entity "Yuml" "\\\"{Y}" False "&Yuml;" "Y" "Y" "Ÿ"
-  , Entity "yuml" "\\\"{y}" False "&yuml;" "y" "ÿ" "ÿ"
-  , Entity "fnof" "\\textit{f}" False "&fnof;" "f" "f" "ƒ"
-  , Entity "real" "\\Re" True "&real;" "R" "R" "ℜ"
-  , Entity "image" "\\Im" True "&image;" "I" "I" "ℑ"
-  , Entity "weierp" "\\wp" True "&weierp;" "P" "P" "℘"
-  , Entity "ell" "\\ell" True "&ell;" "ell" "ell" "ℓ"
-  , Entity "imath" "\\imath" True "&imath;" "[dotless i]" "dotless i" "ı"
-  , Entity "jmath" "\\jmath" True "&jmath;" "[dotless j]" "dotless j" "ȷ"
-  , Entity "Alpha" "A" False "&Alpha;" "Alpha" "Alpha" "Α"
-  , Entity "alpha" "\\alpha" True "&alpha;" "alpha" "alpha" "α"
-  , Entity "Beta" "B" False "&Beta;" "Beta" "Beta" "Β"
-  , Entity "beta" "\\beta" True "&beta;" "beta" "beta" "β"
-  , Entity "Gamma" "\\Gamma" True "&Gamma;" "Gamma" "Gamma" "Γ"
-  , Entity "gamma" "\\gamma" True "&gamma;" "gamma" "gamma" "γ"
-  , Entity "Delta" "\\Delta" True "&Delta;" "Delta" "Delta" "Δ"
-  , Entity "delta" "\\delta" True "&delta;" "delta" "delta" "δ"
-  , Entity "Epsilon" "E" False "&Epsilon;" "Epsilon" "Epsilon" "Ε"
-  , Entity "epsilon" "\\epsilon" True "&epsilon;" "epsilon" "epsilon" "ε"
-  , Entity "varepsilon" "\\varepsilon" True "&epsilon;" "varepsilon" "varepsilon" "ε"
-  , Entity "Zeta" "Z" False "&Zeta;" "Zeta" "Zeta" "Ζ"
-  , Entity "zeta" "\\zeta" True "&zeta;" "zeta" "zeta" "ζ"
-  , Entity "Eta" "H" False "&Eta;" "Eta" "Eta" "Η"
-  , Entity "eta" "\\eta" True "&eta;" "eta" "eta" "η"
-  , Entity "Theta" "\\Theta" True "&Theta;" "Theta" "Theta" "Θ"
-  , Entity "theta" "\\theta" True "&theta;" "theta" "theta" "θ"
-  , Entity "thetasym" "\\vartheta" True "&thetasym;" "theta" "theta" "ϑ"
-  , Entity "vartheta" "\\vartheta" True "&thetasym;" "theta" "theta" "ϑ"
-  , Entity "Iota" "I" False "&Iota;" "Iota" "Iota" "Ι"
-  , Entity "iota" "\\iota" True "&iota;" "iota" "iota" "ι"
-  , Entity "Kappa" "K" False "&Kappa;" "Kappa" "Kappa" "Κ"
-  , Entity "kappa" "\\kappa" True "&kappa;" "kappa" "kappa" "κ"
-  , Entity "Lambda" "\\Lambda" True "&Lambda;" "Lambda" "Lambda" "Λ"
-  , Entity "lambda" "\\lambda" True "&lambda;" "lambda" "lambda" "λ"
-  , Entity "Mu" "M" False "&Mu;" "Mu" "Mu" "Μ"
-  , Entity "mu" "\\mu" True "&mu;" "mu" "mu" "μ"
-  , Entity "nu" "\\nu" True "&nu;" "nu" "nu" "ν"
-  , Entity "Nu" "N" False "&Nu;" "Nu" "Nu" "Ν"
-  , Entity "Xi" "\\Xi" True "&Xi;" "Xi" "Xi" "Ξ"
-  , Entity "xi" "\\xi" True "&xi;" "xi" "xi" "ξ"
-  , Entity "Omicron" "O" False "&Omicron;" "Omicron" "Omicron" "Ο"
-  , Entity "omicron" "\\textit{o}" False "&omicron;" "omicron" "omicron" "ο"
-  , Entity "Pi" "\\Pi" True "&Pi;" "Pi" "Pi" "Π"
-  , Entity "pi" "\\pi" True "&pi;" "pi" "pi" "π"
-  , Entity "Rho" "P" False "&Rho;" "Rho" "Rho" "Ρ"
-  , Entity "rho" "\\rho" True "&rho;" "rho" "rho" "ρ"
-  , Entity "Sigma" "\\Sigma" True "&Sigma;" "Sigma" "Sigma" "Σ"
-  , Entity "sigma" "\\sigma" True "&sigma;" "sigma" "sigma" "σ"
-  , Entity "sigmaf" "\\varsigma" True "&sigmaf;" "sigmaf" "sigmaf" "ς"
-  , Entity "varsigma" "\\varsigma" True "&sigmaf;" "varsigma" "varsigma" "ς"
-  , Entity "Tau" "T" False "&Tau;" "Tau" "Tau" "Τ"
-  , Entity "Upsilon" "\\Upsilon" True "&Upsilon;" "Upsilon" "Upsilon" "Υ"
-  , Entity "upsih" "\\Upsilon" True "&upsih;" "upsilon" "upsilon" "ϒ"
-  , Entity "upsilon" "\\upsilon" True "&upsilon;" "upsilon" "upsilon" "υ"
-  , Entity "Phi" "\\Phi" True "&Phi;" "Phi" "Phi" "Φ"
-  , Entity "phi" "\\phi" True "&phi;" "phi" "phi" "ɸ"
-  , Entity "varphi" "\\varphi" True "&varphi;" "varphi" "varphi" "φ"
-  , Entity "Chi" "X" False "&Chi;" "Chi" "Chi" "Χ"
-  , Entity "chi" "\\chi" True "&chi;" "chi" "chi" "χ"
-  , Entity "acutex" "\\acute x" True "&acute;x" "'x" "'x" "𝑥́"
-  , Entity "Psi" "\\Psi" True "&Psi;" "Psi" "Psi" "Ψ"
-  , Entity "psi" "\\psi" True "&psi;" "psi" "psi" "ψ"
-  , Entity "tau" "\\tau" True "&tau;" "tau" "tau" "τ"
-  , Entity "Omega" "\\Omega" True "&Omega;" "Omega" "Omega" "Ω"
-  , Entity "omega" "\\omega" True "&omega;" "omega" "omega" "ω"
-  , Entity "piv" "\\varpi" True "&piv;" "omega-pi" "omega-pi" "ϖ"
-  , Entity "varpi" "\\varpi" True "&piv;" "omega-pi" "omega-pi" "ϖ"
-  , Entity "partial" "\\partial" True "&part;" "[partial differential]" "[partial differential]" "∂"
-  , Entity "alefsym" "\\aleph" True "&alefsym;" "aleph" "aleph" "ℵ"
-  , Entity "aleph" "\\aleph" True "&aleph;" "aleph" "aleph" "ℵ"
-  , Entity "gimel" "\\gimel" True "&gimel;" "gimel" "gimel" "ℷ"
-  , Entity "beth" "\\beth" True "&beth;" "beth" "beth" "ב"
-  , Entity "dalet" "\\daleth" True "&daleth;" "dalet" "dalet" "ד"
-  , Entity "ETH" "\\DH{}" False "&ETH;" "D" "Ð" "Ð"
-  , Entity "eth" "\\dh{}" False "&eth;" "dh" "ð" "ð"
-  , Entity "THORN" "\\TH{}" False "&THORN;" "TH" "Þ" "Þ"
-  , Entity "thorn" "\\th{}" False "&thorn;" "th" "þ" "þ"
-  , Entity "dots" "\\dots{}" False "&hellip;" "..." "..." "…"
-  , Entity "cdots" "\\cdots{}" True "&ctdot;" "..." "..." "⋯"
-  , Entity "hellip" "\\dots{}" False "&hellip;" "..." "..." "…"
-  , Entity "middot" "\\textperiodcentered{}" False "&middot;" "." "·" "·"
-  , Entity "iexcl" "!`" False "&iexcl;" "!" "¡" "¡"
-  , Entity "iquest" "?`" False "&iquest;" "?" "¿" "¿"
-  , Entity "shy" "\\-" False "&shy;" "" "" ""
-  , Entity "ndash" "--" False "&ndash;" "-" "-" "–"
-  , Entity "mdash" "---" False "&mdash;" "--" "--" "—"
-  , Entity "quot" "\\textquotedbl{}" False "&quot;" "\"" "\"" "\""
-  , Entity "acute" "\\textasciiacute{}" False "&acute;" "'" "´" "´"
-  , Entity "ldquo" "\\textquotedblleft{}" False "&ldquo;" "\"" "\"" "“"
-  , Entity "rdquo" "\\textquotedblright{}" False "&rdquo;" "\"" "\"" "”"
-  , Entity "bdquo" "\\quotedblbase{}" False "&bdquo;" "\"" "\"" "„"
-  , Entity "lsquo" "\\textquoteleft{}" False "&lsquo;" "`" "`" "‘"
-  , Entity "rsquo" "\\textquoteright{}" False "&rsquo;" "'" "'" "’"
-  , Entity "sbquo" "\\quotesinglbase{}" False "&sbquo;" "," "," "‚"
-  , Entity "laquo" "\\guillemotleft{}" False "&laquo;" "<<" "«" "«"
-  , Entity "raquo" "\\guillemotright{}" False "&raquo;" ">>" "»" "»"
-  , Entity "lsaquo" "\\guilsinglleft{}" False "&lsaquo;" "<" "<" "‹"
-  , Entity "rsaquo" "\\guilsinglright{}" False "&rsaquo;" ">" ">" "›"
-  , Entity "circ" "\\^{}" False "&circ;" "^" "^" "∘"
-  , Entity "vert" "\\vert{}" True "&vert;" "|" "|" "|"
-  , Entity "vbar" "|" False "|" "|" "|" "|"
-  , Entity "brvbar" "\\textbrokenbar{}" False "&brvbar;" "|" "¦" "¦"
-  , Entity "S" "\\S" False "&sect;" "paragraph" "§" "§"
-  , Entity "sect" "\\S" False "&sect;" "paragraph" "§" "§"
-  , Entity "amp" "\\&" False "&amp;" "&" "&" "&"
-  , Entity "lt" "\\textless{}" False "&lt;" "<" "<" "<"
-  , Entity "gt" "\\textgreater{}" False "&gt;" ">" ">" ">"
-  , Entity "tilde" "\\textasciitilde{}" False "~" "~" "~" "~"
-  , Entity "slash" "/" False "/" "/" "/" "/"
-  , Entity "plus" "+" False "+" "+" "+" "+"
-  , Entity "under" "\\_" False "_" "_" "_" "_"
-  , Entity "equal" "=" False "=" "=" "=" "="
-  , Entity "asciicirc" "\\textasciicircum{}" False "^" "^" "^" "^"
-  , Entity "dagger" "\\textdagger{}" False "&dagger;" "[dagger]" "[dagger]" "†"
-  , Entity "dag" "\\dag{}" False "&dagger;" "[dagger]" "[dagger]" "†"
-  , Entity "Dagger" "\\textdaggerdbl{}" False "&Dagger;" "[doubledagger]" "[doubledagger]" "‡"
-  , Entity "ddag" "\\ddag{}" False "&Dagger;" "[doubledagger]" "[doubledagger]" "‡"
-  , Entity "nbsp" "~" False "&nbsp;" " " " " " "
-  , Entity "ensp" "\\hspace*{.5em}" False "&ensp;" " " " " " "
-  , Entity "emsp" "\\hspace*{1em}" False "&emsp;" " " " " " "
-  , Entity "thinsp" "\\hspace*{.2em}" False "&thinsp;" " " " " " "
-  , Entity "curren" "\\textcurrency{}" False "&curren;" "curr." "¤" "¤"
-  , Entity "cent" "\\textcent{}" False "&cent;" "cent" "¢" "¢"
-  , Entity "pound" "\\pounds{}" False "&pound;" "pound" "£" "£"
-  , Entity "yen" "\\textyen{}" False "&yen;" "yen" "¥" "¥"
-  , Entity "euro" "\\texteuro{}" False "&euro;" "EUR" "EUR" "€"
-  , Entity "EUR" "\\texteuro{}" False "&euro;" "EUR" "EUR" "€"
-  , Entity "dollar" "\\$" False "$" "$" "$" "$"
-  , Entity "USD" "\\$" False "$" "$" "$" "$"
-  , Entity "copy" "\\textcopyright{}" False "&copy;" "(c)" "©" "©"
-  , Entity "reg" "\\textregistered{}" False "&reg;" "(r)" "®" "®"
-  , Entity "trade" "\\texttrademark{}" False "&trade;" "TM" "TM" "™"
-  , Entity "minus" "\\minus" True "&minus;" "-" "-" "−"
-  , Entity "pm" "\\textpm{}" False "&plusmn;" "+-" "±" "±"
-  , Entity "plusmn" "\\textpm{}" False "&plusmn;" "+-" "±" "±"
-  , Entity "times" "\\texttimes{}" False "&times;" "*" "×" "×"
-  , Entity "frasl" "/" False "&frasl;" "/" "/" "⁄"
-  , Entity "colon" "\\colon" True ":" ":" ":" ":"
-  , Entity "div" "\\textdiv{}" False "&divide;" "/" "÷" "÷"
-  , Entity "frac12" "\\textonehalf{}" False "&frac12;" "1/2" "½" "½"
-  , Entity "frac14" "\\textonequarter{}" False "&frac14;" "1/4" "¼" "¼"
-  , Entity "frac34" "\\textthreequarters{}" False "&frac34;" "3/4" "¾" "¾"
-  , Entity "permil" "\\textperthousand{}" False "&permil;" "per thousand" "per thousand" "‰"
-  , Entity "sup1" "\\textonesuperior{}" False "&sup1;" "^1" "¹" "¹"
-  , Entity "sup2" "\\texttwosuperior{}" False "&sup2;" "^2" "²" "²"
-  , Entity "sup3" "\\textthreesuperior{}" False "&sup3;" "^3" "³" "³"
-  , Entity "radic" "\\sqrt{\\,}" True "&radic;" "[square root]" "[square root]" "√"
-  , Entity "sum" "\\sum" True "&sum;" "[sum]" "[sum]" "∑"
-  , Entity "prod" "\\prod" True "&prod;" "[product]" "[n-ary product]" "∏"
-  , Entity "micro" "\\textmu{}" False "&micro;" "micro" "µ" "µ"
-  , Entity "macr" "\\textasciimacron{}" False "&macr;" "[macron]" "¯" "¯"
-  , Entity "deg" "\\textdegree{}" False "&deg;" "degree" "°" "°"
-  , Entity "prime" "\\prime" True "&prime;" "'" "'" "′"
-  , Entity "Prime" "\\prime{}\\prime" True "&Prime;" "''" "''" "″"
-  , Entity "infin" "\\infty" True "&infin;" "[infinity]" "[infinity]" "∞"
-  , Entity "infty" "\\infty" True "&infin;" "[infinity]" "[infinity]" "∞"
-  , Entity "prop" "\\propto" True "&prop;" "[proportional to]" "[proportional to]" "∝"
-  , Entity "propto" "\\propto" True "&prop;" "[proportional to]" "[proportional to]" "∝"
-  , Entity "not" "\\textlnot{}" False "&not;" "[angled dash]" "¬" "¬"
-  , Entity "neg" "\\neg{}" True "&not;" "[angled dash]" "¬" "¬"
-  , Entity "land" "\\land" True "&and;" "[logical and]" "[logical and]" "∧"
-  , Entity "wedge" "\\wedge" True "&and;" "[logical and]" "[logical and]" "∧"
-  , Entity "lor" "\\lor" True "&or;" "[logical or]" "[logical or]" "∨"
-  , Entity "vee" "\\vee" True "&or;" "[logical or]" "[logical or]" "∨"
-  , Entity "cap" "\\cap" True "&cap;" "[intersection]" "[intersection]" "∩"
-  , Entity "cup" "\\cup" True "&cup;" "[union]" "[union]" "∪"
-  , Entity "smile" "\\smile" True "&smile;" "[cup product]" "[cup product]" "⌣"
-  , Entity "frown" "\\frown" True "&frown;" "[Cap product]" "[cap product]" "⌢"
-  , Entity "int" "\\int" True "&int;" "[integral]" "[integral]" "∫"
-  , Entity "therefore" "\\therefore" True "&there4;" "[therefore]" "[therefore]" "∴"
-  , Entity "there4" "\\therefore" True "&there4;" "[therefore]" "[therefore]" "∴"
-  , Entity "because" "\\because" True "&because;" "[because]" "[because]" "∵"
-  , Entity "sim" "\\sim" True "&sim;" "~" "~" "∼"
-  , Entity "cong" "\\cong" True "&cong;" "[approx. equal to]" "[approx. equal to]" "≅"
-  , Entity "simeq" "\\simeq" True "&cong;" "[approx. equal to]" "[approx. equal to]" "≅"
-  , Entity "asymp" "\\asymp" True "&asymp;" "[almost equal to]" "[almost equal to]" "≈"
-  , Entity "approx" "\\approx" True "&asymp;" "[almost equal to]" "[almost equal to]" "≈"
-  , Entity "ne" "\\ne" True "&ne;" "[not equal to]" "[not equal to]" "≠"
-  , Entity "neq" "\\neq" True "&ne;" "[not equal to]" "[not equal to]" "≠"
-  , Entity "equiv" "\\equiv" True "&equiv;" "[identical to]" "[identical to]" "≡"
-  , Entity "triangleq" "\\triangleq" True "&triangleq;" "[defined to]" "[defined to]" "≜"
-  , Entity "le" "\\le" True "&le;" "<=" "<=" "≤"
-  , Entity "leq" "\\le" True "&le;" "<=" "<=" "≤"
-  , Entity "ge" "\\ge" True "&ge;" ">=" ">=" "≥"
-  , Entity "geq" "\\ge" True "&ge;" ">=" ">=" "≥"
-  , Entity "lessgtr" "\\lessgtr" True "&lessgtr;" "[less than or greater than]" "[less than or greater than]" "≶"
-  , Entity "lesseqgtr" "\\lesseqgtr" True "&lesseqgtr;" "[less than or equal or greater than or equal]" "[less than or equal or greater than or equal]" "⋚"
-  , Entity "ll" "\\ll" True "&Lt;" "<<" "<<" "≪"
-  , Entity "Ll" "\\lll" True "&Ll;" "<<<" "<<<" "⋘"
-  , Entity "lll" "\\lll" True "&Ll;" "<<<" "<<<" "⋘"
-  , Entity "gg" "\\gg" True "&Gt;" ">>" ">>" "≫"
-  , Entity "Gg" "\\ggg" True "&Gg;" ">>>" ">>>" "⋙"
-  , Entity "ggg" "\\ggg" True "&Gg;" ">>>" ">>>" "⋙"
-  , Entity "prec" "\\prec" True "&pr;" "[precedes]" "[precedes]" "≺"
-  , Entity "preceq" "\\preceq" True "&prcue;" "[precedes or equal]" "[precedes or equal]" "≼"
-  , Entity "preccurlyeq" "\\preccurlyeq" True "&prcue;" "[precedes or equal]" "[precedes or equal]" "≼"
-  , Entity "succ" "\\succ" True "&sc;" "[succeeds]" "[succeeds]" "≻"
-  , Entity "succeq" "\\succeq" True "&sccue;" "[succeeds or equal]" "[succeeds or equal]" "≽"
-  , Entity "succcurlyeq" "\\succcurlyeq" True "&sccue;" "[succeeds or equal]" "[succeeds or equal]" "≽"
-  , Entity "sub" "\\subset" True "&sub;" "[subset of]" "[subset of]" "⊂"
-  , Entity "subset" "\\subset" True "&sub;" "[subset of]" "[subset of]" "⊂"
-  , Entity "sup" "\\supset" True "&sup;" "[superset of]" "[superset of]" "⊃"
-  , Entity "supset" "\\supset" True "&sup;" "[superset of]" "[superset of]" "⊃"
-  , Entity "nsub" "\\not\\subset" True "&nsub;" "[not a subset of]" "[not a subset of" "⊄"
-  , Entity "sube" "\\subseteq" True "&sube;" "[subset of or equal to]" "[subset of or equal to]" "⊆"
-  , Entity "nsup" "\\not\\supset" True "&nsup;" "[not a superset of]" "[not a superset of]" "⊅"
-  , Entity "supe" "\\supseteq" True "&supe;" "[superset of or equal to]" "[superset of or equal to]" "⊇"
-  , Entity "setminus" "\\setminus" True "&setminus;" "\\" " \\" "⧵"
-  , Entity "forall" "\\forall" True "&forall;" "[for all]" "[for all]" "∀"
-  , Entity "exist" "\\exists" True "&exist;" "[there exists]" "[there exists]" "∃"
-  , Entity "exists" "\\exists" True "&exist;" "[there exists]" "[there exists]" "∃"
-  , Entity "nexist" "\\nexists" True "&exist;" "[there does not exists]" "[there does not  exists]" "∄"
-  , Entity "nexists" "\\nexists" True "&exist;" "[there does not exists]" "[there does not  exists]" "∄"
-  , Entity "empty" "\\emptyset" True "&empty;" "[empty set]" "[empty set]" "∅"
-  , Entity "emptyset" "\\emptyset" True "&empty;" "[empty set]" "[empty set]" "∅"
-  , Entity "isin" "\\in" True "&isin;" "[element of]" "[element of]" "∈"
-  , Entity "in" "\\in" True "&isin;" "[element of]" "[element of]" "∈"
-  , Entity "notin" "\\notin" True "&notin;" "[not an element of]" "[not an element of]" "∉"
-  , Entity "ni" "\\ni" True "&ni;" "[contains as member]" "[contains as member]" "∋"
-  , Entity "nabla" "\\nabla" True "&nabla;" "[nabla]" "[nabla]" "∇"
-  , Entity "ang" "\\angle" True "&ang;" "[angle]" "[angle]" "∠"
-  , Entity "angle" "\\angle" True "&ang;" "[angle]" "[angle]" "∠"
-  , Entity "perp" "\\perp" True "&perp;" "[up tack]" "[up tack]" "⊥"
-  , Entity "parallel" "\\parallel" True "&parallel;" "||" "||" "∥"
-  , Entity "sdot" "\\cdot" True "&sdot;" "[dot]" "[dot]" "⋅"
-  , Entity "cdot" "\\cdot" True "&sdot;" "[dot]" "[dot]" "⋅"
-  , Entity "lceil" "\\lceil" True "&lceil;" "[left ceiling]" "[left ceiling]" "⌈"
-  , Entity "rceil" "\\rceil" True "&rceil;" "[right ceiling]" "[right ceiling]" "⌉"
-  , Entity "lfloor" "\\lfloor" True "&lfloor;" "[left floor]" "[left floor]" "⌊"
-  , Entity "rfloor" "\\rfloor" True "&rfloor;" "[right floor]" "[right floor]" "⌋"
-  , Entity "lang" "\\langle" True "&lang;" "<" "<" "⟨"
-  , Entity "rang" "\\rangle" True "&rang;" ">" ">" "⟩"
-  , Entity "langle" "\\langle" True "&lang;" "<" "<" "⟨"
-  , Entity "rangle" "\\rangle" True "&rang;" ">" ">" "⟩"
-  , Entity "hbar" "\\hbar" True "&hbar;" "hbar" "hbar" "ℏ"
-  , Entity "mho" "\\mho" True "&mho;" "mho" "mho" "℧"
-  , Entity "larr" "\\leftarrow" True "&larr;" "<-" "<-" "←"
-  , Entity "leftarrow" "\\leftarrow" True "&larr;" "<-" "<-" "←"
-  , Entity "gets" "\\gets" True "&larr;" "<-" "<-" "←"
-  , Entity "lArr" "\\Leftarrow" True "&lArr;" "<=" "<=" "⇐"
-  , Entity "Leftarrow" "\\Leftarrow" True "&lArr;" "<=" "<=" "⇐"
-  , Entity "uarr" "\\uparrow" True "&uarr;" "[uparrow]" "[uparrow]" "↑"
-  , Entity "uparrow" "\\uparrow" True "&uarr;" "[uparrow]" "[uparrow]" "↑"
-  , Entity "uArr" "\\Uparrow" True "&uArr;" "[dbluparrow]" "[dbluparrow]" "⇑"
-  , Entity "Uparrow" "\\Uparrow" True "&uArr;" "[dbluparrow]" "[dbluparrow]" "⇑"
-  , Entity "rarr" "\\rightarrow" True "&rarr;" "->" "->" "→"
-  , Entity "to" "\\to" True "&rarr;" "->" "->" "→"
-  , Entity "rightarrow" "\\rightarrow" True "&rarr;" "->" "->" "→"
-  , Entity "rArr" "\\Rightarrow" True "&rArr;" "=>" "=>" "⇒"
-  , Entity "Rightarrow" "\\Rightarrow" True "&rArr;" "=>" "=>" "⇒"
-  , Entity "darr" "\\downarrow" True "&darr;" "[downarrow]" "[downarrow]" "↓"
-  , Entity "downarrow" "\\downarrow" True "&darr;" "[downarrow]" "[downarrow]" "↓"
-  , Entity "dArr" "\\Downarrow" True "&dArr;" "[dbldownarrow]" "[dbldownarrow]" "⇓"
-  , Entity "Downarrow" "\\Downarrow" True "&dArr;" "[dbldownarrow]" "[dbldownarrow]" "⇓"
-  , Entity "harr" "\\leftrightarrow" True "&harr;" "<->" "<->" "↔"
-  , Entity "leftrightarrow" "\\leftrightarrow" True "&harr;" "<->" "<->" "↔"
-  , Entity "hArr" "\\Leftrightarrow" True "&hArr;" "<=>" "<=>" "⇔"
-  , Entity "Leftrightarrow" "\\Leftrightarrow" True "&hArr;" "<=>" "<=>" "⇔"
-  , Entity "crarr" "\\hookleftarrow" True "&crarr;" "<-'" "<-'" "↵"
-  , Entity "hookleftarrow" "\\hookleftarrow" True "&crarr;" "<-'" "<-'" "↵"
-  , Entity "arccos" "\\arccos" True "arccos" "arccos" "arccos" "arccos"
-  , Entity "arcsin" "\\arcsin" True "arcsin" "arcsin" "arcsin" "arcsin"
-  , Entity "arctan" "\\arctan" True "arctan" "arctan" "arctan" "arctan"
-  , Entity "arg" "\\arg" True "arg" "arg" "arg" "arg"
-  , Entity "cos" "\\cos" True "cos" "cos" "cos" "cos"
-  , Entity "cosh" "\\cosh" True "cosh" "cosh" "cosh" "cosh"
-  , Entity "cot" "\\cot" True "cot" "cot" "cot" "cot"
-  , Entity "coth" "\\coth" True "coth" "coth" "coth" "coth"
-  , Entity "csc" "\\csc" True "csc" "csc" "csc" "csc"
-  , Entity "deg" "\\deg" True "&deg;" "deg" "deg" "deg"
-  , Entity "det" "\\det" True "det" "det" "det" "det"
-  , Entity "dim" "\\dim" True "dim" "dim" "dim" "dim"
-  , Entity "exp" "\\exp" True "exp" "exp" "exp" "exp"
-  , Entity "gcd" "\\gcd" True "gcd" "gcd" "gcd" "gcd"
-  , Entity "hom" "\\hom" True "hom" "hom" "hom" "hom"
-  , Entity "inf" "\\inf" True "inf" "inf" "inf" "inf"
-  , Entity "ker" "\\ker" True "ker" "ker" "ker" "ker"
-  , Entity "lg" "\\lg" True "lg" "lg" "lg" "lg"
-  , Entity "lim" "\\lim" True "lim" "lim" "lim" "lim"
-  , Entity "liminf" "\\liminf" True "liminf" "liminf" "liminf" "liminf"
-  , Entity "limsup" "\\limsup" True "limsup" "limsup" "limsup" "limsup"
-  , Entity "ln" "\\ln" True "ln" "ln" "ln" "ln"
-  , Entity "log" "\\log" True "log" "log" "log" "log"
-  , Entity "max" "\\max" True "max" "max" "max" "max"
-  , Entity "min" "\\min" True "min" "min" "min" "min"
-  , Entity "Pr" "\\Pr" True "Pr" "Pr" "Pr" "Pr"
-  , Entity "sec" "\\sec" True "sec" "sec" "sec" "sec"
-  , Entity "sin" "\\sin" True "sin" "sin" "sin" "sin"
-  , Entity "sinh" "\\sinh" True "sinh" "sinh" "sinh" "sinh"
-  , Entity "sup" "\\sup" True "&sup;" "sup" "sup" "sup"
-  , Entity "tan" "\\tan" True "tan" "tan" "tan" "tan"
-  , Entity "tanh" "\\tanh" True "tanh" "tanh" "tanh" "tanh"
-  , Entity "bull" "\\textbullet{}" False "&bull;" "*" "*" "•"
-  , Entity "bullet" "\\textbullet{}" False "&bull;" "*" "*" "•"
-  , Entity "star" "\\star" True "*" "*" "*" "⋆"
-  , Entity "lowast" "\\ast" True "&lowast;" "*" "*" "∗"
-  , Entity "ast" "\\ast" True "&lowast;" "*" "*" "*"
-  , Entity "odot" "\\odot" True "o" "[circled dot]" "[circled dot]" "ʘ"
-  , Entity "oplus" "\\oplus" True "&oplus;" "[circled plus]" "[circled plus]" "⊕"
-  , Entity "otimes" "\\otimes" True "&otimes;" "[circled times]" "[circled times]" "⊗"
-  , Entity "check" "\\checkmark" True "&checkmark;" "[checkmark]" "[checkmark]" "✓"
-  , Entity "checkmark" "\\checkmark" True "&check;" "[checkmark]" "[checkmark]" "✓"
-  , Entity "para" "\\P{}" False "&para;" "[pilcrow]" "¶" "¶"
-  , Entity "ordf" "\\textordfeminine{}" False "&ordf;" "_a_" "ª" "ª"
-  , Entity "ordm" "\\textordmasculine{}" False "&ordm;" "_o_" "º" "º"
-  , Entity "cedil" "\\c{}" False "&cedil;" "[cedilla]" "¸" "¸"
-  , Entity "oline" "\\overline{~}" True "&oline;" "[overline]" "¯" "‾"
-  , Entity "uml" "\\textasciidieresis{}" False "&uml;" "[diaeresis]" "¨" "¨"
-  , Entity "zwnj" "\\/{}" False "&zwnj;" "" "" "\8204"
-  , Entity "zwj" "" False "&zwj;" "" "" "\8205"
-  , Entity "lrm" "" False "&lrm;" "" "" "\8206"
-  , Entity "rlm" "" False "&rlm;" "" "" "\8207"
-  , Entity "smiley" "\\ddot\\smile" True "&#9786;" ":-)" ":-)" "☺"
-  , Entity "blacksmile" "\\ddot\\smile" True "&#9787;" ":-)" ":-)" "☻"
-  , Entity "sad" "\\ddot\\frown" True "&#9785;" ":-(" ":-(" "☹"
-  , Entity "frowny" "\\ddot\\frown" True "&#9785;" ":-(" ":-(" "☹"
-  , Entity "clubs" "\\clubsuit" True "&clubs;" "[clubs]" "[clubs]" "♣"
-  , Entity "clubsuit" "\\clubsuit" True "&clubs;" "[clubs]" "[clubs]" "♣"
-  , Entity "spades" "\\spadesuit" True "&spades;" "[spades]" "[spades]" "♠"
-  , Entity "spadesuit" "\\spadesuit" True "&spades;" "[spades]" "[spades]" "♠"
-  , Entity "hearts" "\\heartsuit" True "&hearts;" "[hearts]" "[hearts]" "♥"
-  , Entity "heartsuit" "\\heartsuit" True "&heartsuit;" "[hearts]" "[hearts]" "♥"
-  , Entity "diams" "\\diamondsuit" True "&diams;" "[diamonds]" "[diamonds]" "◆"
-  , Entity "diamondsuit" "\\diamondsuit" True "&diams;" "[diamonds]" "[diamonds]" "◆"
-  , Entity "diamond" "\\diamondsuit" True "&diamond;" "[diamond]" "[diamond]" "◆"
-  , Entity "Diamond" "\\diamondsuit" True "&diamond;" "[diamond]" "[diamond]" "◆"
-  , Entity "loz" "\\lozenge" True "&loz;" "[lozenge]" "[lozenge]" "⧫"
-  , Entity "_ " "\\hspace*{0.5em}" False "&ensp;" " " " " " "
-  , Entity "_  " "\\hspace*{1.0em}" False "&ensp;&ensp;" "  " "  " "  "
-  , Entity "_   " "\\hspace*{1.5em}" False "&ensp;&ensp;&ensp;" "   " "   " "   "
-  , Entity "_    " "\\hspace*{2.0em}" False "&ensp;&ensp;&ensp;&ensp;" "    " "    " "    "
-  , Entity "_     " "\\hspace*{2.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;" "     " "     " "     "
-  , Entity "_      " "\\hspace*{3.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "      " "      " "      "
-  , Entity "_       " "\\hspace*{3.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "       " "       " "       "
-  , Entity "_        " "\\hspace*{4.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "        " "        " "        "
-  , Entity "_         " "\\hspace*{4.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "         " "         " "         "
-  , Entity "_          " "\\hspace*{5.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "          " "          " "          "
-  , Entity "_           " "\\hspace*{5.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "           " "           " "           "
-  , Entity "_            " "\\hspace*{6.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "            " "            " "            "
-  , Entity "_             " "\\hspace*{6.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "             " "             " "             "
-  , Entity "_              " "\\hspace*{7.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "              " "              " "              "
-  , Entity "_               " "\\hspace*{7.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "               " "               " "               "
-  , Entity "_                " "\\hspace*{8.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "                " "                " "                "
-  , Entity "_                 " "\\hspace*{8.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "                 " "                 " "                 "
-  , Entity "_                  " "\\hspace*{9.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "                  " "                  " "                  "
-  , Entity "_                   " "\\hspace*{9.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "                   " "                   " "                   "
-  , Entity "_                    " "\\hspace*{10.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "                    " "                    " "                    "
+  [ Entity "Agrave" "\\`{A}" False "&Agrave;" "A" "À" "À",
+    Entity "agrave" "\\`{a}" False "&agrave;" "a" "à" "à",
+    Entity "Aacute" "\\'{A}" False "&Aacute;" "A" "Á" "Á",
+    Entity "aacute" "\\'{a}" False "&aacute;" "a" "á" "á",
+    Entity "Acirc" "\\^{A}" False "&Acirc;" "A" "Â" "Â",
+    Entity "acirc" "\\^{a}" False "&acirc;" "a" "â" "â",
+    Entity "Amacr" "\\={A}" False "&Amacr;" "A" "Ã" "Ã",
+    Entity "amacr" "\\={a}" False "&amacr;" "a" "ã" "ã",
+    Entity "Atilde" "\\~{A}" False "&Atilde;" "A" "Ã" "Ã",
+    Entity "atilde" "\\~{a}" False "&atilde;" "a" "ã" "ã",
+    Entity "Auml" "\\\"{A}" False "&Auml;" "Ae" "Ä" "Ä",
+    Entity "auml" "\\\"{a}" False "&auml;" "ae" "ä" "ä",
+    Entity "Aring" "\\AA{}" False "&Aring;" "A" "Å" "Å",
+    Entity "AA" "\\AA{}" False "&Aring;" "A" "Å" "Å",
+    Entity "aring" "\\aa{}" False "&aring;" "a" "å" "å",
+    Entity "AElig" "\\AE{}" False "&AElig;" "AE" "Æ" "Æ",
+    Entity "aelig" "\\ae{}" False "&aelig;" "ae" "æ" "æ",
+    Entity "Ccedil" "\\c{C}" False "&Ccedil;" "C" "Ç" "Ç",
+    Entity "ccedil" "\\c{c}" False "&ccedil;" "c" "ç" "ç",
+    Entity "Egrave" "\\`{E}" False "&Egrave;" "E" "È" "È",
+    Entity "egrave" "\\`{e}" False "&egrave;" "e" "è" "è",
+    Entity "Eacute" "\\'{E}" False "&Eacute;" "E" "É" "É",
+    Entity "eacute" "\\'{e}" False "&eacute;" "e" "é" "é",
+    Entity "Ecirc" "\\^{E}" False "&Ecirc;" "E" "Ê" "Ê",
+    Entity "ecirc" "\\^{e}" False "&ecirc;" "e" "ê" "ê",
+    Entity "Euml" "\\\"{E}" False "&Euml;" "E" "Ë" "Ë",
+    Entity "euml" "\\\"{e}" False "&euml;" "e" "ë" "ë",
+    Entity "Igrave" "\\`{I}" False "&Igrave;" "I" "Ì" "Ì",
+    Entity "igrave" "\\`{i}" False "&igrave;" "i" "ì" "ì",
+    Entity "Iacute" "\\'{I}" False "&Iacute;" "I" "Í" "Í",
+    Entity "iacute" "\\'{i}" False "&iacute;" "i" "í" "í",
+    Entity "Idot" "\\.{I}" False "&idot;" "I" "İ" "İ",
+    Entity "inodot" "\\i" False "&inodot;" "i" "ı" "ı",
+    Entity "Icirc" "\\^{I}" False "&Icirc;" "I" "Î" "Î",
+    Entity "icirc" "\\^{i}" False "&icirc;" "i" "î" "î",
+    Entity "Iuml" "\\\"{I}" False "&Iuml;" "I" "Ï" "Ï",
+    Entity "iuml" "\\\"{i}" False "&iuml;" "i" "ï" "ï",
+    Entity "Ntilde" "\\~{N}" False "&Ntilde;" "N" "Ñ" "Ñ",
+    Entity "ntilde" "\\~{n}" False "&ntilde;" "n" "ñ" "ñ",
+    Entity "Ograve" "\\`{O}" False "&Ograve;" "O" "Ò" "Ò",
+    Entity "ograve" "\\`{o}" False "&ograve;" "o" "ò" "ò",
+    Entity "Oacute" "\\'{O}" False "&Oacute;" "O" "Ó" "Ó",
+    Entity "oacute" "\\'{o}" False "&oacute;" "o" "ó" "ó",
+    Entity "Ocirc" "\\^{O}" False "&Ocirc;" "O" "Ô" "Ô",
+    Entity "ocirc" "\\^{o}" False "&ocirc;" "o" "ô" "ô",
+    Entity "Otilde" "\\~{O}" False "&Otilde;" "O" "Õ" "Õ",
+    Entity "otilde" "\\~{o}" False "&otilde;" "o" "õ" "õ",
+    Entity "Ouml" "\\\"{O}" False "&Ouml;" "Oe" "Ö" "Ö",
+    Entity "ouml" "\\\"{o}" False "&ouml;" "oe" "ö" "ö",
+    Entity "Oslash" "\\O" False "&Oslash;" "O" "Ø" "Ø",
+    Entity "oslash" "\\o{}" False "&oslash;" "o" "ø" "ø",
+    Entity "OElig" "\\OE{}" False "&OElig;" "OE" "OE" "Œ",
+    Entity "oelig" "\\oe{}" False "&oelig;" "oe" "oe" "œ",
+    Entity "Scaron" "\\v{S}" False "&Scaron;" "S" "S" "Š",
+    Entity "scaron" "\\v{s}" False "&scaron;" "s" "s" "š",
+    Entity "szlig" "\\ss{}" False "&szlig;" "ss" "ß" "ß",
+    Entity "Ugrave" "\\`{U}" False "&Ugrave;" "U" "Ù" "Ù",
+    Entity "ugrave" "\\`{u}" False "&ugrave;" "u" "ù" "ù",
+    Entity "Uacute" "\\'{U}" False "&Uacute;" "U" "Ú" "Ú",
+    Entity "uacute" "\\'{u}" False "&uacute;" "u" "ú" "ú",
+    Entity "Ucirc" "\\^{U}" False "&Ucirc;" "U" "Û" "Û",
+    Entity "ucirc" "\\^{u}" False "&ucirc;" "u" "û" "û",
+    Entity "Uuml" "\\\"{U}" False "&Uuml;" "Ue" "Ü" "Ü",
+    Entity "uuml" "\\\"{u}" False "&uuml;" "ue" "ü" "ü",
+    Entity "Yacute" "\\'{Y}" False "&Yacute;" "Y" "Ý" "Ý",
+    Entity "yacute" "\\'{y}" False "&yacute;" "y" "ý" "ý",
+    Entity "Yuml" "\\\"{Y}" False "&Yuml;" "Y" "Y" "Ÿ",
+    Entity "yuml" "\\\"{y}" False "&yuml;" "y" "ÿ" "ÿ",
+    Entity "fnof" "\\textit{f}" False "&fnof;" "f" "f" "ƒ",
+    Entity "real" "\\Re" True "&real;" "R" "R" "ℜ",
+    Entity "image" "\\Im" True "&image;" "I" "I" "ℑ",
+    Entity "weierp" "\\wp" True "&weierp;" "P" "P" "℘",
+    Entity "ell" "\\ell" True "&ell;" "ell" "ell" "ℓ",
+    Entity "imath" "\\imath" True "&imath;" "[dotless i]" "dotless i" "ı",
+    Entity "jmath" "\\jmath" True "&jmath;" "[dotless j]" "dotless j" "ȷ",
+    Entity "Alpha" "A" False "&Alpha;" "Alpha" "Alpha" "Α",
+    Entity "alpha" "\\alpha" True "&alpha;" "alpha" "alpha" "α",
+    Entity "Beta" "B" False "&Beta;" "Beta" "Beta" "Β",
+    Entity "beta" "\\beta" True "&beta;" "beta" "beta" "β",
+    Entity "Gamma" "\\Gamma" True "&Gamma;" "Gamma" "Gamma" "Γ",
+    Entity "gamma" "\\gamma" True "&gamma;" "gamma" "gamma" "γ",
+    Entity "Delta" "\\Delta" True "&Delta;" "Delta" "Delta" "Δ",
+    Entity "delta" "\\delta" True "&delta;" "delta" "delta" "δ",
+    Entity "Epsilon" "E" False "&Epsilon;" "Epsilon" "Epsilon" "Ε",
+    Entity "epsilon" "\\epsilon" True "&epsilon;" "epsilon" "epsilon" "ε",
+    Entity "varepsilon" "\\varepsilon" True "&epsilon;" "varepsilon" "varepsilon" "ε",
+    Entity "Zeta" "Z" False "&Zeta;" "Zeta" "Zeta" "Ζ",
+    Entity "zeta" "\\zeta" True "&zeta;" "zeta" "zeta" "ζ",
+    Entity "Eta" "H" False "&Eta;" "Eta" "Eta" "Η",
+    Entity "eta" "\\eta" True "&eta;" "eta" "eta" "η",
+    Entity "Theta" "\\Theta" True "&Theta;" "Theta" "Theta" "Θ",
+    Entity "theta" "\\theta" True "&theta;" "theta" "theta" "θ",
+    Entity "thetasym" "\\vartheta" True "&thetasym;" "theta" "theta" "ϑ",
+    Entity "vartheta" "\\vartheta" True "&thetasym;" "theta" "theta" "ϑ",
+    Entity "Iota" "I" False "&Iota;" "Iota" "Iota" "Ι",
+    Entity "iota" "\\iota" True "&iota;" "iota" "iota" "ι",
+    Entity "Kappa" "K" False "&Kappa;" "Kappa" "Kappa" "Κ",
+    Entity "kappa" "\\kappa" True "&kappa;" "kappa" "kappa" "κ",
+    Entity "Lambda" "\\Lambda" True "&Lambda;" "Lambda" "Lambda" "Λ",
+    Entity "lambda" "\\lambda" True "&lambda;" "lambda" "lambda" "λ",
+    Entity "Mu" "M" False "&Mu;" "Mu" "Mu" "Μ",
+    Entity "mu" "\\mu" True "&mu;" "mu" "mu" "μ",
+    Entity "nu" "\\nu" True "&nu;" "nu" "nu" "ν",
+    Entity "Nu" "N" False "&Nu;" "Nu" "Nu" "Ν",
+    Entity "Xi" "\\Xi" True "&Xi;" "Xi" "Xi" "Ξ",
+    Entity "xi" "\\xi" True "&xi;" "xi" "xi" "ξ",
+    Entity "Omicron" "O" False "&Omicron;" "Omicron" "Omicron" "Ο",
+    Entity "omicron" "\\textit{o}" False "&omicron;" "omicron" "omicron" "ο",
+    Entity "Pi" "\\Pi" True "&Pi;" "Pi" "Pi" "Π",
+    Entity "pi" "\\pi" True "&pi;" "pi" "pi" "π",
+    Entity "Rho" "P" False "&Rho;" "Rho" "Rho" "Ρ",
+    Entity "rho" "\\rho" True "&rho;" "rho" "rho" "ρ",
+    Entity "Sigma" "\\Sigma" True "&Sigma;" "Sigma" "Sigma" "Σ",
+    Entity "sigma" "\\sigma" True "&sigma;" "sigma" "sigma" "σ",
+    Entity "sigmaf" "\\varsigma" True "&sigmaf;" "sigmaf" "sigmaf" "ς",
+    Entity "varsigma" "\\varsigma" True "&sigmaf;" "varsigma" "varsigma" "ς",
+    Entity "Tau" "T" False "&Tau;" "Tau" "Tau" "Τ",
+    Entity "Upsilon" "\\Upsilon" True "&Upsilon;" "Upsilon" "Upsilon" "Υ",
+    Entity "upsih" "\\Upsilon" True "&upsih;" "upsilon" "upsilon" "ϒ",
+    Entity "upsilon" "\\upsilon" True "&upsilon;" "upsilon" "upsilon" "υ",
+    Entity "Phi" "\\Phi" True "&Phi;" "Phi" "Phi" "Φ",
+    Entity "phi" "\\phi" True "&phi;" "phi" "phi" "ɸ",
+    Entity "varphi" "\\varphi" True "&varphi;" "varphi" "varphi" "φ",
+    Entity "Chi" "X" False "&Chi;" "Chi" "Chi" "Χ",
+    Entity "chi" "\\chi" True "&chi;" "chi" "chi" "χ",
+    Entity "acutex" "\\acute x" True "&acute;x" "'x" "'x" "𝑥́",
+    Entity "Psi" "\\Psi" True "&Psi;" "Psi" "Psi" "Ψ",
+    Entity "psi" "\\psi" True "&psi;" "psi" "psi" "ψ",
+    Entity "tau" "\\tau" True "&tau;" "tau" "tau" "τ",
+    Entity "Omega" "\\Omega" True "&Omega;" "Omega" "Omega" "Ω",
+    Entity "omega" "\\omega" True "&omega;" "omega" "omega" "ω",
+    Entity "piv" "\\varpi" True "&piv;" "omega-pi" "omega-pi" "ϖ",
+    Entity "varpi" "\\varpi" True "&piv;" "omega-pi" "omega-pi" "ϖ",
+    Entity "partial" "\\partial" True "&part;" "[partial differential]" "[partial differential]" "∂",
+    Entity "alefsym" "\\aleph" True "&alefsym;" "aleph" "aleph" "ℵ",
+    Entity "aleph" "\\aleph" True "&aleph;" "aleph" "aleph" "ℵ",
+    Entity "gimel" "\\gimel" True "&gimel;" "gimel" "gimel" "ℷ",
+    Entity "beth" "\\beth" True "&beth;" "beth" "beth" "ב",
+    Entity "dalet" "\\daleth" True "&daleth;" "dalet" "dalet" "ד",
+    Entity "ETH" "\\DH{}" False "&ETH;" "D" "Ð" "Ð",
+    Entity "eth" "\\dh{}" False "&eth;" "dh" "ð" "ð",
+    Entity "THORN" "\\TH{}" False "&THORN;" "TH" "Þ" "Þ",
+    Entity "thorn" "\\th{}" False "&thorn;" "th" "þ" "þ",
+    Entity "dots" "\\dots{}" False "&hellip;" "..." "..." "…",
+    Entity "cdots" "\\cdots{}" True "&ctdot;" "..." "..." "⋯",
+    Entity "hellip" "\\dots{}" False "&hellip;" "..." "..." "…",
+    Entity "middot" "\\textperiodcentered{}" False "&middot;" "." "·" "·",
+    Entity "iexcl" "!`" False "&iexcl;" "!" "¡" "¡",
+    Entity "iquest" "?`" False "&iquest;" "?" "¿" "¿",
+    Entity "shy" "\\-" False "&shy;" "" "" "",
+    Entity "ndash" "--" False "&ndash;" "-" "-" "–",
+    Entity "mdash" "---" False "&mdash;" "--" "--" "—",
+    Entity "quot" "\\textquotedbl{}" False "&quot;" "\"" "\"" "\"",
+    Entity "acute" "\\textasciiacute{}" False "&acute;" "'" "´" "´",
+    Entity "ldquo" "\\textquotedblleft{}" False "&ldquo;" "\"" "\"" "“",
+    Entity "rdquo" "\\textquotedblright{}" False "&rdquo;" "\"" "\"" "”",
+    Entity "bdquo" "\\quotedblbase{}" False "&bdquo;" "\"" "\"" "„",
+    Entity "lsquo" "\\textquoteleft{}" False "&lsquo;" "`" "`" "‘",
+    Entity "rsquo" "\\textquoteright{}" False "&rsquo;" "'" "'" "’",
+    Entity "sbquo" "\\quotesinglbase{}" False "&sbquo;" "," "," "‚",
+    Entity "laquo" "\\guillemotleft{}" False "&laquo;" "<<" "«" "«",
+    Entity "raquo" "\\guillemotright{}" False "&raquo;" ">>" "»" "»",
+    Entity "lsaquo" "\\guilsinglleft{}" False "&lsaquo;" "<" "<" "‹",
+    Entity "rsaquo" "\\guilsinglright{}" False "&rsaquo;" ">" ">" "›",
+    Entity "circ" "\\^{}" False "&circ;" "^" "^" "∘",
+    Entity "vert" "\\vert{}" True "&vert;" "|" "|" "|",
+    Entity "vbar" "|" False "|" "|" "|" "|",
+    Entity "brvbar" "\\textbrokenbar{}" False "&brvbar;" "|" "¦" "¦",
+    Entity "S" "\\S" False "&sect;" "paragraph" "§" "§",
+    Entity "sect" "\\S" False "&sect;" "paragraph" "§" "§",
+    Entity "amp" "\\&" False "&amp;" "&" "&" "&",
+    Entity "lt" "\\textless{}" False "&lt;" "<" "<" "<",
+    Entity "gt" "\\textgreater{}" False "&gt;" ">" ">" ">",
+    Entity "tilde" "\\textasciitilde{}" False "~" "~" "~" "~",
+    Entity "slash" "/" False "/" "/" "/" "/",
+    Entity "plus" "+" False "+" "+" "+" "+",
+    Entity "under" "\\_" False "_" "_" "_" "_",
+    Entity "equal" "=" False "=" "=" "=" "=",
+    Entity "asciicirc" "\\textasciicircum{}" False "^" "^" "^" "^",
+    Entity "dagger" "\\textdagger{}" False "&dagger;" "[dagger]" "[dagger]" "†",
+    Entity "dag" "\\dag{}" False "&dagger;" "[dagger]" "[dagger]" "†",
+    Entity "Dagger" "\\textdaggerdbl{}" False "&Dagger;" "[doubledagger]" "[doubledagger]" "‡",
+    Entity "ddag" "\\ddag{}" False "&Dagger;" "[doubledagger]" "[doubledagger]" "‡",
+    Entity "nbsp" "~" False "&nbsp;" " " " " " ",
+    Entity "ensp" "\\hspace*{.5em}" False "&ensp;" " " " " " ",
+    Entity "emsp" "\\hspace*{1em}" False "&emsp;" " " " " " ",
+    Entity "thinsp" "\\hspace*{.2em}" False "&thinsp;" " " " " " ",
+    Entity "curren" "\\textcurrency{}" False "&curren;" "curr." "¤" "¤",
+    Entity "cent" "\\textcent{}" False "&cent;" "cent" "¢" "¢",
+    Entity "pound" "\\pounds{}" False "&pound;" "pound" "£" "£",
+    Entity "yen" "\\textyen{}" False "&yen;" "yen" "¥" "¥",
+    Entity "euro" "\\texteuro{}" False "&euro;" "EUR" "EUR" "€",
+    Entity "EUR" "\\texteuro{}" False "&euro;" "EUR" "EUR" "€",
+    Entity "dollar" "\\$" False "$" "$" "$" "$",
+    Entity "USD" "\\$" False "$" "$" "$" "$",
+    Entity "copy" "\\textcopyright{}" False "&copy;" "(c)" "©" "©",
+    Entity "reg" "\\textregistered{}" False "&reg;" "(r)" "®" "®",
+    Entity "trade" "\\texttrademark{}" False "&trade;" "TM" "TM" "™",
+    Entity "minus" "\\minus" True "&minus;" "-" "-" "−",
+    Entity "pm" "\\textpm{}" False "&plusmn;" "+-" "±" "±",
+    Entity "plusmn" "\\textpm{}" False "&plusmn;" "+-" "±" "±",
+    Entity "times" "\\texttimes{}" False "&times;" "*" "×" "×",
+    Entity "frasl" "/" False "&frasl;" "/" "/" "⁄",
+    Entity "colon" "\\colon" True ":" ":" ":" ":",
+    Entity "div" "\\textdiv{}" False "&divide;" "/" "÷" "÷",
+    Entity "frac12" "\\textonehalf{}" False "&frac12;" "1/2" "½" "½",
+    Entity "frac14" "\\textonequarter{}" False "&frac14;" "1/4" "¼" "¼",
+    Entity "frac34" "\\textthreequarters{}" False "&frac34;" "3/4" "¾" "¾",
+    Entity "permil" "\\textperthousand{}" False "&permil;" "per thousand" "per thousand" "‰",
+    Entity "sup1" "\\textonesuperior{}" False "&sup1;" "^1" "¹" "¹",
+    Entity "sup2" "\\texttwosuperior{}" False "&sup2;" "^2" "²" "²",
+    Entity "sup3" "\\textthreesuperior{}" False "&sup3;" "^3" "³" "³",
+    Entity "radic" "\\sqrt{\\,}" True "&radic;" "[square root]" "[square root]" "√",
+    Entity "sum" "\\sum" True "&sum;" "[sum]" "[sum]" "∑",
+    Entity "prod" "\\prod" True "&prod;" "[product]" "[n-ary product]" "∏",
+    Entity "micro" "\\textmu{}" False "&micro;" "micro" "µ" "µ",
+    Entity "macr" "\\textasciimacron{}" False "&macr;" "[macron]" "¯" "¯",
+    Entity "deg" "\\textdegree{}" False "&deg;" "degree" "°" "°",
+    Entity "prime" "\\prime" True "&prime;" "'" "'" "′",
+    Entity "Prime" "\\prime{}\\prime" True "&Prime;" "''" "''" "″",
+    Entity "infin" "\\infty" True "&infin;" "[infinity]" "[infinity]" "∞",
+    Entity "infty" "\\infty" True "&infin;" "[infinity]" "[infinity]" "∞",
+    Entity "prop" "\\propto" True "&prop;" "[proportional to]" "[proportional to]" "∝",
+    Entity "propto" "\\propto" True "&prop;" "[proportional to]" "[proportional to]" "∝",
+    Entity "not" "\\textlnot{}" False "&not;" "[angled dash]" "¬" "¬",
+    Entity "neg" "\\neg{}" True "&not;" "[angled dash]" "¬" "¬",
+    Entity "land" "\\land" True "&and;" "[logical and]" "[logical and]" "∧",
+    Entity "wedge" "\\wedge" True "&and;" "[logical and]" "[logical and]" "∧",
+    Entity "lor" "\\lor" True "&or;" "[logical or]" "[logical or]" "∨",
+    Entity "vee" "\\vee" True "&or;" "[logical or]" "[logical or]" "∨",
+    Entity "cap" "\\cap" True "&cap;" "[intersection]" "[intersection]" "∩",
+    Entity "cup" "\\cup" True "&cup;" "[union]" "[union]" "∪",
+    Entity "smile" "\\smile" True "&smile;" "[cup product]" "[cup product]" "⌣",
+    Entity "frown" "\\frown" True "&frown;" "[Cap product]" "[cap product]" "⌢",
+    Entity "int" "\\int" True "&int;" "[integral]" "[integral]" "∫",
+    Entity "therefore" "\\therefore" True "&there4;" "[therefore]" "[therefore]" "∴",
+    Entity "there4" "\\therefore" True "&there4;" "[therefore]" "[therefore]" "∴",
+    Entity "because" "\\because" True "&because;" "[because]" "[because]" "∵",
+    Entity "sim" "\\sim" True "&sim;" "~" "~" "∼",
+    Entity "cong" "\\cong" True "&cong;" "[approx. equal to]" "[approx. equal to]" "≅",
+    Entity "simeq" "\\simeq" True "&cong;" "[approx. equal to]" "[approx. equal to]" "≅",
+    Entity "asymp" "\\asymp" True "&asymp;" "[almost equal to]" "[almost equal to]" "≈",
+    Entity "approx" "\\approx" True "&asymp;" "[almost equal to]" "[almost equal to]" "≈",
+    Entity "ne" "\\ne" True "&ne;" "[not equal to]" "[not equal to]" "≠",
+    Entity "neq" "\\neq" True "&ne;" "[not equal to]" "[not equal to]" "≠",
+    Entity "equiv" "\\equiv" True "&equiv;" "[identical to]" "[identical to]" "≡",
+    Entity "triangleq" "\\triangleq" True "&triangleq;" "[defined to]" "[defined to]" "≜",
+    Entity "le" "\\le" True "&le;" "<=" "<=" "≤",
+    Entity "leq" "\\le" True "&le;" "<=" "<=" "≤",
+    Entity "ge" "\\ge" True "&ge;" ">=" ">=" "≥",
+    Entity "geq" "\\ge" True "&ge;" ">=" ">=" "≥",
+    Entity "lessgtr" "\\lessgtr" True "&lessgtr;" "[less than or greater than]" "[less than or greater than]" "≶",
+    Entity "lesseqgtr" "\\lesseqgtr" True "&lesseqgtr;" "[less than or equal or greater than or equal]" "[less than or equal or greater than or equal]" "⋚",
+    Entity "ll" "\\ll" True "&Lt;" "<<" "<<" "≪",
+    Entity "Ll" "\\lll" True "&Ll;" "<<<" "<<<" "⋘",
+    Entity "lll" "\\lll" True "&Ll;" "<<<" "<<<" "⋘",
+    Entity "gg" "\\gg" True "&Gt;" ">>" ">>" "≫",
+    Entity "Gg" "\\ggg" True "&Gg;" ">>>" ">>>" "⋙",
+    Entity "ggg" "\\ggg" True "&Gg;" ">>>" ">>>" "⋙",
+    Entity "prec" "\\prec" True "&pr;" "[precedes]" "[precedes]" "≺",
+    Entity "preceq" "\\preceq" True "&prcue;" "[precedes or equal]" "[precedes or equal]" "≼",
+    Entity "preccurlyeq" "\\preccurlyeq" True "&prcue;" "[precedes or equal]" "[precedes or equal]" "≼",
+    Entity "succ" "\\succ" True "&sc;" "[succeeds]" "[succeeds]" "≻",
+    Entity "succeq" "\\succeq" True "&sccue;" "[succeeds or equal]" "[succeeds or equal]" "≽",
+    Entity "succcurlyeq" "\\succcurlyeq" True "&sccue;" "[succeeds or equal]" "[succeeds or equal]" "≽",
+    Entity "sub" "\\subset" True "&sub;" "[subset of]" "[subset of]" "⊂",
+    Entity "subset" "\\subset" True "&sub;" "[subset of]" "[subset of]" "⊂",
+    Entity "sup" "\\supset" True "&sup;" "[superset of]" "[superset of]" "⊃",
+    Entity "supset" "\\supset" True "&sup;" "[superset of]" "[superset of]" "⊃",
+    Entity "nsub" "\\not\\subset" True "&nsub;" "[not a subset of]" "[not a subset of" "⊄",
+    Entity "sube" "\\subseteq" True "&sube;" "[subset of or equal to]" "[subset of or equal to]" "⊆",
+    Entity "nsup" "\\not\\supset" True "&nsup;" "[not a superset of]" "[not a superset of]" "⊅",
+    Entity "supe" "\\supseteq" True "&supe;" "[superset of or equal to]" "[superset of or equal to]" "⊇",
+    Entity "setminus" "\\setminus" True "&setminus;" "\\" " \\" "⧵",
+    Entity "forall" "\\forall" True "&forall;" "[for all]" "[for all]" "∀",
+    Entity "exist" "\\exists" True "&exist;" "[there exists]" "[there exists]" "∃",
+    Entity "exists" "\\exists" True "&exist;" "[there exists]" "[there exists]" "∃",
+    Entity "nexist" "\\nexists" True "&exist;" "[there does not exists]" "[there does not  exists]" "∄",
+    Entity "nexists" "\\nexists" True "&exist;" "[there does not exists]" "[there does not  exists]" "∄",
+    Entity "empty" "\\emptyset" True "&empty;" "[empty set]" "[empty set]" "∅",
+    Entity "emptyset" "\\emptyset" True "&empty;" "[empty set]" "[empty set]" "∅",
+    Entity "isin" "\\in" True "&isin;" "[element of]" "[element of]" "∈",
+    Entity "in" "\\in" True "&isin;" "[element of]" "[element of]" "∈",
+    Entity "notin" "\\notin" True "&notin;" "[not an element of]" "[not an element of]" "∉",
+    Entity "ni" "\\ni" True "&ni;" "[contains as member]" "[contains as member]" "∋",
+    Entity "nabla" "\\nabla" True "&nabla;" "[nabla]" "[nabla]" "∇",
+    Entity "ang" "\\angle" True "&ang;" "[angle]" "[angle]" "∠",
+    Entity "angle" "\\angle" True "&ang;" "[angle]" "[angle]" "∠",
+    Entity "perp" "\\perp" True "&perp;" "[up tack]" "[up tack]" "⊥",
+    Entity "parallel" "\\parallel" True "&parallel;" "||" "||" "∥",
+    Entity "sdot" "\\cdot" True "&sdot;" "[dot]" "[dot]" "⋅",
+    Entity "cdot" "\\cdot" True "&sdot;" "[dot]" "[dot]" "⋅",
+    Entity "lceil" "\\lceil" True "&lceil;" "[left ceiling]" "[left ceiling]" "⌈",
+    Entity "rceil" "\\rceil" True "&rceil;" "[right ceiling]" "[right ceiling]" "⌉",
+    Entity "lfloor" "\\lfloor" True "&lfloor;" "[left floor]" "[left floor]" "⌊",
+    Entity "rfloor" "\\rfloor" True "&rfloor;" "[right floor]" "[right floor]" "⌋",
+    Entity "lang" "\\langle" True "&lang;" "<" "<" "⟨",
+    Entity "rang" "\\rangle" True "&rang;" ">" ">" "⟩",
+    Entity "langle" "\\langle" True "&lang;" "<" "<" "⟨",
+    Entity "rangle" "\\rangle" True "&rang;" ">" ">" "⟩",
+    Entity "hbar" "\\hbar" True "&hbar;" "hbar" "hbar" "ℏ",
+    Entity "mho" "\\mho" True "&mho;" "mho" "mho" "℧",
+    Entity "larr" "\\leftarrow" True "&larr;" "<-" "<-" "←",
+    Entity "leftarrow" "\\leftarrow" True "&larr;" "<-" "<-" "←",
+    Entity "gets" "\\gets" True "&larr;" "<-" "<-" "←",
+    Entity "lArr" "\\Leftarrow" True "&lArr;" "<=" "<=" "⇐",
+    Entity "Leftarrow" "\\Leftarrow" True "&lArr;" "<=" "<=" "⇐",
+    Entity "uarr" "\\uparrow" True "&uarr;" "[uparrow]" "[uparrow]" "↑",
+    Entity "uparrow" "\\uparrow" True "&uarr;" "[uparrow]" "[uparrow]" "↑",
+    Entity "uArr" "\\Uparrow" True "&uArr;" "[dbluparrow]" "[dbluparrow]" "⇑",
+    Entity "Uparrow" "\\Uparrow" True "&uArr;" "[dbluparrow]" "[dbluparrow]" "⇑",
+    Entity "rarr" "\\rightarrow" True "&rarr;" "->" "->" "→",
+    Entity "to" "\\to" True "&rarr;" "->" "->" "→",
+    Entity "rightarrow" "\\rightarrow" True "&rarr;" "->" "->" "→",
+    Entity "rArr" "\\Rightarrow" True "&rArr;" "=>" "=>" "⇒",
+    Entity "Rightarrow" "\\Rightarrow" True "&rArr;" "=>" "=>" "⇒",
+    Entity "darr" "\\downarrow" True "&darr;" "[downarrow]" "[downarrow]" "↓",
+    Entity "downarrow" "\\downarrow" True "&darr;" "[downarrow]" "[downarrow]" "↓",
+    Entity "dArr" "\\Downarrow" True "&dArr;" "[dbldownarrow]" "[dbldownarrow]" "⇓",
+    Entity "Downarrow" "\\Downarrow" True "&dArr;" "[dbldownarrow]" "[dbldownarrow]" "⇓",
+    Entity "harr" "\\leftrightarrow" True "&harr;" "<->" "<->" "↔",
+    Entity "leftrightarrow" "\\leftrightarrow" True "&harr;" "<->" "<->" "↔",
+    Entity "hArr" "\\Leftrightarrow" True "&hArr;" "<=>" "<=>" "⇔",
+    Entity "Leftrightarrow" "\\Leftrightarrow" True "&hArr;" "<=>" "<=>" "⇔",
+    Entity "crarr" "\\hookleftarrow" True "&crarr;" "<-'" "<-'" "↵",
+    Entity "hookleftarrow" "\\hookleftarrow" True "&crarr;" "<-'" "<-'" "↵",
+    Entity "arccos" "\\arccos" True "arccos" "arccos" "arccos" "arccos",
+    Entity "arcsin" "\\arcsin" True "arcsin" "arcsin" "arcsin" "arcsin",
+    Entity "arctan" "\\arctan" True "arctan" "arctan" "arctan" "arctan",
+    Entity "arg" "\\arg" True "arg" "arg" "arg" "arg",
+    Entity "cos" "\\cos" True "cos" "cos" "cos" "cos",
+    Entity "cosh" "\\cosh" True "cosh" "cosh" "cosh" "cosh",
+    Entity "cot" "\\cot" True "cot" "cot" "cot" "cot",
+    Entity "coth" "\\coth" True "coth" "coth" "coth" "coth",
+    Entity "csc" "\\csc" True "csc" "csc" "csc" "csc",
+    Entity "deg" "\\deg" True "&deg;" "deg" "deg" "deg",
+    Entity "det" "\\det" True "det" "det" "det" "det",
+    Entity "dim" "\\dim" True "dim" "dim" "dim" "dim",
+    Entity "exp" "\\exp" True "exp" "exp" "exp" "exp",
+    Entity "gcd" "\\gcd" True "gcd" "gcd" "gcd" "gcd",
+    Entity "hom" "\\hom" True "hom" "hom" "hom" "hom",
+    Entity "inf" "\\inf" True "inf" "inf" "inf" "inf",
+    Entity "ker" "\\ker" True "ker" "ker" "ker" "ker",
+    Entity "lg" "\\lg" True "lg" "lg" "lg" "lg",
+    Entity "lim" "\\lim" True "lim" "lim" "lim" "lim",
+    Entity "liminf" "\\liminf" True "liminf" "liminf" "liminf" "liminf",
+    Entity "limsup" "\\limsup" True "limsup" "limsup" "limsup" "limsup",
+    Entity "ln" "\\ln" True "ln" "ln" "ln" "ln",
+    Entity "log" "\\log" True "log" "log" "log" "log",
+    Entity "max" "\\max" True "max" "max" "max" "max",
+    Entity "min" "\\min" True "min" "min" "min" "min",
+    Entity "Pr" "\\Pr" True "Pr" "Pr" "Pr" "Pr",
+    Entity "sec" "\\sec" True "sec" "sec" "sec" "sec",
+    Entity "sin" "\\sin" True "sin" "sin" "sin" "sin",
+    Entity "sinh" "\\sinh" True "sinh" "sinh" "sinh" "sinh",
+    Entity "sup" "\\sup" True "&sup;" "sup" "sup" "sup",
+    Entity "tan" "\\tan" True "tan" "tan" "tan" "tan",
+    Entity "tanh" "\\tanh" True "tanh" "tanh" "tanh" "tanh",
+    Entity "bull" "\\textbullet{}" False "&bull;" "*" "*" "•",
+    Entity "bullet" "\\textbullet{}" False "&bull;" "*" "*" "•",
+    Entity "star" "\\star" True "*" "*" "*" "⋆",
+    Entity "lowast" "\\ast" True "&lowast;" "*" "*" "∗",
+    Entity "ast" "\\ast" True "&lowast;" "*" "*" "*",
+    Entity "odot" "\\odot" True "o" "[circled dot]" "[circled dot]" "ʘ",
+    Entity "oplus" "\\oplus" True "&oplus;" "[circled plus]" "[circled plus]" "⊕",
+    Entity "otimes" "\\otimes" True "&otimes;" "[circled times]" "[circled times]" "⊗",
+    Entity "check" "\\checkmark" True "&checkmark;" "[checkmark]" "[checkmark]" "✓",
+    Entity "checkmark" "\\checkmark" True "&check;" "[checkmark]" "[checkmark]" "✓",
+    Entity "para" "\\P{}" False "&para;" "[pilcrow]" "¶" "¶",
+    Entity "ordf" "\\textordfeminine{}" False "&ordf;" "_a_" "ª" "ª",
+    Entity "ordm" "\\textordmasculine{}" False "&ordm;" "_o_" "º" "º",
+    Entity "cedil" "\\c{}" False "&cedil;" "[cedilla]" "¸" "¸",
+    Entity "oline" "\\overline{~}" True "&oline;" "[overline]" "¯" "‾",
+    Entity "uml" "\\textasciidieresis{}" False "&uml;" "[diaeresis]" "¨" "¨",
+    Entity "zwnj" "\\/{}" False "&zwnj;" "" "" "\8204",
+    Entity "zwj" "" False "&zwj;" "" "" "\8205",
+    Entity "lrm" "" False "&lrm;" "" "" "\8206",
+    Entity "rlm" "" False "&rlm;" "" "" "\8207",
+    Entity "smiley" "\\ddot\\smile" True "&#9786;" ":-)" ":-)" "☺",
+    Entity "blacksmile" "\\ddot\\smile" True "&#9787;" ":-)" ":-)" "☻",
+    Entity "sad" "\\ddot\\frown" True "&#9785;" ":-(" ":-(" "☹",
+    Entity "frowny" "\\ddot\\frown" True "&#9785;" ":-(" ":-(" "☹",
+    Entity "clubs" "\\clubsuit" True "&clubs;" "[clubs]" "[clubs]" "♣",
+    Entity "clubsuit" "\\clubsuit" True "&clubs;" "[clubs]" "[clubs]" "♣",
+    Entity "spades" "\\spadesuit" True "&spades;" "[spades]" "[spades]" "♠",
+    Entity "spadesuit" "\\spadesuit" True "&spades;" "[spades]" "[spades]" "♠",
+    Entity "hearts" "\\heartsuit" True "&hearts;" "[hearts]" "[hearts]" "♥",
+    Entity "heartsuit" "\\heartsuit" True "&heartsuit;" "[hearts]" "[hearts]" "♥",
+    Entity "diams" "\\diamondsuit" True "&diams;" "[diamonds]" "[diamonds]" "◆",
+    Entity "diamondsuit" "\\diamondsuit" True "&diams;" "[diamonds]" "[diamonds]" "◆",
+    Entity "diamond" "\\diamondsuit" True "&diamond;" "[diamond]" "[diamond]" "◆",
+    Entity "Diamond" "\\diamondsuit" True "&diamond;" "[diamond]" "[diamond]" "◆",
+    Entity "loz" "\\lozenge" True "&loz;" "[lozenge]" "[lozenge]" "⧫",
+    Entity "_ " "\\hspace*{0.5em}" False "&ensp;" " " " " " ",
+    Entity "_  " "\\hspace*{1.0em}" False "&ensp;&ensp;" "  " "  " "  ",
+    Entity "_   " "\\hspace*{1.5em}" False "&ensp;&ensp;&ensp;" "   " "   " "   ",
+    Entity "_    " "\\hspace*{2.0em}" False "&ensp;&ensp;&ensp;&ensp;" "    " "    " "    ",
+    Entity "_     " "\\hspace*{2.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;" "     " "     " "     ",
+    Entity "_      " "\\hspace*{3.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "      " "      " "      ",
+    Entity "_       " "\\hspace*{3.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "       " "       " "       ",
+    Entity "_        " "\\hspace*{4.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "        " "        " "        ",
+    Entity "_         " "\\hspace*{4.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "         " "         " "         ",
+    Entity "_          " "\\hspace*{5.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "          " "          " "          ",
+    Entity "_           " "\\hspace*{5.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "           " "           " "           ",
+    Entity "_            " "\\hspace*{6.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "            " "            " "            ",
+    Entity "_             " "\\hspace*{6.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "             " "             " "             ",
+    Entity "_              " "\\hspace*{7.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "              " "              " "              ",
+    Entity "_               " "\\hspace*{7.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "               " "               " "               ",
+    Entity "_                " "\\hspace*{8.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "                " "                " "                ",
+    Entity "_                 " "\\hspace*{8.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "                 " "                 " "                 ",
+    Entity "_                  " "\\hspace*{9.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "                  " "                  " "                  ",
+    Entity "_                   " "\\hspace*{9.5em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "                   " "                   " "                   ",
+    Entity "_                    " "\\hspace*{10.0em}" False "&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;" "                    " "                    " "                    "
   ]

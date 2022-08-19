@@ -1,14 +1,19 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, GeneralizedNewtypeDeriving,
-  StandaloneDeriving, DeriveTraversable, DeriveGeneric, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Org.Builder where
 
+import Data.Sequence (ViewL (..), ViewR (..), viewl, viewr, (|>))
+import Data.Text qualified as T
+import GHC.Exts qualified
 import Org.Types
-import Data.Sequence ((|>), viewr, viewl, ViewR(..), ViewL(..))
-import qualified GHC.Exts
-import qualified Data.Text as T
 
-newtype Many a = Many { unMany :: Seq a }
+newtype Many a = Many {unMany :: Seq a}
   deriving (Ord, Eq, Typeable, Foldable, Traversable, Functor, Show, Read)
 
 instance One (Many a) where
@@ -23,9 +28,11 @@ instance IsList (Many a) where
 deriving instance Generic (Many a)
 
 type OrgObjects = Many OrgObject
-type OrgElements  = Many OrgElement
+
+type OrgElements = Many OrgElement
 
 deriving instance Semigroup OrgElements
+
 deriving instance Monoid OrgElements
 
 instance Semigroup OrgObjects where
@@ -51,14 +58,14 @@ instance Semigroup OrgObjects where
               (SoftBreak, LineBreak) -> xs' |> LineBreak
               (LineBreak, SoftBreak) -> xs' |> LineBreak
               (SoftBreak, SoftBreak) -> xs' |> SoftBreak
-              _                  -> xs' |> x |> y
+              _ -> xs' |> x |> y
 
 instance Monoid OrgObjects where
   mempty = Many mempty
   mappend = (<>)
 
 instance IsString OrgObjects where
-   fromString = text . T.pack
+  fromString = text . T.pack
 
 -- * Element builders
 
@@ -148,13 +155,14 @@ keyword key = one . Keyword key
 
 text :: Text -> OrgObjects
 text = fromList . map conv . breakByNewline
-  where breakByNewline = T.groupBy sameCategory
-        sameCategory x y = is_newline x == is_newline y
-        conv xs | T.any is_newline xs = SoftBreak
-        conv xs = Plain xs
-        is_newline '\r' = True
-        is_newline '\n' = True
-        is_newline _    = False
+  where
+    breakByNewline = T.groupBy sameCategory
+    sameCategory x y = is_newline x == is_newline y
+    conv xs | T.any is_newline xs = SoftBreak
+    conv xs = Plain xs
+    is_newline '\r' = True
+    is_newline '\n' = True
+    is_newline _ = False
 
 plain :: Text -> OrgObjects
 plain = one . Plain
