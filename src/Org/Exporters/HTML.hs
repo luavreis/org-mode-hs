@@ -61,8 +61,8 @@ render ::
   Either OndimException LByteString
 render exst st spl =
   spl
-    & withOndimS (const st)
     & bindDefaults
+    & withOndimS (const st)
     & runOndimT
     & flip evalState defaultExporterState {exporterSettings = exst}
     & second toNodeList
