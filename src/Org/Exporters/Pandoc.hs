@@ -11,6 +11,7 @@ import Control.Exception (throwIO)
 import Ondim
 import Ondim.Pandoc
 import Org.Exporters.Common
+import Org.Types (OrgDocument)
 import Paths_org_parser
 import System.Directory.Recursive
 import System.FilePath
@@ -49,9 +50,12 @@ instance ExportBackend PTag where
 newtype TemplateLoadingError = TemplateLoadingException String
   deriving (Eq, Show, Exception)
 
-loadBlockTemplates :: IO (OndimS PTag P.Block)
-loadBlockTemplates = do
-  files <- getFilesRecursive . (</> "templates/md/blocks") =<< getDataDir
+templateDir :: IO FilePath
+templateDir = (</> "templates/md") <$> getDataDir
+
+loadBlockTemplates :: FilePath -> IO (OndimS PTag P.Block)
+loadBlockTemplates dir = do
+  files <- getFilesRecursive (dir </> "blocks")
   templates <- forM files $ \file -> do
     text :: Text <- decodeUtf8 <$> readFileBS file
     let pandoc =
@@ -67,9 +71,9 @@ loadBlockTemplates = do
         filters = mempty
       }
 
-loadInlineTemplates :: IO (OndimS PTag P.Inline)
-loadInlineTemplates = do
-  files <- getFilesRecursive . (</> "templates/md/inlines") =<< getDataDir
+loadInlineTemplates :: FilePath -> IO (OndimS PTag P.Inline)
+loadInlineTemplates dir = do
+  files <- getFilesRecursive (dir </> "inlines")
   templates <- forM files $ \file -> do
     text :: Text <- decodeUtf8 <$> readFileBS file
     let pandoc =
@@ -84,3 +88,31 @@ loadInlineTemplates = do
       { expansions = fromList templates,
         filters = mempty
       }
+
+loadPandocDoc :: FilePath -> IO P.Pandoc
+loadPandocDoc dir = do
+  let file = dir </> "org:document.md"
+  text :: Text <- decodeUtf8 <$> readFileBS file
+  let pandoc =
+        runPure $
+          readMarkdown def {readerExtensions = pandocExtensions} text
+  case pandoc of
+    Left s -> throwIO (TemplateLoadingException (toString $ renderError s))
+    Right t -> pure t
+
+renderDoc ::
+  ExporterSettings ->
+  OndimS PTag P.Inline ->
+  OndimS PTag P.Block ->
+  P.Pandoc ->
+  OrgDocument ->
+  Either OndimException P.Pandoc
+renderDoc s sti stb layout doc =
+  liftDocument doc layout
+    & bindDefaults
+    & withOndimS (const sti)
+    & withOndimS (const stb)
+    & runOndimT
+    & flip evalState st'
+  where
+    st' = defaultExporterState {exporterSettings = s}

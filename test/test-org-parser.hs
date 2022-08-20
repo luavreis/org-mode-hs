@@ -1,4 +1,3 @@
--- |
 module Main
   ( module Main,
     module Tests.Helpers,

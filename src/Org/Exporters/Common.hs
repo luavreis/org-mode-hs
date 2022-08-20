@@ -9,8 +9,8 @@ import Data.Map.Syntax
 import Data.Text qualified as T
 import Data.Time (Day, TimeLocale, TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
 import Ondim
-import Ondim.Extra (Attribute, HasAttrChild, ignore, switch, switchCases)
-import Org.Data.Entities (defaultEntitiesMap, utf8Replacement)
+import Ondim.Extra (Attribute, HasAttrChild, ifElse, ignore, switch, switchCases)
+import Org.Data.Entities qualified as Data
 import Org.Types
 import Org.Walk
 import Relude.Extra (insert, lookup, toPairs)
@@ -40,8 +40,25 @@ getFootnoteRef label = do
 type MonadExporter n = MonadState ExporterState n
 
 data ExporterSettings = ExporterSettings
-  { orgExportHeadlineLevels :: Int,
+  { -- | The last level which is still exported as a headline.
+    --
+    -- Inferior levels will usually produce itemize or enumerate lists
+    -- when exported, but back-end behavior may differ.
+    --
+    -- This option can also be set with the OPTIONS keyword,
+    -- e.g. "H:2".
+    orgExportHeadlineLevels :: Int,
+    -- | Interpret "\-", "--", "---" and "..." for export.
+    --
+    -- This option can also be set with the OPTIONS keyword,
+    -- e.g. "-:nil".
     orgExportWithSpecialStrings :: Bool,
+    -- | Interpret entities when exporting.
+    --
+    -- This option can also be set with the OPTIONS keyword,
+    -- e.g. "e:nil".
+    orgExportWithEntities :: Bool,
+    -- | Global shift of headline levels.
     headlineLevelShift :: Int,
     timeLocale :: TimeLocale
   }
@@ -52,6 +69,7 @@ defaultExporterSettings =
   ExporterSettings
     { orgExportHeadlineLevels = 3,
       orgExportWithSpecialStrings = True,
+      orgExportWithEntities = True,
       headlineLevelShift = 0,
       timeLocale = defaultTimeLocale
     }
@@ -160,8 +178,11 @@ expandOrgObject ::
   OrgObject ->
   Ondim tag [ObjectNode tag]
 expandOrgObject = \case
-  (Plain txt) ->
-    pure $ plain @tag (doSpecialStrings txt) -- TODO
+  (Plain txt) -> do
+    specialStrings <- getSetting orgExportWithSpecialStrings
+    pure $
+      plain @tag
+        (if specialStrings then doSpecialStrings txt else txt)
   SoftBreak ->
     pure $ softbreak @tag
   LineBreak ->
@@ -169,8 +190,21 @@ expandOrgObject = \case
   (Code txt) ->
     call "org:code"
       `bindingText` do "content" ## pure txt
-  (Entity name) ->
-    pure $ plain @tag (maybe "⍰" utf8Replacement (lookup name defaultEntitiesMap))
+  (Entity name) -> do
+    withEntities <- getSetting orgExportWithEntities
+    case lookup name Data.defaultEntitiesMap of
+      Just (Data.Entity _ latex mathP html ascii latin utf8)
+        | withEntities ->
+            call "org:entity"
+              `binding` do
+                "entity:if-math" ## ifElse @(ObjectNode tag) mathP
+              `bindingText` do
+                "entity:latex" ## pure latex
+                "entity:ascii" ## pure ascii
+                "entity:html" ## pure html
+                "entity:latin" ## pure latin
+                "entity:utf8" ## pure utf8
+      _ -> pure $ plain @tag ("\\" <> name)
   (LaTeXFragment ftype txt) ->
     call "org:latex-fragment"
       `bindingText` do
@@ -320,8 +354,8 @@ expandOrgElement = \case
     bindingAff x aff =
       x
         `binding` affiliatedAttrExpansions "html" aff
-        `binding` parsedKwExpansions aff "kw:"
-        `bindingText` textKwExpansions aff "kw:"
+        `binding` parsedKwExpansions aff "akw:"
+        `bindingText` textKwExpansions aff "akw:"
     expEls :: [OrgElement] -> Expansion tag (ElementNode tag)
     expEls o = const $ expandOrgElements o
     call x = callExpansion x (pure (nullEl @tag))
@@ -345,18 +379,20 @@ expandOrgSections sections@(OrgSection {sectionLevel = level} : _) = do
           join <$> forM sections \section ->
             children x
               `binding` do
-                "headline-title"
+                "section:headline"
                   ## const
                   $ toList <$> expandOrgObjects (sectionTitle section)
                 "tags" ## \inner ->
                   join <$> forM (sectionTags section) (`tags` inner)
               `binding` do
-                "children" ## const $ toList <$> expandOrgElements (sectionChildren section)
-                "subsections" ## const $ expandOrgSections (sectionSubsections section)
+                "section:children" ## const $ toList <$> expandOrgElements (sectionChildren section)
+                "section:subsections" ## const $ expandOrgSections (sectionSubsections section)
                 "h-n" ## hN (level + shift)
               `bindingText` do
                 for_ (sectionTodo section) todo
                 for_ (sectionPriority section) priority
+                for_ (toPairs $ sectionProperties section) \(k, v) ->
+                  "prop:" <> k ## pure v
                 "anchor" ## pure $ sectionAnchor section
   where
     todo (TodoKeyword st nm) = do
@@ -380,10 +416,16 @@ liftDocument doc node = do
     `binding` do
       parsedKwExpansions
         (keywordsFromList $ documentKeywords doc)
-        "meta:"
+        "kw:"
+    `bindingText` do
+      textKwExpansions
+        (keywordsFromList $ documentKeywords doc)
+        "kw:"
+      for_ (toPairs $ documentProperties doc) \(k, v) ->
+        "prop:" <> k ## pure v
     `binding` do
-      "children" ## const $ expandOrgElements (documentChildren doc)
-      "sections" ## const $ expandOrgSections (documentSections doc)
+      "doc:children" ## const $ expandOrgElements (documentChildren doc)
+      "doc:sections" ## const $ expandOrgSections (documentSections doc)
 
 -- "footnotes" ## const do
 --   -- is this run in the right order? in the end?

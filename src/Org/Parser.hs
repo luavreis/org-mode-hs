@@ -1,7 +1,7 @@
 -- |
 module Org.Parser
   ( defaultOrgOptions,
-    OrgOptions,
+    OrgOptions (..),
     parseOrg,
     parseOrgIO,
   )

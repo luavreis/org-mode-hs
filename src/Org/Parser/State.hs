@@ -1,4 +1,3 @@
--- |
 module Org.Parser.State where
 
 import Org.Builder (OrgElements, OrgObjects)

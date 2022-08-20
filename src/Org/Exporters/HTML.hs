@@ -39,9 +39,12 @@ instance ExportBackend HTag where
 newtype TemplateLoadingError = TemplateLoadingException String
   deriving (Eq, Show, Exception)
 
-loadHtmlTemplates :: IO (OndimS HTag HtmlNode)
-loadHtmlTemplates = do
-  files <- getFilesRecursive . (</> "templates/html") =<< getDataDir
+templateDir :: IO FilePath
+templateDir = (</> "templates/html") <$> getDataDir
+
+loadTemplates :: FilePath -> IO (OndimS HTag HtmlNode)
+loadTemplates dir = do
+  files <- getFilesRecursive dir
   templates <- forM files $ \file -> do
     let name = takeBaseName file
     text <- readFileBS file
@@ -53,6 +56,14 @@ loadHtmlTemplates = do
       { expansions = fromList templates,
         filters = mempty
       }
+
+loadLayout :: FilePath -> IO X.Document
+loadLayout dir = do
+  let file = dir </> "org:document.tpl"
+  text <- readFileBS file
+  case X.parseHTML file text of
+    Left s -> throwIO (TemplateLoadingException s)
+    Right t -> pure t
 
 render ::
   ExporterSettings ->
@@ -69,8 +80,13 @@ render exst st spl =
     <&> X.renderHtmlFragment X.UTF8
     <&> toLazyByteString
 
-renderDocWithLayout :: OndimS HTag HtmlNode -> X.Document -> OrgDocument -> Either OndimException LByteString
-renderDocWithLayout st layout doc =
+renderDoc ::
+  ExporterSettings ->
+  OndimS HTag HtmlNode ->
+  X.Document ->
+  OrgDocument ->
+  Either OndimException LByteString
+renderDoc s st layout doc =
   liftDocument doc layout
     & bindDefaults
     & withOndimS (const st)
@@ -79,4 +95,4 @@ renderDocWithLayout st layout doc =
     <&> X.render
     <&> toLazyByteString
   where
-    st' = defaultExporterState -- todo: get options from the document
+    st' = defaultExporterState { exporterSettings = s }

@@ -16,7 +16,6 @@ import Org.Builder (Many)
 import Org.Parser.Definitions
 import Test.Tasty
 import Test.Tasty.HUnit
-import Text.Megaparsec
 import Text.Pretty.Simple
 import Text.PrettyPrint (render, text)
 

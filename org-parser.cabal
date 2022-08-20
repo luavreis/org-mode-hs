@@ -16,7 +16,7 @@ Build-type:          Simple
 Tested-With:         GHC == 8.10.7 || == 9.0.2 || == 9.2.2
 data-dir:            data
 data-files:          **/*.tpl
-                     **/*.html
+                     **/*.md
 Source-repository    head
   type:              git
   location:          git://github.com/lucasvreis/org-types.git
@@ -53,6 +53,7 @@ common common-options
     MultiWayIf
     LambdaCase
     ScopedTypeVariables
+    DeriveGeneric
     FlexibleContexts
     BlockArguments
     ConstraintKinds

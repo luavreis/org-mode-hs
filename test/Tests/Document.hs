@@ -1,4 +1,3 @@
--- |
 module Tests.Document where
 
 import NeatInterpolation
