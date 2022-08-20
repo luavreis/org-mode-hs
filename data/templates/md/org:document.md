@@ -1,12 +1,12 @@
 ---
-'title{kw:title}': '[]{#kw:title}'
-'date{kw:date}': '[]{#kw:date}'
-'date{kw:author}': '[]{#kw:author}'
+'title{kw:title}': '[]{.e:kw:title}'
+# 'date{kw:date}': '[]{.e:kw:date}'
+# 'date{kw:author}': '[]{.e:kw:author}'
 'props:all':
 ---
 
-::: children
+::: e:doc:children
 :::
 
-::: sections
+::: e:doc:sections
 :::

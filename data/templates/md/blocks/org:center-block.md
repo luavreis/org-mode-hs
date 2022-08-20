@@ -1,4 +1,4 @@
 ::: {.center affiliated=""}
-:::: {#content}
+:::: {.e:content}
 ::::
 :::

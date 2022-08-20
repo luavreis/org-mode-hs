@@ -1,37 +1,37 @@
-::: {#bind tag=item}
-:::: {#cons}
+::: {.e:bind tag=item}
+:::: e:cons
 
-[ [ ☒ ]{#case tag=true}
-  [ ☐ ]{#case tag=false}
-  [ ☐ ]{#case tag=partial}
-]{#switch tag=checkbox}
+[ [ ☒ ]{.e:case tag=true}
+  [ ☐ ]{.e:case tag=false}
+  [ ☐ ]{.e:case tag=partial}
+]{.e:switch tag=checkbox}
 
-::::: {#list-item-content}
+::::: e:list-item-content
 :::::
 
 ::::
 :::
 
-::: {#list-items}
+::: e:list-items
 
-:::: {#case tag=unordered}
-- ::: {#item}
+:::: {.e:case tag=unordered}
+- ::: e:item
   :::
 ::::
 
-:::: {#case tag=ordered-num}
-1. ::: {#item}
+:::: {.e:case tag=ordered-num}
+1. ::: e:item
    :::
 ::::
 
-:::: {#case tag=ordered-alpha}
-a. ::: {#item}
+:::: {.e:case tag=ordered-alpha}
+a. ::: e:item
    :::
 ::::
 
-:::: {#case tag=descriptive}
-[]{#descriptive-tag}
-  ~ ::: {#list-item-content}
+:::: {.e:case tag=descriptive}
+[]{.e:descriptive-tag}
+  ~ ::: e:list-item-content
     :::
 ::::
 

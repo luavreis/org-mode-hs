@@ -1,6 +1,6 @@
 <figure>
   <img src="!(target)" affiliated>
-  <if-bound tag="kw:caption">
-    <figcaption><kw:caption /></figcaption>
-  </if-bound>
+  <if tag="akw:caption">
+    <figcaption><akw:caption /></figcaption>
+  </if>
 </figure>

@@ -1,11 +1,10 @@
 <!doctype html>
-<html lang="!(meta:language)">
+<html>
   <head>
     <meta charset="utf-8" />
-    <meta name="generator" content="ondim" />
-    <if-bound tag="meta:title">
-      <title><meta:title/></title>
-    </if-bound>
+    <if kw:title>
+      <title><kw:title /></title>
+    </if>
     <style type="text/css" media="screen">
      .todokw {
          font-family: monospace;
@@ -33,8 +32,8 @@
     </style>
   </head>
   <body>
-    <children />
-    <sections />
-    <footnotes />
+    <extra:toc />
+    <doc:children />
+    <doc:sections />
   </body>
 </html>

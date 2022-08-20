@@ -1,1 +1,1 @@
-![[[]{#kw:caption}]{#if-bound tag="kw:caption"}](!(target)){affiliated=""}
+![[[]{.e:kw:caption}]{.e:if tag="kw:caption"}](!(target)){affiliated=""}

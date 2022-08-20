@@ -1,29 +1,28 @@
-[ [`!(todo-name)`\ ]{.e:if-bound tag="todo-name"}
-  [`[#!(priority)]`\ ]{.e:if-bound tag="priority"}
-  []{.e:headline-title}
+[ [`!(todo-name)`\ ]{.e:if tag="todo-name"}
+  [`[#!(priority)]`\ ]{.e:if tag="priority"}
+  []{.e:section:headline}
   [\ [!(tag)]{.smallcaps}]{.e:tags}
-]{.e:bind tag="headline-def"}
-
+]{.e:bind tag=headline}
 
 ::: e:sections
 
 ::: {.e:case tag=normal}
-# []{.e:headline-def} {.e:h-n id="!(anchor)"}
+# []{.e:headline} {.e:h-n id="!(anchor)"}
 
-:::: e:children
+:::: e:section:children
 ::::
 
-:::: e:subsections
+:::: e:section:subsections
 ::::
 :::
 
 ::: {.e:case tag=over-level}
-1. **[[]{.e:headline-def}]{id="!(anchor)"}**
+1. **[[]{.e:headline}]{id="!(anchor)"}**
  
-   :::: e:children
+   :::: e:section:children
    ::::
 
-   :::: e:subsections
+   :::: e:section:subsections
    ::::
 :::
 

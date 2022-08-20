@@ -1,4 +1,4 @@
 ::: {affiliated=""}
-> ::: {#content}
+> ::: e:content
 > :::
 :::

@@ -1,3 +1,3 @@
 ::: {affiliated=""}
-[]{#content}
+[]{.e:content}
 :::
