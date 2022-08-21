@@ -63,6 +63,8 @@ executable orge
   other-modules:     Options
   build-depends:     org-parser
                    , org-exporters
+                   , path-io
+                   , path
                    , pretty-simple >= 4.1
                    , optparse-applicative >= 0.17
   ghc-options:      -threaded

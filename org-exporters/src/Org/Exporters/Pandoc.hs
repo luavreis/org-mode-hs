@@ -12,7 +12,6 @@ import Ondim
 import Ondim.Pandoc
 import Org.Exporters.Common
 import Org.Types (OrgDocument)
-import Paths_org_exporters
 import System.Directory.Recursive
 import System.FilePath
 import Text.Pandoc (def, readerExtensions, renderError, runPure)
@@ -50,8 +49,8 @@ instance ExportBackend PTag where
 newtype TemplateLoadingError = TemplateLoadingException String
   deriving (Eq, Show, Exception)
 
-templateDir :: IO FilePath
-templateDir = (</> "templates/md") <$> getDataDir
+pandocTemplateDir :: IO FilePath
+pandocTemplateDir = (</> "pandoc") <$> templateDir
 
 loadBlockTemplates :: FilePath -> IO (OndimS PTag P.Block)
 loadBlockTemplates dir = do

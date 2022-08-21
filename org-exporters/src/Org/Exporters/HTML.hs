@@ -13,7 +13,6 @@ import Ondim.Extra
 import Ondim.HTML
 import Org.Exporters.Common
 import Org.Types
-import Paths_org_exporters
 import System.Directory.Recursive
 import System.FilePath
 import Text.XmlHtml qualified as X
@@ -39,8 +38,8 @@ instance ExportBackend HTag where
 newtype TemplateLoadingError = TemplateLoadingException String
   deriving (Eq, Show, Exception)
 
-templateDir :: IO FilePath
-templateDir = (</> "templates/html") <$> getDataDir
+htmlTemplateDir :: IO FilePath
+htmlTemplateDir = (</> "templates/html") <$> templateDir
 
 loadTemplates :: FilePath -> IO (OndimS HTag HtmlNode)
 loadTemplates dir = do

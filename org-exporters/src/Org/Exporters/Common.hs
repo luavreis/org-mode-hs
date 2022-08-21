@@ -14,7 +14,11 @@ import Org.Data.Entities qualified as Data
 import Org.Types
 import Org.Walk
 import Relude.Extra (insert, lookup, toPairs)
-import System.FilePath (isRelative, takeExtension, (-<.>))
+import System.FilePath (isRelative, takeExtension, (-<.>), (</>))
+import Paths_org_exporters (getDataDir)
+
+templateDir :: IO FilePath
+templateDir = (</> "templates") <$> getDataDir
 
 data ExporterState = ExporterState
   { footnoteCounter :: (Int, Map Text Int),

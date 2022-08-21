@@ -7,6 +7,10 @@ import Options.Applicative
 import Org.Exporters.Common
 import Org.Parser (OrgOptions (..), defaultOrgOptions)
 
+data AppCmd
+  = CmdExport AppOptions
+  | CmdInitTemplates
+
 data AppOptions = AppOptions
   { backend :: BackendOptions,
     input :: Input,
@@ -24,14 +28,33 @@ data OndimOptions = OndimOptions
     templateDir :: Maybe FilePath
   }
 
-appOptions :: ParserInfo AppOptions
-appOptions =
+appCmd :: ParserInfo AppCmd
+appCmd =
   info
-    (AppOptions <$> backend' <*> input' <*> options' <*> output' <**> helper)
-    ( fullDesc
-        <> progDesc "org-hs is a parser for Org Mode documents with customizable exporters."
-        <> header "org-hs - parse and export your Org documents."
+    ( hsubparser
+        ( command
+            "export"
+            ( info
+                (CmdExport <$> appOptions)
+                (progDesc "Parse and export an Org file")
+            )
+            <> command
+              "init-templates"
+              ( info
+                  (pure CmdInitTemplates)
+                  (progDesc "Creates a directory with the default Ondim template files for all formats")
+              )
+        ) <**> helper
     )
+    ( fullDesc
+        <> progDesc "Orge is a parser for Org Mode documents with customizable exporters.\
+                    \Use --help for more info."
+        <> header "Orge - parse and export your Org documents."
+    )
+
+appOptions :: Parser AppOptions
+appOptions =
+  AppOptions <$> backend' <*> input' <*> options' <*> output'
 
 options' :: Parser OrgOptions
 options' =
