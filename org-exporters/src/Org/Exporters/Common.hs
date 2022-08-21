@@ -13,9 +13,9 @@ import Ondim.Extra (Attribute, HasAttrChild, ifElse, ignore, switch, switchCases
 import Org.Data.Entities qualified as Data
 import Org.Types
 import Org.Walk
+import Paths_org_exporters (getDataDir)
 import Relude.Extra (insert, lookup, toPairs)
 import System.FilePath (isRelative, takeExtension, (-<.>), (</>))
-import Paths_org_exporters (getDataDir)
 
 templateDir :: IO FilePath
 templateDir = (</> "templates") <$> getDataDir
@@ -348,8 +348,22 @@ expandOrgElement = \case
       `bindingText` do "content" ## pure text
   HorizontalRule ->
     call "org:horizontal-rule"
-  Keyword {} ->
-    pure mempty
+  Keyword k (ValueKeyword _ v) ->
+    call "org:keyword"
+      `bindingText` do
+        "keyword:key" ## pure k
+        "keyword:value" ## pure v
+      `binding`
+        switchCases @(ElementNode tag) "keyword:textual"
+  Keyword k (ParsedKeyword _ v) ->
+    call "org:keyword"
+      `bindingText` do
+        "keyword:key" ## pure k
+      `binding`
+        switchCases @(ElementNode tag) "keyword:parsed"
+      `binding` do
+        "keyword:value" ## const $ expandOrgObjects v
+  Keyword {} -> pure []
   VerseBlock {} ->
     error "TODO"
   Clock {} ->
