@@ -39,7 +39,7 @@ newtype TemplateLoadingError = TemplateLoadingException String
   deriving (Eq, Show, Exception)
 
 htmlTemplateDir :: IO FilePath
-htmlTemplateDir = (</> "templates/html") <$> templateDir
+htmlTemplateDir = (</> "html") <$> templateDir
 
 loadTemplates :: FilePath -> IO (OndimS HTag HtmlNode)
 loadTemplates dir = do
