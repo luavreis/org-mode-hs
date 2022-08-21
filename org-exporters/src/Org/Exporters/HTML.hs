@@ -13,7 +13,7 @@ import Ondim.Extra
 import Ondim.HTML
 import Org.Exporters.Common
 import Org.Types
-import Paths_org_parser
+import Paths_org_exporters
 import System.Directory.Recursive
 import System.FilePath
 import Text.XmlHtml qualified as X

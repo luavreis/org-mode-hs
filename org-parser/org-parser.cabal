@@ -2,11 +2,11 @@ cabal-version:       2.4
 Name:                org-parser
 version:             0.1
 license:             GPL-3.0-only
-Synopsis:            Parser and exporter for Org Mode documents.
+Synopsis:            Parser for Org Mode documents.
 Description:
-  org-parser provides a parser and an HTML exporter for Org Mode documents.
-  The Org document is parsed into an AST similar to org-element's, and the
-  HTML exporter is highly configurable using HTML templates.
+  org-parser provides a parser for Org Mode documents.
+  The Org document is parsed into an AST similar to org-element's, and
+  aims to be accurate where possible.
 
 Maintainer:          @lucasvreis
 Bug-Reports:         https://github.com/lucasvreis/org-parser/issues
@@ -14,33 +14,23 @@ Copyright:           (c) 2022 lucasvreis
 Category:            Text
 Build-type:          Simple
 Tested-With:         GHC == 8.10.7 || == 9.0.2 || == 9.2.2
-data-dir:            data
-data-files:          **/*.tpl
-                     **/*.md
 Source-repository    head
   type:              git
-  location:          git://github.com/lucasvreis/org-types.git
+  location:          git://github.com/lucasvreis/orge.git
 
 common common-options
   default-language:  Haskell2010
   build-depends:     base >= 4.14 && < 5
-                   , aeson >= 1.4
                    , bytestring
-                   , citeproc >= 0.7
                    , containers
-                   , dir-traverse
                    , directory
                    , filepath
-                   , ondim
-                   , map-syntax
                    , megaparsec
-                   , pandoc-types >= 1.22
-                   , pandoc
+                   , pandoc-types
                    , relude
                    , slugify
                    , text
                    , time
-                   , xmlhtml
   mixins:            base hiding (Prelude)
                    , relude (Relude as Prelude)
                    , relude
@@ -65,10 +55,6 @@ library
                      Org.Builder
                      Org.Walk
                      Org.Parser
-                     Org.Exporters.Common
-                     Org.Exporters.HTML
-                     Org.Exporters.Pandoc
-                     Org.Exporters.Citeproc
                      Org.Parser.Definitions
                      Org.Parser.Document
                      Org.Parser.Elements
@@ -77,16 +63,6 @@ library
   other-modules:     Org.Parser.Common
                      Org.Parser.State
                      Org.Parser.MarkupContexts
-                     Paths_org_parser
-  autogen-modules:   Paths_org_parser
-
-executable org-parser
-  import:            common-options
-  hs-source-dirs:    app
-  main-is:           org-parser.hs
-  build-depends:     org-parser
-                   , optparse-applicative >= 0.17
-  ghc-options:      -threaded
 
 test-suite test
   import:            common-options

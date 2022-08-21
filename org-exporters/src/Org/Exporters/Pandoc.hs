@@ -12,7 +12,7 @@ import Ondim
 import Ondim.Pandoc
 import Org.Exporters.Common
 import Org.Types (OrgDocument)
-import Paths_org_parser
+import Paths_org_exporters
 import System.Directory.Recursive
 import System.FilePath
 import Text.Pandoc (def, readerExtensions, renderError, runPure)

@@ -1,6 +1,6 @@
-#+title: org-parser
+#+title: horg
 
-  =org-parser= provides a parser and an HTML exporter for Org Mode documents. The Org document is parsed into an AST similar to =org-element='s, and the HTML exporter is highly configurable using HTML templates.
+  =horg= provides a parser and an HTML exporter for Org Mode documents. The Org document is parsed into an AST similar to =org-element='s, and the HTML exporter is highly configurable using HTML templates.
 
 * Table of contents :TOC:
 - [[#demo][Demo]]
@@ -14,7 +14,7 @@
 - [[#comparasion-to-pandoc][Comparasion to Pandoc]]
 
 * Demo
-[[demo/demo.png]]
+[[file:demo/demo.png]]
 
 The page on the right was rendered using this parser and its HTML exporter (plus CSS styling).
 You can see the org document source in [[demo/content.org][demo/content.org]] and the resulting AST in [[demo/AST output.txt][demo/AST output.txt]].
