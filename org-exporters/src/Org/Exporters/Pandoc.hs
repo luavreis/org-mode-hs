@@ -109,8 +109,8 @@ renderDoc ::
 renderDoc s sti stb layout doc =
   liftDocument doc layout
     & bindDefaults
-    & withOndimS (const sti)
-    & withOndimS (const stb)
+    & withOndimS (sti <>)
+    & withOndimS (stb <>)
     & runOndimT
     & flip evalState st'
   where

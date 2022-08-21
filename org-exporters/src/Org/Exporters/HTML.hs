@@ -72,7 +72,7 @@ render ::
 render exst st spl =
   spl
     & bindDefaults
-    & withOndimS (const st)
+    & withOndimS (st <>)
     & runOndimT
     & flip evalState defaultExporterState {exporterSettings = exst}
     & second toNodeList
@@ -88,7 +88,7 @@ renderDoc ::
 renderDoc s st layout doc =
   liftDocument doc layout
     & bindDefaults
-    & withOndimS (const st)
+    & withOndimS (st <>)
     & runOndimT
     & flip evalState st'
     <&> X.render
