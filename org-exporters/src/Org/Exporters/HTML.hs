@@ -67,17 +67,35 @@ loadLayout dir = do
 render ::
   ExporterSettings ->
   OndimS HTag HtmlNode ->
-  Ondim HTag [HtmlNode] ->
+  Ondim HTag X.Document ->
   Either OndimException LByteString
 render exst st spl =
   spl
     & bindDefaults
     & withOndimS (st <>)
     & runOndimT
-    & flip evalState defaultExporterState {exporterSettings = exst}
+    & flip evalState st'
+    <&> X.render
+    <&> toLazyByteString
+  where
+    st' = defaultExporterState { exporterSettings = exst }
+
+renderFragment ::
+  ExporterSettings ->
+  OndimS HTag HtmlNode ->
+  Ondim HTag [HtmlNode] ->
+  Either OndimException LByteString
+renderFragment exst st spl =
+  spl
+    & bindDefaults
+    & withOndimS (st <>)
+    & runOndimT
+    & flip evalState st'
     & second toNodeList
     <&> X.renderHtmlFragment X.UTF8
     <&> toLazyByteString
+  where
+    st' = defaultExporterState { exporterSettings = exst }
 
 renderDoc ::
   ExporterSettings ->
