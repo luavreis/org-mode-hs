@@ -48,7 +48,7 @@ appCmd =
     )
     ( fullDesc
         <> progDesc "horg is a parser for Org Mode documents with customizable exporters.\
-                    \Use --help for more info."
+                    \ Use --help for more info."
         <> header "horg - parse and export your Org documents."
     )
 
