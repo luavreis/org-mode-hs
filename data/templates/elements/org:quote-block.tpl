@@ -1,3 +1,0 @@
-<blockquote affiliated>
-  <contents />
-</blockquote>
