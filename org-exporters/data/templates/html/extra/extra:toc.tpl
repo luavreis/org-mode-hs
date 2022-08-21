@@ -1,5 +1,5 @@
 <div id="table-of-contents">
-  <h2>Table of Contents</h2>
+  <apply-content />
   <scope>
     <bind org:sections>
       <ul>

@@ -32,7 +32,7 @@
     </style>
   </head>
   <body>
-    <extra:toc />
+    <extra:toc><h2>Table of Contents</h2></extra:toc>
     <doc:children />
     <doc:sections />
   </body>
