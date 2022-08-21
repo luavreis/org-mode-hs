@@ -20,7 +20,7 @@
 *** Using =cabal=
 #+begin_src bash
 git clone https://github.com/lucasvreis/org-hs.git
-cd org-cli
+cd org-hs
 cabal install horg
 #+end_src
 ** Usage
@@ -32,7 +32,7 @@ horg -h
 horg export -h
 #+end_src
 ** Customizing templates
-
+TODO
 * org-parser library
 ** Demo
 [[file:demo/demo.png]]
