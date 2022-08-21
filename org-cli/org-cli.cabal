@@ -1,0 +1,70 @@
+cabal-version:       2.4
+Name:                org-cli
+version:             0.1
+license:             GPL-3.0-only
+Synopsis:            CLI tool for exporting Org documents.
+Description:
+  @org-cli@ makes use of the @org-parser@ and @org-exporters@ libraries
+  to provide a CLI tool for exporting Org documents. Its key features are
+  parsing accuracy and easy customizability of many aspects of the exported
+  document, using @ondim@ templates.
+
+Maintainer:          @lucasvreis
+Bug-Reports:         https://github.com/lucasvreis/org-parser/issues
+Copyright:           (c) 2022 lucasvreis
+Category:            Text
+Build-type:          Simple
+Tested-With:         GHC == 8.10.7 || == 9.0.2 || == 9.2.2
+Source-repository    head
+  type:              git
+  location:          git://github.com/lucasvreis/org-hs.git
+
+common common-options
+  default-language:  Haskell2010
+  build-depends:     base >= 4.14 && < 5
+                   , aeson >= 1.4
+                   , bytestring
+                   , citeproc >= 0.7
+                   , containers
+                   , dir-traverse
+                   , directory
+                   , filepath
+                   , map-syntax
+                   , megaparsec
+                   , ondim
+                   , pandoc-types >= 1.22
+                   , pandoc
+                   , relude
+                   , slugify
+                   , text
+                   , time
+                   , xmlhtml
+  mixins:            base hiding (Prelude)
+                   , relude (Relude as Prelude)
+                   , relude
+  ghc-options:      -Wall
+  default-extensions:
+    TupleSections
+    OverloadedStrings
+    ViewPatterns
+    ImportQualifiedPost
+    MultiWayIf
+    LambdaCase
+    ScopedTypeVariables
+    DeriveGeneric
+    FlexibleContexts
+    BlockArguments
+    ConstraintKinds
+
+executable horg
+  import:            common-options
+  hs-source-dirs:    app
+  main-is:           org-cli.hs
+  other-modules:     Options
+  build-depends:     org-parser
+                   , org-exporters
+                   , path-io
+                   , path
+                   , pretty-simple >= 4.1
+                   , optparse-applicative >= 0.17
+  ghc-options:      -threaded
