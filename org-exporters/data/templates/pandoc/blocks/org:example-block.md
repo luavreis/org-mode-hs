@@ -1,0 +1,3 @@
+``` {.example affiliated=""}
+!(content)
+```

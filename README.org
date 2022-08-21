@@ -1,32 +1,51 @@
-#+title: org-parser
+#+title: horg
 
-  =org-parser= provides a parser and an HTML exporter for Org Mode documents. The Org document is parsed into an AST similar to =org-element='s, and the HTML exporter is highly configurable using HTML templates.
+  This repository provides a parser and exporters for Org Mode documents. The Org document is parsed into an AST similar to =org-element='s, and the exporters are highly configurable using HTML or Markdown templates.
 
 * Table of contents :TOC:
-- [[#demo][Demo]]
-- [[#how-to-test-and-play-with-it][How to test and play with it]]
-  - [[#testing-the-parser-in-ghci][Testing the parser in =ghci=]]
-  - [[#unit-tests][Unit tests]]
-- [[#progress][Progress]]
-  - [[#going-beyond-what-is-listed-in-the-spec][Going beyond what is listed in the spec]]
-- [[#exporters][Exporters]]
-  - [[#ondim-html-exporter][Ondim HTML exporter]]
-- [[#comparasion-to-pandoc][Comparasion to Pandoc]]
+- [[#org-cli-horg][org-cli (horg)]]
+  - [[#installation][Installation]]
+  - [[#usage][Usage]]
+  - [[#customizing-templates][Customizing templates]]
+- [[#org-parser-library][org-parser library]]
+  - [[#demo][Demo]]
+  - [[#how-to-test-and-play-with-it][How to test and play with it]]
+  - [[#progress][Progress]]
+  - [[#comparasion-to-pandoc][Comparasion to Pandoc]]
+- [[#org-exporters-library][org-exporters library]]
+  - [[#defining-a-new-export-backend][Defining a new export backend]]
 
-* Demo
-[[demo/demo.png]]
+* org-cli (horg)
+** Installation
+*** Using =cabal=
+#+begin_src bash
+git clone https://github.com/lucasvreis/org-hs.git
+cd org-hs
+cabal install horg
+#+end_src
+** Usage
+The =horg= CLI tool has some basic help pages, to see them type:
+#+begin_src bash
+# Global help
+horg -h
+# Exporter help
+horg export -h
+#+end_src
+** Customizing templates
+TODO
+* org-parser library
+** Demo
+[[file:demo/demo.png]]
 
 The page on the right was rendered using this parser and its HTML exporter (plus CSS styling).
 You can see the org document source in [[demo/content.org][demo/content.org]] and the resulting AST in [[demo/AST output.txt][demo/AST output.txt]].
 
-* How to test and play with it
-Unfortunately there is no CLI yet, and ~org-parser~ will remain unpublished as an library for now. I am in the middle of a semester and I don't have time to write the CLI or figure out how to push this to Hackage (two things I have never done before). But still, you can use the parser either as a library in Haskell (like I've been doing in [[https://github.com/lucasvreis/abacateiro][abacateiro]]) or test it from =ghci=.
-
-** Testing the parser in =ghci=
+** How to test and play with it
+*** Testing the parser in =ghci=
 
 This assumes you have =cabal= installed.
 
-Clone the parser repository and run =cabal repl test= inside it. Cabal will be busy downloading dependencies and building for a while. You can then call the convenience function ~prettyParse~ like so:
+Clone the parser repository, =cd= into =org-parser= and run =cabal repl test= inside it. Cabal will be busy downloading dependencies and building for a while. You can then call the convenience function ~prettyParse~ like so:
 
 : prettyParse orgDocument [text|
 : This is a test.
@@ -38,77 +57,77 @@ You can write the contents to be parsed between =[text|= and =|]=. More generall
 
 Where =[parser to parse]= can be basically any of the functions from =Org.Parse.Document=, =Org.Parser.Elements= or =Org.Parser.Objects= whose types are wrapped by the =OrgParser= monad. You don't need to import those modules yourself as they are already imported in the ~test~ namespace.
 
-** Unit tests
-You can view the unit tests under [[test][test]]. They aim to touch as much corner cases as possible against org-element, so you can take a look there to see what already works, and how well it works.
+*** Unit tests
+You can view the unit tests under [[org-parser/test][org-parser/test]]. They aim to touch as much corner cases as possible against org-element, so you can take a look there to see what already works, and how well it works.
 
-* Progress
+** Progress
 In the spec terms (see below the table for other features), the following components are implemented:
-| Component           | Type             | Parse | HTML (via Ondim)   |
-|---------------------+------------------+-------+--------------------|
-| Heading             | X                | X     | X                  |
-| Section             | X                | X     | X                  |
-|---------------------+------------------+-------+--------------------|
-| Affiliated Keywords | X                | X     | X                  |
-|---------------------+------------------+-------+--------------------|
-| GreaterBlock        | X                | X     | X                  |
-| Drawer              | X                | X     | X                  |
-| DynamicBlock        | X                |       | X                  |
-| FootnoteDefinition  | X                |       | X                  |
-| InlineTask          | X                |       |                    |
-| Item                | X                | X     | X                  |
-| List                | X                | X     | X                  |
-| PropertyDrawer      | X                | X     | n.a.               |
-| Table               |                  |       |                    |
-|---------------------+------------------+-------+--------------------|
-| BabelCall           | X                |       | n.a.               |
-| Comment Block       | X                | X     | X                  |
-| Example Block       | X                | X     | X                  |
-| Export Block        | X                | X     | X                  |
-| Src Block           | X                | X     | X                  |
-| Verse Block         | X                |       |                    |
-| Clock               | X                |       |                    |
-| DiarySexp           | X                |       | n.a.               |
-| Planning            | X                | X     |                    |
-| Comment             | X                | X     | n.a.               |
-| FixedWidth          | X (ExampleBlock) |       | X                  |
-| HorizontalRule      | X                | X     | X                  |
-| Keyword             | X                | X     | X                  |
-| LaTeXEnvironment    | X                | X     | X                  |
-| NodeProperty        | X                | X     | n.a.               |
-| Paragraph           | X                | X     | X                  |
-| TableRow            |                  |       |                    |
-| TableHRule          |                  |       |                    |
-|---------------------+------------------+-------+--------------------|
-| OrgEntity           | X                | X     | X                  |
-| LaTeXFragment       | X                | X     | X                  |
-| ExportSnippet       | X                | X     | X                  |
-| FootnoteReference   | X                |       | X                  |
-| InlineBabelCall     | X                |       | n.a.               |
-| InlineSrcBlock      | X                | X     | X                  |
-| RadioLink           | X (Link)         |       | X                  |
-| PlainLink           | X (Link)         |       | X                  |
-| AngleLink           | X (Link)         | X     | X                  |
-| RegularLink         | X (Link)         | X     | X                  |
-| Image               | X                | X     | X                  |
-| LineBreak           | X                | X     | X                  |
-| Macro               | X                |       | n.a.               |
-| Citation            | X                | X     | (WIP via citeproc) |
-| RadioTarget         |                  |       |                    |
-| Target              | X                | X     | X                  |
-| StatisticsCookie    |                  |       |                    |
-| Subscript           | X                | X     | X                  |
-| Superscript         | X                | X     | X                  |
-| TableCell           |                  |       |                    |
-| Timestamp           | X                | X     | X                  |
-| Plain               | X                | X     | X                  |
-| Markup              | X                | X     | X                  |
+| Component           | Type             | Parse |
+|---------------------+------------------+-------|
+| Heading             | X                | X     |
+| Section             | X                | X     |
+|---------------------+------------------+-------|
+| Affiliated Keywords | X                | X     |
+|---------------------+------------------+-------|
+| GreaterBlock        | X                | X     |
+| Drawer              | X                | X     |
+| DynamicBlock        | X                |       |
+| FootnoteDefinition  | X                |       |
+| InlineTask          | X                |       |
+| Item                | X                | X     |
+| List                | X                | X     |
+| PropertyDrawer      | X                | X     |
+| Table               |                  |       |
+|---------------------+------------------+-------|
+| BabelCall           | X                |       |
+| Comment Block       | X                | X     |
+| Example Block       | X                | X     |
+| Export Block        | X                | X     |
+| Src Block           | X                | X     |
+| Verse Block         | X                |       |
+| Clock               | X                |       |
+| DiarySexp           | X                |       |
+| Planning            | X                | X     |
+| Comment             | X                | X     |
+| FixedWidth          | X (ExampleBlock) |       |
+| HorizontalRule      | X                | X     |
+| Keyword             | X                | X     |
+| LaTeXEnvironment    | X                | X     |
+| NodeProperty        | X                | X     |
+| Paragraph           | X                | X     |
+| TableRow            |                  |       |
+| TableHRule          |                  |       |
+|---------------------+------------------+-------|
+| OrgEntity           | X                | X     |
+| LaTeXFragment       | X                | X     |
+| ExportSnippet       | X                | X     |
+| FootnoteReference   | X                |       |
+| InlineBabelCall     | X                |       |
+| InlineSrcBlock      | X                | X     |
+| RadioLink           | X (Link)         |       |
+| PlainLink           | X (Link)         |       |
+| AngleLink           | X (Link)         | X     |
+| RegularLink         | X (Link)         | X     |
+| Image               | X                | X     |
+| LineBreak           | X                | X     |
+| Macro               | X                |       |
+| Citation            | X                | X     |
+| RadioTarget         |                  |       |
+| Target              | X                | X     |
+| StatisticsCookie    |                  |       |
+| Subscript           | X                | X     |
+| Superscript         | X                | X     |
+| TableCell           |                  |       |
+| Timestamp           | X                | X     |
+| Plain               | X                | X     |
+| Markup              | X                | X     |
 (Thanks @tecosaur for the table)
 
-** Going beyond what is listed in the spec
+*** Going beyond what is listed in the spec
 
 ~org-element-parse-buffer~ does not parse /everything/ that will eventually be parsed or processed when exporting a document written in Org-mode. Examples of Org features that are not handled by the parser alone (so aren't described in the spec) include content from keywords like =#+title:=, that are parsed "later" by the exporter itself, references in lines of =src= or =example= blocks and link resolving, that are done in a post-processing step, and the use of =#+include:= keywords, =TODO= keywords and radio links, that are done in a pre-processing step.
 
-But my motto for writing this parser is: information useful for all exporters should be trivial to get from the AST, and minimal text processing should be done an exporter. Since the aspects listed above are genuine /org-mode features/, and not optional extensions, they should be resolved in the AST outputted by this parser. Below is a table with more Org features that are not listed in the spec but are planned to be supported:
+Since the aspects listed above are genuine /org-mode features/, and not optional extensions, its preferable that should be resolved in the AST outputted by this parser. Below is a table with more Org features that are not listed in the spec but are planned to be supported:
 
 | Feature                                    | Implemented?                                         |
 |--------------------------------------------+------------------------------------------------------|
@@ -119,18 +138,12 @@ But my motto for writing this parser is: information useful for all exporters sh
 | Pre-processing radio links                 | no; conformant implementation requires parsing twice |
 | Per-file TODO keywords                     | no                                                   |
 
-* Exporters
-For now there is a highly customizable HTML exporter. It's possible to add a Pandoc exporter in the future, allowing conversions from Org documents to other types of markup.
-
-** Ondim HTML exporter
-Ondim is a Haskell templating library that uses raw XML/HTML for templating. You can have a look at the templates used for HTML export in the [[data][data/templates]] directory. Those can be customized by the user without having to write Haskell or recompile the library.
-
-* Comparasion to Pandoc
+** Comparasion to Pandoc
 The main difference between =org-parser= and the Pandoc Org Reader is that this one parses into an AST is more similar to the org-element's AST, while Pandoc's parses into the =Pandoc= AST, which cannot express all Org elements directly. This has the effect that some Org features are either unsupported by the reader or "projected" onto =Pandoc= in ways that bundle less information about the Org source. In contrast, this parser aims to represent Org documents more faithfully before "projecting" them into formats like HTML or the Pandoc AST itself. So you can expect more org-specific features to be parsed, and a hopefully more accurate parsing in general.
 
 Also, if you are developer mainly interested in rendering Org documents to HTML, Pandoc is a very big library to depend upon, with very long build times (at least in my computer, sadly).
 
-Indeed, my initial plan was to fork the Org Reader and make it a standalone package, but this quickly proved infeasible as the reader is very tangled with the rest of Pandoc. Also, some accuracy improvements to the reader were hard to make without deeper changes to the parser. For example, consider the following Org snippet:
+Indeed, my initial plan was to fork the Org Reader and make it a standalone package, but this quickly proved unfeasible as the reader is very tangled with the rest of Pandoc. Also, some accuracy improvements to the reader were hard to make without deeper changes to the parser. For example, consider the following Org snippet:
 #+begin_src org
 This is a single paragraph. Because this single paragraph
 ,#+should not be ended by this funny line, because this funny
@@ -141,4 +154,11 @@ environment should break this paragraph apart.
 This single paragraph is broken into three by Pandoc, because it looks for a new "block start" (the start of a new org element) in each line. If there is a block start, then it aborts the current element (block) and starts the new one. Only later the parser decides if the started block actually parses correctly until its end, which is not the case for the =\begin{LaTeX}= in this example.
 
 Another noteworthy difference is that =haskell-org-parser= uses a different parsing library, ~megaparsec~. Pandoc uses the older ~parsec~, but also bundles many features on its own library.
+
+* org-exporters library
+** Defining a new export backend
+Basically:
+ - Use the [[https://github.com/lucasvreis/ondim][~ondim~ library]] to create a Ondim template system for the desired format, if it does not already exist.
+ - Import ~Org.Exporters.Common~ and instantiate the ~ExportBackend~ class. 
+ - Create auxiliary functions for loading templates and rendering the document.
 

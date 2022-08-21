@@ -1,0 +1,70 @@
+cabal-version:       2.4
+Name:                org-exporters
+version:             0.1
+license:             GPL-3.0-only
+Synopsis:            Customizable exporter for Org Mode documents.
+Description:
+  org-parser provides a parser and an HTML exporter for Org Mode documents.
+  The Org document is parsed into an AST similar to org-element's, and the
+  HTML exporter is highly configurable using HTML templates.
+
+Maintainer:          @lucasvreis
+Bug-Reports:         https://github.com/lucasvreis/org-parser/issues
+Copyright:           (c) 2022 lucasvreis
+Category:            Text
+Build-type:          Simple
+Tested-With:         GHC == 8.10.7 || == 9.0.2 || == 9.2.2
+data-dir:            data
+data-files:          **/*.tpl
+                     **/*.md
+Source-repository    head
+  type:              git
+  location:          git://github.com/lucasvreis/orge.git
+
+common common-options
+  default-language:  Haskell2010
+  build-depends:     base >= 4.14 && < 5
+                   , aeson >= 1.4
+                   , bytestring
+                   , citeproc >= 0.7
+                   , containers
+                   , dir-traverse
+                   , directory
+                   , filepath
+                   , ondim
+                   , org-parser
+                   , map-syntax
+                   , megaparsec
+                   , pandoc-types >= 1.22
+                   , pandoc
+                   , relude
+                   , slugify
+                   , text
+                   , time
+                   , xmlhtml
+  mixins:            base hiding (Prelude)
+                   , relude (Relude as Prelude)
+                   , relude
+  ghc-options:      -Wall
+  default-extensions:
+    TupleSections
+    OverloadedStrings
+    ViewPatterns
+    ImportQualifiedPost
+    MultiWayIf
+    LambdaCase
+    ScopedTypeVariables
+    DeriveGeneric
+    FlexibleContexts
+    BlockArguments
+    ConstraintKinds
+
+library
+  import:            common-options
+  hs-source-dirs:    src
+  exposed-modules:   Org.Exporters.Common
+                     Org.Exporters.HTML
+                     Org.Exporters.Pandoc
+                     Org.Exporters.Citeproc
+  other-modules:     Paths_org_exporters
+  autogen-modules:   Paths_org_exporters
