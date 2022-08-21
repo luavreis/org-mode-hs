@@ -1,39 +1,39 @@
-#+title: orge
+#+title: horg
 
   This repository provides a parser and exporters for Org Mode documents. The Org document is parsed into an AST similar to =org-element='s, and the exporters are highly configurable using HTML or Markdown templates.
 
 * Table of contents :TOC:
-- [[#cli][CLI]]
+- [[#org-cli-horg][org-cli (horg)]]
   - [[#installation][Installation]]
   - [[#usage][Usage]]
   - [[#customizing-templates][Customizing templates]]
-- [[#org-parser-library][=org-parser= library]]
+- [[#org-parser-library][org-parser library]]
   - [[#demo][Demo]]
   - [[#how-to-test-and-play-with-it][How to test and play with it]]
   - [[#progress][Progress]]
   - [[#comparasion-to-pandoc][Comparasion to Pandoc]]
-- [[#org-exporters-library][=org-exporters= library]]
+- [[#org-exporters-library][org-exporters library]]
   - [[#defining-a-new-export-backend][Defining a new export backend]]
 
-* CLI
+* org-cli (horg)
 ** Installation
 *** Using =cabal=
 #+begin_src bash
-git clone https://github.com/lucasvreis/orge.git
-cd orge
-cabal install orge
+git clone https://github.com/lucasvreis/org-hs.git
+cd org-cli
+cabal install horg
 #+end_src
 ** Usage
-The =orge= CLI tool has some basic help pages, to see them type:
+The =horg= CLI tool has some basic help pages, to see them type:
 #+begin_src bash
 # Global help
-orge -h
+horg -h
 # Exporter help
-orge export -h
+horg export -h
 #+end_src
 ** Customizing templates
 
-* =org-parser= library
+* org-parser library
 ** Demo
 [[file:demo/demo.png]]
 
@@ -127,7 +127,7 @@ In the spec terms (see below the table for other features), the following compon
 
 ~org-element-parse-buffer~ does not parse /everything/ that will eventually be parsed or processed when exporting a document written in Org-mode. Examples of Org features that are not handled by the parser alone (so aren't described in the spec) include content from keywords like =#+title:=, that are parsed "later" by the exporter itself, references in lines of =src= or =example= blocks and link resolving, that are done in a post-processing step, and the use of =#+include:= keywords, =TODO= keywords and radio links, that are done in a pre-processing step.
 
-But my motto for writing this parser is: information useful for all exporters should be trivial to get from the AST, and minimal text processing should be done an exporter. Since the aspects listed above are genuine /org-mode features/, and not optional extensions, they should be resolved in the AST outputted by this parser. Below is a table with more Org features that are not listed in the spec but are planned to be supported:
+Since the aspects listed above are genuine /org-mode features/, and not optional extensions, its preferable that should be resolved in the AST outputted by this parser. Below is a table with more Org features that are not listed in the spec but are planned to be supported:
 
 | Feature                                    | Implemented?                                         |
 |--------------------------------------------+------------------------------------------------------|
@@ -155,7 +155,7 @@ This single paragraph is broken into three by Pandoc, because it looks for a new
 
 Another noteworthy difference is that =haskell-org-parser= uses a different parsing library, ~megaparsec~. Pandoc uses the older ~parsec~, but also bundles many features on its own library.
 
-* =org-exporters= library
+* org-exporters library
 ** Defining a new export backend
 Basically:
  - Use the [[https://github.com/lucasvreis/ondim][~ondim~ library]] to create a Ondim template system for the desired format, if it does not already exist.

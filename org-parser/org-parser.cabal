@@ -16,7 +16,7 @@ Build-type:          Simple
 Tested-With:         GHC == 8.10.7 || == 9.0.2 || == 9.2.2
 Source-repository    head
   type:              git
-  location:          git://github.com/lucasvreis/orge.git
+  location:          git://github.com/lucasvreis/org-hs.git
 
 common common-options
   default-language:  Haskell2010
