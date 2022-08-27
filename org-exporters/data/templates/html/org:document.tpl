@@ -32,8 +32,21 @@
     </style>
   </head>
   <body>
-    <extra:toc><h2>Table of Contents</h2></extra:toc>
+    <extra:toc>
+      <h2>Table of Contents</h2>
+    </extra:toc>
     <doc:children />
     <doc:sections />
+    <doc:footnotes>
+      <br />
+      <div id="footnotes">
+        <footnote-defs>
+          <div class="footdef">
+            <a id="fn-!(footnote-def:number)" href="#fnr-!(footnote-def:number)">[<footnote-def:number />]</a>
+            <footnote-def:content />
+          </div>
+        </footnote-defs>
+      </div>
+    </doc:footnotes>
   </body>
 </html>

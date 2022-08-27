@@ -1,4 +1,3 @@
--- |
 module Org.Parser.Objects where
 
 import Data.Text qualified as T
@@ -33,7 +32,7 @@ minimalSet =
 standardSet :: Marked OrgParser (F OrgObjects)
 standardSet =
   mconcat
-    [ minimalSet, -- TODO optimize with ordering? in minimal too
+    [ minimalSet,
       citation,
       timestamp,
       exportSnippet,
@@ -42,7 +41,8 @@ standardSet =
       linebreak,
       target,
       angleLink,
-      regularLinkOrImage
+      regularLinkOrImage,
+      footnoteReference
     ]
 
 plainMarkupContext :: Marked OrgParser (F OrgObjects) -> OrgParser (F OrgObjects)
@@ -243,7 +243,7 @@ exportSnippet = mark' '@' . try $ do
 citation :: Marked OrgParser (F OrgObjects)
 citation =
   mark' '[' $
-    B.citation <<$>> withBalancedContext '[' ']' mempty orgCite
+    B.citation <<$>> withBalancedContext '[' ']' (const True) orgCite
 
 -- | A citation in org-cite style
 orgCite :: OrgParser (F Citation)
@@ -376,8 +376,8 @@ inlBabel = mark' 'c' . try $ do
   header2 <- option "" header
   pureF $ B.inlBabel name header1 header2 args
   where
-    header = withBalancedContext '[' ']' (All . (/= '\n')) getInput
-    arguments = withBalancedContext '(' ')' (All . (/= '\n')) getInput
+    header = withBalancedContext '[' ']' (/= '\n') getInput
+    arguments = withBalancedContext '(' ')' (/= '\n') getInput
 
 -- * Inline source blocks
 
@@ -392,8 +392,8 @@ inlSrc = mark' 's' . try $ do
   str <- body
   pureF $ B.inlSrc name headers str
   where
-    header = withBalancedContext '[' ']' (All . (/= '\n')) getInput
-    body = withBalancedContext '{' '}' (All . (/= '\n')) getInput
+    header = withBalancedContext '[' ']' (/= '\n') getInput
+    body = withBalancedContext '{' '}' (/= '\n') getInput
 
 -- * Line breaks
 
@@ -515,7 +515,7 @@ suscript = mark "_^" $ try do
     asterisk = pure . B.plain . one <$> char '*'
 
     balanced =
-      withBalancedContext '{' '}' (const $ All True) $
+      withBalancedContext '{' '}' (const True) $
         plainMarkupContext minimalSet
 
     sign = pure <$> option mempty (B.plain . one <$> oneOf ['+', '-'])
@@ -536,6 +536,29 @@ suscript = mark "_^" $ try do
             <|> void (noneOf [',', '.', '\\'])
 
 -- * Macros
+
+-- * Footnote references
+
+footnoteReference :: Marked OrgParser (F OrgObjects)
+footnoteReference = mark' '[' $
+  withBalancedContext '[' ']' (const True) do
+    _ <- string "fn:"
+    lbl <-
+      optional $
+        takeWhile1P
+          (Just "footnote ref label")
+          (\c -> isAlphaNum c || c == '-' || c == '_')
+    def <-
+      optional $ try do
+        _ <- char ':'
+        plainMarkupContext standardSet
+    case (lbl, def) of
+      (Nothing, Nothing) -> empty
+      _ -> do
+        lbl' <- maybe popUniqueId pure lbl
+        whenJust def \def' ->
+          registerFootnote lbl' (B.para mempty <$> def')
+        pureF $ B.footnoteRef lbl'
 
 -- * Timestamps
 
