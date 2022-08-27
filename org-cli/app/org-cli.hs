@@ -49,25 +49,23 @@ main = do
           O.HTML oo -> do
             let dir = O.templateDir oo <|> (</> "html") <$> udir
             dt <- H.loadTemplates =<< H.htmlTemplateDir
-            ut <- maybe (pure mempty) H.loadTemplates dir
+            tpls <- maybe dt (<> dt) <$> forM dir H.loadTemplates
             layout <-
               maybe empty H.loadLayout dir
                 <|> (H.loadLayout =<< H.htmlTemplateDir)
             pure $
               either (error . show) toStrict $
-                H.renderDoc (O.settings oo) (ut <> dt) layout parsed
+                H.renderDoc (O.settings oo) tpls layout parsed
           O.Pandoc fmt tplo oo -> do
             let dir = O.templateDir oo <|> (</> "pandoc") <$> udir
-            dit <- P.loadInlineTemplates =<< P.pandocTemplateDir
-            dbt <- P.loadBlockTemplates =<< P.pandocTemplateDir
-            uit <- maybe (pure mempty) P.loadInlineTemplates dir
-            ubt <- maybe (pure mempty) P.loadBlockTemplates dir
+            dt <- P.loadTemplates =<< P.pandocTemplateDir
+            tpls <- maybe dt (<> dt) <$> forM dir P.loadTemplates
             layout <-
               maybe empty P.loadPandocDoc dir
                 <|> (P.loadPandocDoc =<< P.pandocTemplateDir)
             let doc =
                   either (error . show) id $
-                    P.renderDoc (O.settings oo) (uit <> dit) (ubt <> dbt) layout parsed
+                    P.renderDoc (O.settings oo) tpls layout parsed
             TP.runIOorExplode do
               (w, ext) <- TP.getWriter fmt
               tpl <- TP.compileDefaultTemplate fmt

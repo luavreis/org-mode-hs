@@ -13,6 +13,7 @@ import Ondim.Extra
 import Ondim.HTML
 import Org.Exporters.Common
 import Org.Types
+import Relude.Extra.Lens
 import System.Directory.Recursive
 import System.FilePath
 import Text.XmlHtml qualified as X
@@ -41,7 +42,7 @@ newtype TemplateLoadingError = TemplateLoadingException String
 htmlTemplateDir :: IO FilePath
 htmlTemplateDir = (</> "html") <$> templateDir
 
-loadTemplates :: FilePath -> IO (OndimS HTag HtmlNode)
+loadTemplates :: FilePath -> IO (OndimMS HTag)
 loadTemplates dir = do
   files <- getFilesRecursive dir
   templates <- forM files $ \file -> do
@@ -51,10 +52,12 @@ loadTemplates dir = do
       Left s -> throwIO (TemplateLoadingException s)
       Right t -> pure (fromString name, fromDocument t)
   pure $
-    OndimS
-      { expansions = fromList templates,
-        filters = mempty
-      }
+    initialMS
+      & ondimState
+        .~ OndimS
+          { expansions = fromList templates,
+            filters = mempty
+          }
 
 loadLayout :: FilePath -> IO X.Document
 loadLayout dir = do
@@ -66,50 +69,47 @@ loadLayout dir = do
 
 render ::
   ExporterSettings ->
-  OndimS HTag HtmlNode ->
+  OndimMS HTag ->
   Ondim HTag X.Document ->
   Either OndimException LByteString
 render exst st spl =
   spl
     & bindDefaults
-    & withOndimS (st <>)
-    & runOndimT
+    & runOndimTWith st
     & flip evalState st'
     <&> X.render
     <&> toLazyByteString
   where
-    st' = defaultExporterState { exporterSettings = exst }
+    st' = defaultExporterState {exporterSettings = exst}
 
 renderFragment ::
   ExporterSettings ->
-  OndimS HTag HtmlNode ->
+  OndimMS HTag ->
   Ondim HTag [HtmlNode] ->
   Either OndimException LByteString
 renderFragment exst st spl =
   spl
     & bindDefaults
-    & withOndimS (st <>)
-    & runOndimT
+    & runOndimTWith st
     & flip evalState st'
     & second toNodeList
     <&> X.renderHtmlFragment X.UTF8
     <&> toLazyByteString
   where
-    st' = defaultExporterState { exporterSettings = exst }
+    st' = defaultExporterState {exporterSettings = exst}
 
 renderDoc ::
   ExporterSettings ->
-  OndimS HTag HtmlNode ->
+  OndimMS HTag ->
   X.Document ->
   OrgDocument ->
   Either OndimException LByteString
 renderDoc s st layout doc =
   liftDocument doc layout
     & bindDefaults
-    & withOndimS (st <>)
-    & runOndimT
+    & runOndimTWith st
     & flip evalState st'
     <&> X.render
     <&> toLazyByteString
   where
-    st' = defaultExporterState { exporterSettings = s }
+    st' = defaultExporterState {exporterSettings = s}

@@ -12,6 +12,7 @@ import Ondim
 import Ondim.Pandoc
 import Org.Exporters.Common
 import Org.Types (OrgDocument)
+import Relude.Extra.Lens
 import System.Directory.Recursive
 import System.FilePath
 import Text.Pandoc (def, readerExtensions, renderError, runPure)
@@ -51,6 +52,15 @@ newtype TemplateLoadingError = TemplateLoadingException String
 
 pandocTemplateDir :: IO FilePath
 pandocTemplateDir = (</> "pandoc") <$> templateDir
+
+loadTemplates :: FilePath -> IO (OndimMS PTag)
+loadTemplates dir = do
+  blk <- loadBlockTemplates dir
+  inl <- loadInlineTemplates dir
+  pure $
+    initialMS
+      & ondimState .~ blk
+      & ondimState .~ inl
 
 loadBlockTemplates :: FilePath -> IO (OndimS PTag P.Block)
 loadBlockTemplates dir = do
@@ -101,17 +111,14 @@ loadPandocDoc dir = do
 
 renderDoc ::
   ExporterSettings ->
-  OndimS PTag P.Inline ->
-  OndimS PTag P.Block ->
+  OndimMS PTag ->
   P.Pandoc ->
   OrgDocument ->
   Either OndimException P.Pandoc
-renderDoc s sti stb layout doc =
+renderDoc s st layout doc =
   liftDocument doc layout
     & bindDefaults
-    & withOndimS (sti <>)
-    & withOndimS (stb <>)
-    & runOndimT
+    & runOndimTWith st
     & flip evalState st'
   where
     st' = defaultExporterState {exporterSettings = s}
