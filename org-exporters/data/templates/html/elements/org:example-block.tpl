@@ -1,4 +1,4 @@
-<bind line-number><if-bound number><span class="line-number"><number /></span></if-bound></bind>
+<bind line-number><if number><span class="line-number"><number /></span></if></bind>
 
 <bind line-of-code><code class="line-of-code"><line-number /><content /></code></bind>
 
