@@ -548,7 +548,10 @@ srcOrExample ::
 srcOrExample name stNumber lins =
   callExpansion name (pure $ nullEl @tag)
     `binding` ("src-lines" ## runLines)
-    `bindingText` ("content" ## pure $ T.intercalate "\n" (srcLineContent <$> lins))
+    `bindingText` do
+      whenJust stNumber \num ->
+        "starting-number" ## pure $ show num
+      "content" ## pure $ T.intercalate "\n" (srcLineContent <$> lins)
   where
     runLines :: Expansion tag (ObjectNode tag)
     runLines inner =
