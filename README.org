@@ -101,7 +101,7 @@ In the spec terms (see below the table for other features), the following compon
 | OrgEntity           | X                | X     |
 | LaTeXFragment       | X                | X     |
 | ExportSnippet       | X                | X     |
-| FootnoteReference   | X                |       |
+| FootnoteReference   | X                | X     |
 | InlineBabelCall     | X                |       |
 | InlineSrcBlock      | X                | X     |
 | RadioLink           | X (Link)         |       |

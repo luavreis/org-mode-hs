@@ -458,13 +458,13 @@ affKeyword = try do
       pure mempty
   where
     optionalArgP =
-      withBalancedContext '[' ']' (All . (/= '\n') <> All . (/= ':')) $
+      withBalancedContext '[' ']' (\c -> c /= '\n' && c /= ':') $
         plainMarkupContext standardSet
     optionalArg =
       withBalancedContext
         '['
         ']'
-        (All . (/= '\n') <> All . (/= ':'))
+        (\c -> c /= '\n' && c /= ':')
         takeInput
 
 keyword :: OrgParser (F OrgElements)
@@ -475,7 +475,6 @@ keyword = try do
   -- regexes: "#+abc:d:e :f" is a valid keyword of key "abc:d" and value "e :f".
   name <-
     T.toLower . fst <$> fix \me -> do
-      -- a joke?
       res@(name, ended) <-
         findMarked $
           Marked (ap2 (||) isSpace (== ':')) ["space", ":"] . try $

@@ -1,7 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 
--- |
 module Org.Parser.Definitions
   ( module Org.Parser.Definitions,
     module Org.Types,
@@ -98,6 +97,14 @@ registerAffiliated kw =
     s
       { orgStatePendingAffiliated =
           kw : orgStatePendingAffiliated s
+      }
+
+registerFootnote :: Text -> F OrgElements -> OrgParser ()
+registerFootnote k v =
+  updateState \s ->
+    s
+      { orgStateFootnotes =
+          insert k v (orgStateFootnotes s)
       }
 
 clearPendingAffiliated :: OrgParser ()

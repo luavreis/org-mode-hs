@@ -40,10 +40,10 @@ withBalancedContext ::
   Char ->
   Char ->
   -- | Allowed
-  (Char -> All) ->
+  (Char -> Bool) ->
   OrgParser a ->
   OrgParser a
-withBalancedContext lchar rchar ((getAll .) -> allowed) p = try do
+withBalancedContext lchar rchar allowed p = try do
   _ <- char lchar
   let find' :: StateT Int OrgParser Text
       find' = do

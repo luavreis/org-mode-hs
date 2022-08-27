@@ -250,5 +250,8 @@ image = one . Image
 target :: Id -> OrgObjects
 target = one . Target
 
+footnoteRef :: Text -> OrgObjects
+footnoteRef = one . FootnoteRef
+
 horizontalRule :: OrgElements
 horizontalRule = one HorizontalRule
