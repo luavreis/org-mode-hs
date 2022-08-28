@@ -1,4 +1,3 @@
--- |
 module Tests.Elements where
 
 import NeatInterpolation
@@ -17,17 +16,18 @@ testElements =
           "#this line is not a comment" =!> ()
         ],
       "Paragraph" ~: para $
-        [ [text|
-         foobar
-         baz
-      |]
+        [ --
+          [text|
+            foobar
+            baz
+          |]
             =?> B.para mempty ("foobar" <> B.softbreak <> "baz"),
           [text|
-         with /wrapped
-         markup/ and markup *at end*
-         =at start= but not~here~ and
-         not _here_right.
-      |]
+            with /wrapped
+            markup/ and markup *at end*
+            =at start= but not~here~ and
+            not _here_right.
+          |]
             =?> B.para
               mempty
               ( "with " <> B.italic "wrapped\nmarkup" <> " and markup "
@@ -40,10 +40,11 @@ testElements =
               )
         ],
       "Affiliated Keywords in Context" ~: elements $
-        [ [text|
-         #+attr_html: :width 40px :foo bar:joined space :liz buuz
-         Hi
-      |]
+        [ --
+          [text|
+            #+attr_html: :width 40px :foo bar:joined space :liz buuz
+            Hi
+          |]
             =?> let kw =
                       BackendKeyword
                         [ ("width", "40px"),
@@ -52,21 +53,29 @@ testElements =
                         ]
                  in B.para (fromList [("attr_html", kw)]) "Hi",
           [text|
-         Some para
-         #+caption: hi /guys/
-         Hi
-      |]
+            Some para
+            #+caption: hi /guys/
+
+            Hi
+          |]
+            =?> B.para mempty "Some para"
+              <> B.para mempty "Hi",
+          [text|
+            Some para
+            #+caption: hi /guys/
+            Hi
+          |]
             =?> let kw = ParsedKeyword [] (toList $ "hi " <> B.italic "guys")
                  in B.para mempty "Some para"
                       <> B.para (fromList [("caption", kw)]) "Hi",
           [text|
-         #+attr_org: :foo bar
-         #+begin_center
-         Some para
-         #+caption: hi /guys/
-         #+end_center
-         I don't have a caption
-      |]
+            #+attr_org: :foo bar
+            #+begin_center
+            Some para
+            #+caption: hi /guys/
+            #+end_center
+            I don't have a caption
+          |]
             =?> B.greaterBlock
               (fromList [("attr_org", BackendKeyword [("foo", "bar")])])
               Center

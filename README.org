@@ -72,7 +72,7 @@ In the spec terms (see below the table for other features), the following compon
 | GreaterBlock        | X                | X     |
 | Drawer              | X                | X     |
 | DynamicBlock        | X                |       |
-| FootnoteDefinition  | X                |       |
+| FootnoteDefinition  | X                | X     |
 | InlineTask          | X                |       |
 | Item                | X                | X     |
 | List                | X                | X     |

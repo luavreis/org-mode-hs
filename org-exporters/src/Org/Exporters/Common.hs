@@ -42,8 +42,12 @@ getFootnoteRef label =
   gets (lookup label . allFootnotes) >>= \case
     Just els -> do
       (i, m) <- gets footnoteCounter
-      modify \s -> s {footnoteCounter = (i + 1, insert label i m)}
-      pure $ Just (show i, els)
+      case lookup label m of
+        Just num ->
+          pure $ Just (show num, els)
+        Nothing -> do
+          modify \s -> s {footnoteCounter = (i + 1, insert label i m)}
+          pure $ Just (show i, els)
     Nothing -> pure Nothing
 
 type MonadExporter n = MonadState ExporterState n
@@ -428,7 +432,7 @@ expandOrgSections sections@(OrgSection {sectionLevel = level} : _) = do
               `binding` do
                 "section:children" ## const $ toList <$> expandOrgElements (sectionChildren section)
                 "section:subsections" ## const $ expandOrgSections (sectionSubsections section)
-                "h-n" ## hN (level + shift)
+                "h-n" ## hN (sectionLevel section + shift)
               `bindingText` do
                 for_ (sectionTodo section) todo
                 for_ (sectionPriority section) priority

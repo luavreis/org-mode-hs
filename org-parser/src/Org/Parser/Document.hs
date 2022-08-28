@@ -53,6 +53,7 @@ section lvl = try $ do
   (title, tags, titleTxt) <- titleObjects
   planning <- option emptyPlanning planningInfo
   properties <- option mempty propertyDrawer
+  clearPendingAffiliated
   contents <- elements
   children <- many (section (level + 1))
   anchor <- case lookup "CUSTOM_ID" properties of
