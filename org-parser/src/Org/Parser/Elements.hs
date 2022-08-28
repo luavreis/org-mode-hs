@@ -1,4 +1,3 @@
--- |
 module Org.Parser.Elements where
 
 import Data.Text qualified as T
@@ -38,27 +37,33 @@ elements' end = mconcat <$> manyTill (element <|> para) end
 -- This is necessary for correct counting of list indentations.
 element :: OrgParser (F OrgElements)
 element =
-  choice
-    [ blankline $> mempty <* clearPendingAffiliated,
-      elementNonEmpty
-    ]
+  blankline $> mempty
+    <* clearPendingAffiliated
+    <|> elementNonEmpty
     <?> "org element or blank line"
 
 elementNonEmpty :: OrgParser (F OrgElements)
 elementNonEmpty =
-  choice
-    [ commentLine <* clearPendingAffiliated,
-      exampleBlock <* clearPendingAffiliated,
-      srcBlock <* clearPendingAffiliated,
-      exportBlock <* clearPendingAffiliated,
-      greaterBlock <* clearPendingAffiliated,
-      plainList <* clearPendingAffiliated,
-      latexEnvironment <* clearPendingAffiliated,
-      drawer <* clearPendingAffiliated,
-      affKeyword,
-      keyword <* clearPendingAffiliated
-    ]
-    <?> "org element"
+  elementIndentable
+    <|> footnoteDef
+      <* clearPendingAffiliated
+
+elementIndentable :: OrgParser (F OrgElements)
+elementIndentable =
+  affKeyword
+    <|> choice
+      [ commentLine,
+        exampleBlock,
+        srcBlock,
+        exportBlock,
+        greaterBlock,
+        plainList,
+        latexEnvironment,
+        drawer,
+        keyword
+      ]
+      <* clearPendingAffiliated
+      <?> "org element"
 
 para :: OrgParser (F OrgElements)
 para = try do
@@ -75,7 +80,8 @@ para = try do
       _ <- newline'
       lookAhead headingStart $> mempty
         <|> eof $> mempty
-        <|> element
+        <|> lookAhead blankline $> mempty
+        <|> elementNonEmpty
 
 -- * Plain lists
 
@@ -325,14 +331,14 @@ rawBlockLine switches =
                 (string $ T.reverse refpre)
           content <- T.stripEnd . T.reverse <$> takeInput
           pure (ref, content) =
-        do
-          (ref', alias) <-
-            if "-r" `member` switches
-              then ("",) . show <$> getSrcLineNum
-              else pure (ref, ref)
-          let anchor = "coderef-" <> slugify ref
-          registerAnchorTarget ("(" <> ref <> ")") anchor (pure $ B.plain alias)
-          pure $ RefLine anchor ref' content
+          do
+            (ref', alias) <-
+              if "-r" `member` switches
+                then ("",) . show <$> getSrcLineNum
+                else pure (ref, ref)
+            let anchor = "coderef-" <> slugify ref
+            registerAnchorTarget ("(" <> ref <> ")") anchor (pure $ B.plain alias)
+            pure $ RefLine anchor ref' content
       | otherwise = pure $ SrcLine txt
 
 blockSwitches :: OrgParser (Map Text Text)
@@ -492,3 +498,25 @@ keyword = try do
   let kw = (name,) <$> value
   registerKeyword kw
   return $ uncurry B.keyword <$> kw
+
+-- * Footnote definitions
+
+footnoteDef :: OrgParser (F OrgElements)
+footnoteDef = try do
+  lbl <- start
+  _ <- optional blankline'
+  def <-
+    elements' $
+      lookAhead $
+        void headingStart
+          <|> try (blankline' *> blankline')
+          <|> void (try start)
+  registerFootnote lbl def
+  pureF mempty
+  where
+    start =
+      string "[fn:"
+        *> takeWhile1P
+          (Just "footnote def label")
+          (\c -> isAlphaNum c || c == '-' || c == '_')
+        <* char ']'
