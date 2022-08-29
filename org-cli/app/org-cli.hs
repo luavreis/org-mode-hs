@@ -1,6 +1,8 @@
 module Main where
 
 import Data.Text.IO qualified as T
+import Ondim.Extra.Loading.HTML qualified as H
+import Ondim.Extra.Loading.Pandoc qualified as P
 import Options qualified as O
 import Options.Applicative
 import Org.Exporters.Common (templateDir)
@@ -9,10 +11,10 @@ import Org.Exporters.Pandoc qualified as P
 import Org.Parser
 import Path (parseAbsDir, parseRelDir)
 import Path.IO (copyDirRecur', doesDirExist)
+import System.FilePath ((</>))
 import Text.Megaparsec (errorBundlePretty)
 import Text.Pandoc qualified as TP
 import Text.Pretty.Simple
-import System.FilePath ((</>))
 
 main :: IO ()
 main = do
@@ -47,22 +49,24 @@ main = do
           O.AST False -> pure $ show parsed
           O.AST True -> pure $ encodeUtf8 $ pShowNoColor parsed
           O.HTML oo -> do
-            let dir = O.templateDir oo <|> (</> "html") <$> udir
-            dt <- H.loadTemplates =<< H.htmlTemplateDir
-            tpls <- maybe dt (<> dt) <$> forM dir H.loadTemplates
+            let usrDir = O.templateDir oo
+                lclDir = (</> "html") <$> udir
+            defDir <- H.htmlTemplateDir
+            tpls <- H.loadTemplates $ catMaybes [usrDir, lclDir, Just defDir]
             layout <-
-              maybe empty H.loadLayout dir
-                <|> (H.loadLayout =<< H.htmlTemplateDir)
+              maybe empty H.loadLayout (usrDir <|> lclDir)
+                <|> (H.loadLayout defDir)
             pure $
               either (error . show) toStrict $
                 H.renderDoc (O.settings oo) tpls layout parsed
           O.Pandoc fmt tplo oo -> do
-            let dir = O.templateDir oo <|> (</> "pandoc") <$> udir
-            dt <- P.loadTemplates =<< P.pandocTemplateDir
-            tpls <- maybe dt (<> dt) <$> forM dir P.loadTemplates
+            let usrDir = O.templateDir oo
+                lclDir = (</> "pandoc") <$> udir
+            defDir <- P.pandocTemplateDir
+            tpls <- P.loadTemplates $ catMaybes [usrDir, lclDir, Just defDir]
             layout <-
-              maybe empty P.loadPandocDoc dir
-                <|> (P.loadPandocDoc =<< P.pandocTemplateDir)
+              maybe empty P.loadPandocDoc (usrDir <|> lclDir)
+                <|> (P.loadPandocDoc defDir)
             let doc =
                   either (error . show) id $
                     P.renderDoc (O.settings oo) tpls layout parsed

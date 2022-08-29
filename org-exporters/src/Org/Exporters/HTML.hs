@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -6,15 +5,13 @@
 
 module Org.Exporters.HTML where
 
-import Control.Exception (throwIO)
+import Control.Exception (throw)
 import Data.ByteString.Builder (toLazyByteString)
 import Ondim
 import Ondim.Extra
 import Ondim.HTML
 import Org.Exporters.Common
 import Org.Types
-import Relude.Extra.Lens
-import System.Directory.Recursive
 import System.FilePath
 import Text.XmlHtml qualified as X
 
@@ -36,35 +33,15 @@ instance ExportBackend HTag where
   stringify = nodeText
   type DocumentNode HTag = X.Document
 
-newtype TemplateLoadingError = TemplateLoadingException String
-  deriving (Eq, Show, Exception)
-
 htmlTemplateDir :: IO FilePath
 htmlTemplateDir = (</> "html") <$> templateDir
 
-loadTemplates :: FilePath -> IO (OndimMS HTag)
-loadTemplates dir = do
-  files <- getFilesRecursive dir
-  templates <- forM files $ \file -> do
-    let name = takeBaseName file
-    text <- readFileBS file
-    case X.parseHTML file text of
-      Left s -> throwIO (TemplateLoadingException s)
-      Right t -> pure (fromString name, fromDocument t)
-  pure $
-    initialMS
-      & ondimState
-        .~ OndimS
-          { expansions = fromList templates,
-            filters = mempty
-          }
-
 loadLayout :: FilePath -> IO X.Document
 loadLayout dir = do
-  let file = dir </> "org:document.tpl"
+  let file = dir </> "org/document.tpl"
   text <- readFileBS file
   case X.parseHTML file text of
-    Left s -> throwIO (TemplateLoadingException s)
+    Left s -> throw (TemplateLoadingException s)
     Right t -> pure t
 
 render ::
