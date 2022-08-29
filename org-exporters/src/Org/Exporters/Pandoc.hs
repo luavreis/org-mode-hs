@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
@@ -7,19 +6,18 @@
 
 module Org.Exporters.Pandoc where
 
-import Control.Exception (throwIO)
+import Control.Exception (throw)
 import Ondim
 import Ondim.Pandoc
 import Org.Exporters.Common
 import Org.Types (OrgDocument)
-import Relude.Extra.Lens
-import System.Directory.Recursive
 import System.FilePath
 import Text.Pandoc (def, readerExtensions, renderError, runPure)
 import Text.Pandoc.Builder qualified as B
 import Text.Pandoc.Definition qualified as P
 import Text.Pandoc.Extensions (pandocExtensions)
 import Text.Pandoc.Readers.Markdown (readMarkdown)
+import Ondim.Extra.Loading (TemplateLoadingError(..))
 
 type PTag = PandocTag (State ExporterState)
 
@@ -47,66 +45,18 @@ instance ExportBackend PTag where
   stringify = Ondim.Pandoc.stringify
   type DocumentNode PTag = P.Pandoc
 
-newtype TemplateLoadingError = TemplateLoadingException String
-  deriving (Eq, Show, Exception)
-
 pandocTemplateDir :: IO FilePath
 pandocTemplateDir = (</> "pandoc") <$> templateDir
 
-loadTemplates :: FilePath -> IO (OndimMS PTag)
-loadTemplates dir = do
-  blk <- loadBlockTemplates dir
-  inl <- loadInlineTemplates dir
-  pure $
-    initialMS
-      & ondimState .~ blk
-      & ondimState .~ inl
-
-loadBlockTemplates :: FilePath -> IO (OndimS PTag P.Block)
-loadBlockTemplates dir = do
-  files <- getFilesRecursive (dir </> "blocks")
-  templates <- forM files $ \file -> do
-    text :: Text <- decodeUtf8 <$> readFileBS file
-    let pandoc =
-          runPure $
-            readMarkdown def {readerExtensions = pandocExtensions} text
-        name = takeBaseName file
-    case pandoc of
-      Left s -> throwIO (TemplateLoadingException (toString $ renderError s))
-      Right t -> pure (fromString name, blockFromDocument t)
-  pure $
-    OndimS
-      { expansions = fromList templates,
-        filters = mempty
-      }
-
-loadInlineTemplates :: FilePath -> IO (OndimS PTag P.Inline)
-loadInlineTemplates dir = do
-  files <- getFilesRecursive (dir </> "inlines")
-  templates <- forM files $ \file -> do
-    text :: Text <- decodeUtf8 <$> readFileBS file
-    let pandoc =
-          runPure $
-            readMarkdown def {readerExtensions = pandocExtensions} text
-        name = takeBaseName file
-    case pandoc of
-      Left s -> throwIO (TemplateLoadingException (toString $ renderError s))
-      Right t -> pure (fromString name, inlineFromDocument t)
-  pure $
-    OndimS
-      { expansions = fromList templates,
-        filters = mempty
-      }
-
 loadPandocDoc :: FilePath -> IO P.Pandoc
 loadPandocDoc dir = do
-  let file = dir </> "org:document.md"
+  let file = dir </> "org/document.md"
   text :: Text <- decodeUtf8 <$> readFileBS file
   let pandoc =
         runPure $
           readMarkdown def {readerExtensions = pandocExtensions} text
   case pandoc of
-    Left s -> throwIO (TemplateLoadingException (toString $ renderError s))
+    Left s -> throw (TemplateLoadingException (toString $ renderError s))
     Right t -> pure t
 
 renderDoc ::

@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -201,16 +202,16 @@ expandOrgObject obj =
       SoftBreak ->
         pure $ softbreak @tag
       LineBreak ->
-        call "org:linebreak"
+        call "org:object:linebreak"
       (Code txt) ->
-        call "org:code"
+        call "org:object:code"
           `bindingText` do "content" ## pure txt
       (Entity name) -> do
         withEntities <- getSetting orgExportWithEntities
         case lookup name Data.defaultEntitiesMap of
           Just (Data.Entity _ latex mathP html ascii latin utf8)
             | withEntities ->
-                call "org:entity"
+                call "org:object:entity"
                   `binding` do
                     "entity:if-math" ## ifElse @(ObjectNode tag) mathP
                   `bindingText` do
@@ -221,7 +222,7 @@ expandOrgObject obj =
                     "entity:utf8" ## pure utf8
           _ -> pure $ plain @tag ("\\" <> name)
       (LaTeXFragment ftype txt) ->
-        call "org:latex-fragment"
+        call "org:object:latex-fragment"
           `bindingText` do
             "content" ## pure txt
           `binding` do
@@ -233,40 +234,40 @@ expandOrgObject obj =
       (ExportSnippet backend code) ->
         pure $ exportSnippet @tag backend code
       (Src lang _params txt) ->
-        call "org:src"
+        call "org:object:src"
           `bindingText` do
             "language" ## pure lang
             "content" ## pure txt
       (Target anchor) ->
-        call "org:target"
+        call "org:object:target"
           `bindingText` do
             "anchor" ## pure anchor
       (Italic objs) ->
-        call "org:italic"
+        call "org:object:italic"
           `binding` do
             "content" ## expObjs objs
       (Underline objs) ->
-        call "org:underline"
+        call "org:object:underline"
           `binding` do
             "content" ## expObjs objs
       (Bold objs) ->
-        call "org:bold"
+        call "org:object:bold"
           `binding` do
             "content" ## expObjs objs
       (Strikethrough objs) ->
-        call "org:strikethrough"
+        call "org:object:strikethrough"
           `binding` do
             "content" ## expObjs objs
       (Superscript objs) ->
-        call "org:superscript"
+        call "org:object:superscript"
           `binding` do
             "content" ## expObjs objs
       (Subscript objs) ->
-        call "org:subscript"
+        call "org:object:subscript"
           `binding` do
             "content" ## expObjs objs
       (Quoted qtype objs) ->
-        call "org:quoted"
+        call "org:object:quoted"
           `binding` do
             "content" ## expObjs objs
             switchCases
@@ -274,22 +275,22 @@ expandOrgObject obj =
                 SingleQuote -> "single"
                 DoubleQuote -> "double"
       (Verbatim txt) ->
-        call "org:verbatim"
+        call "org:object:verbatim"
           `bindingText` do
             "content" ## pure txt
       (Link tgt objs) ->
-        call "org:link"
+        call "org:object:link"
           `bindingText` linkTarget tgt
           `binding` do
             "content" ## expObjs objs
       (Image tgt) ->
-        call "org:image"
+        call "org:object:image"
           `bindingText` linkTarget tgt
       (Timestamp ts) ->
         timestamp ts
       (FootnoteRef name) -> do
         ref <- getFootnoteRef name
-        call "org:footnote-ref"
+        call "org:object:footnote-ref"
           `binding` do
             whenJust ref \ ~(_, els) ->
               "footnote-ref:content" ## const $ expandOrgElements els
@@ -324,25 +325,25 @@ expandOrgElement el =
   withText debugExps $
     case el of
       (Paragraph aff [Image tgt]) ->
-        call "org:figure"
+        call "org:element:figure"
           `bindingAff` aff
           `bindingText` linkTarget tgt
       (Paragraph aff c) ->
-        call "org:paragraph"
+        call "org:element:paragraph"
           `bindingAff` aff
           `binding` ("content" ## const $ expandOrgObjects c)
       (GreaterBlock aff Quote c) ->
-        call "org:quote-block"
+        call "org:element:quote-block"
           `bindingAff` aff
           `binding` do
             "content" ## expEls c
       (GreaterBlock aff Center c) ->
-        call "org:center-block"
+        call "org:element:center-block"
           `bindingAff` aff
           `binding` do
             "content" ## expEls c
       (GreaterBlock aff (Special cls) c) ->
-        call "org:special-block"
+        call "org:element:special-block"
           `bindingAff` aff
           `bindingText` do "special-name" ## pure cls
           `binding` do
@@ -357,30 +358,30 @@ expandOrgElement el =
       (ExportBlock lang code) ->
         pure $ rawBlock @tag lang code
       (ExampleBlock aff i c) ->
-        srcOrExample "org:example-block" i c
+        srcOrExample "org:element:example-block" i c
           `bindingAff` aff
           `bindingText` do
             "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
       (SrcBlock aff lang i _ c) ->
-        srcOrExample "org:src-block" i c
+        srcOrExample "org:element:src-block" i c
           `bindingAff` aff
           `bindingText` do
             "language" ## pure lang
             "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
       (LaTeXEnvironment aff _ text) ->
-        call "org:latex-environment"
+        call "org:element:latex-environment"
           `bindingAff` aff
           `bindingText` do "content" ## pure text
       HorizontalRule ->
-        call "org:horizontal-rule"
+        call "org:element:horizontal-rule"
       Keyword k (ValueKeyword _ v) ->
-        call "org:keyword"
+        call "org:element:keyword"
           `bindingText` do
             "keyword:key" ## pure k
             "keyword:value" ## pure v
           `binding` switchCases @(ElementNode tag) "keyword:textual"
       Keyword k (ParsedKeyword _ v) ->
-        call "org:keyword"
+        call "org:element:keyword"
           `bindingText` do
             "keyword:key" ## pure k
           `binding` switchCases @(ElementNode tag) "keyword:parsed"
@@ -464,13 +465,13 @@ liftDocument doc node = do
     `binding` do
       parsedKwExpansions
         (keywordsFromList $ documentKeywords doc)
-        "kw:"
+        "doc:kw:"
     `bindingText` do
       textKwExpansions
         (keywordsFromList $ documentKeywords doc)
-        "kw:"
+        "doc:kw:"
       for_ (toPairs $ documentProperties doc) \(k, v) ->
-        "prop:" <> k ## pure v
+        "doc:prop:" <> k ## pure v
     `binding` do
       "doc:children" ## const $ expandOrgElements (documentChildren doc)
       "doc:sections" ## const $ expandOrgSections (documentSections doc)
@@ -499,7 +500,7 @@ plainList ::
   [ListItem] ->
   Ondim tag [ElementNode tag]
 plainList kind items =
-  callExpansion "org:plain-list" (pure $ nullEl @tag)
+  callExpansion "org:element:plain-list" (pure $ nullEl @tag)
     `binding` do
       "list-items" ## listItems
       case kind of
@@ -585,7 +586,7 @@ timestamp ::
   TimestampData ->
   Ondim tag [ObjectNode tag]
 timestamp ts =
-  callExpansion "org:timestamp" (pure $ nullObj @tag)
+  callExpansion "org:object:timestamp" (pure $ nullObj @tag)
     `binding` case ts of
       TimestampData a (dateToDay -> d, fmap toTime -> t, r, w) -> do
         dtExps d t r w

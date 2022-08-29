@@ -28,13 +28,13 @@ common common-options
                    , bytestring
                    , citeproc >= 0.7
                    , containers
-                   , dir-traverse
                    , directory
                    , filepath
                    , ondim
                    , org-parser
                    , map-syntax
                    , megaparsec
+                   , monad-logger
                    , pandoc-types >= 1.22
                    , pandoc
                    , relude
