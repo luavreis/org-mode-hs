@@ -61,6 +61,15 @@ testElements =
             =?> B.para mempty "Some para"
               <> B.para mempty "Hi",
           [text|
+            #+attr_html: :style color: red
+              - foo
+          |]
+            =?> let kw = BackendKeyword [("style", "color: red")]
+                 in B.list
+                    (fromList [("attr_html", kw)])
+                    (Unordered '-')
+                    [ListItem (Bullet '-') Nothing Nothing [] [Paragraph mempty [Plain "foo"]]],
+          [text|
             Some para
             #+caption: hi /guys/
             Hi
@@ -102,5 +111,21 @@ testElements =
               mempty
               Descriptive
               [ListItem (Bullet '-') Nothing Nothing (toList $ B.link (UnresolvedLink "foo") "bar") [Paragraph mempty (toList $ B.plain "bar")]]
+        ],
+      "Greater Blocks" ~: greaterBlock $
+        [ --
+          ( unlines
+              [ "#+begin_fun",
+                "    ",
+                "#+end_fun"
+              ]
+          )
+            =?> B.greaterBlock
+              mempty
+              (Special "fun")
+              mempty
+        ],
+      "Tricky" ~: elements $
+        [ "\n    " =?> mempty
         ]
     ]

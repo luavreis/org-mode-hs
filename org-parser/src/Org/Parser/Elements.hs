@@ -37,10 +37,10 @@ elements' end = mconcat <$> manyTill (element <|> para) end
 -- This is necessary for correct counting of list indentations.
 element :: OrgParser (F OrgElements)
 element =
-  blankline $> mempty
+  elementNonEmpty
+    <|> space1 $> mempty
     <* clearPendingAffiliated
-    <|> elementNonEmpty
-    <?> "org element or blank line"
+      <?> "org element or blank line"
 
 elementNonEmpty :: OrgParser (F OrgElements)
 elementNonEmpty =
