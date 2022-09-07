@@ -8,4 +8,4 @@ package org-cli
 source-repository-package
   type: git
   location: https://github.com/lucasvreis/ondim.git
-  tag: 81476307bb7d335147e16c8f0371c879b599b45d
+  tag: 7738cf0d3860cd12cec91ed509517f6ee53ee1ff
