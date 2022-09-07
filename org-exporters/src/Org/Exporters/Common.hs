@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
@@ -108,10 +109,15 @@ justOrIgnore = flip (maybe ignore)
 tags :: HasAttrChild tag t => Tag -> Expansion tag t
 tags tag x = children x `bindingText` ("tag" ## pure tag)
 
-parsedKwExpansions :: ExportBackend tag => Affiliated -> Text -> Expansions' tag (ObjectNode tag)
-parsedKwExpansions kws prefix =
+parsedKwExpansions ::
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
+  Affiliated ->
+  Text ->
+  Expansions' tag obj
+parsedKwExpansions bk kws prefix =
   forM_ parsedKws \(name, t) ->
-    (prefix <> name) ## const $ expandOrgObjects t
+    (prefix <> name) ## const $ expandOrgObjects bk t
   where
     parsedKws =
       mapMaybe
@@ -160,47 +166,48 @@ linkTarget tgt = do
         then file -<.> ".html"
         else file
 
-class
-  ( HasAttrChild tag (ObjectNode tag),
-    HasAttrChild tag (ElementNode tag),
-    OndimNode tag (DocumentNode tag),
+type BackendC tag obj elm =
+  ( HasAttrChild tag obj,
+    HasAttrChild tag elm,
     MonadExporter (OndimMonad tag)
-  ) =>
-  ExportBackend tag
-  where
-  type ObjectNode tag
-  nullObj :: ObjectNode tag
-  plain :: Text -> [ObjectNode tag]
-  softbreak :: [ObjectNode tag]
-  exportSnippet :: Text -> Text -> [ObjectNode tag]
-  type ElementNode tag
-  nullEl :: ElementNode tag
-  rawBlock :: Text -> Text -> [ElementNode tag]
-  mergeLists :: Filter tag (ElementNode tag)
-  mergeLists = id
-  hN :: Int -> Expansion tag (ElementNode tag)
-  plainObjsToEls :: [ObjectNode tag] -> [ElementNode tag]
-  stringify :: ObjectNode tag -> Text
-  type DocumentNode tag
+  )
 
-expandOrgObjects :: ExportBackend tag => [OrgObject] -> Ondim tag [ObjectNode tag]
-expandOrgObjects = foldMapM expandOrgObject
+data ExportBackend tag obj elm = ExportBackend
+  { nullObj :: obj,
+    plain :: Text -> [obj],
+    softbreak :: [obj],
+    exportSnippet :: Text -> Text -> [obj],
+    nullEl :: elm,
+    srcPretty :: Affiliated -> Text -> Text -> OndimMonad tag (Maybe [[obj]]),
+    rawBlock :: Text -> Text -> [elm],
+    mergeLists :: Filter tag (elm),
+    hN :: Int -> Expansion tag (elm),
+    plainObjsToEls :: [obj] -> [elm],
+    stringify :: obj -> Text
+  }
+
+expandOrgObjects ::
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
+  [OrgObject] ->
+  Ondim tag [obj]
+expandOrgObjects = foldMapM . expandOrgObject
 
 expandOrgObject ::
-  forall tag.
-  ExportBackend tag =>
+  forall tag obj elm.
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
   OrgObject ->
-  Ondim tag [ObjectNode tag]
-expandOrgObject obj =
+  Ondim tag [obj]
+expandOrgObject bk@(ExportBackend {..}) obj =
   withText debugExps $
     case obj of
       (Plain txt) -> do
         specialStrings <- getSetting orgExportWithSpecialStrings
         pure $
-          plain @tag
-            (if specialStrings then doSpecialStrings txt else txt)
+          plain (if specialStrings then doSpecialStrings txt else txt)
       SoftBreak ->
-        pure $ softbreak @tag
+        pure $ softbreak
       LineBreak ->
         call "org:object:linebreak"
       (Code txt) ->
@@ -213,26 +220,26 @@ expandOrgObject obj =
             | withEntities ->
                 call "org:object:entity"
                   `binding` do
-                    "entity:if-math" ## ifElse @(ObjectNode tag) mathP
+                    "entity:if-math" ## ifElse @obj mathP
                   `bindingText` do
                     "entity:latex" ## pure latex
                     "entity:ascii" ## pure ascii
                     "entity:html" ## pure html
                     "entity:latin" ## pure latin
                     "entity:utf8" ## pure utf8
-          _ -> pure $ plain @tag ("\\" <> name)
+          _ -> pure $ plain ("\\" <> name)
       (LaTeXFragment ftype txt) ->
         call "org:object:latex-fragment"
           `bindingText` do
             "content" ## pure txt
           `binding` do
-            switchCases @(ObjectNode tag) $
+            switchCases @obj $
               case ftype of
                 InlMathFragment -> "inline"
                 DispMathFragment -> "display"
                 RawFragment -> "raw"
       (ExportSnippet backend code) ->
-        pure $ exportSnippet @tag backend code
+        pure $ exportSnippet backend code
       (Src lang _params txt) ->
         call "org:object:src"
           `bindingText` do
@@ -280,26 +287,27 @@ expandOrgObject obj =
             "content" ## pure txt
       (Link tgt objs) ->
         call "org:object:link"
-          `bindingText` linkTarget tgt
+          `bindingText` do
+            linkTarget tgt
           `binding` do
             "content" ## expObjs objs
       (Image tgt) ->
         call "org:object:image"
           `bindingText` linkTarget tgt
       (Timestamp ts) ->
-        timestamp ts
+        timestamp bk ts
       (FootnoteRef name) -> do
         ref <- getFootnoteRef name
         call "org:object:footnote-ref"
           `binding` do
             whenJust ref \ ~(_, els) ->
-              "footnote-ref:content" ## const $ expandOrgElements els
+              "footnote-ref:content" ## const $ expandOrgElements bk els
           `bindingText` do
             "footnote-ref:key" ## pure name
             whenJust ref \ ~(num, _) ->
               "footnote-ref:number" ## pure num
       (Cite _) ->
-        pure $ plain @tag "(unresolved citation)"
+        pure $ plain "(unresolved citation)"
       InlBabelCall {} ->
         error "TODO"
       Macro {} ->
@@ -309,19 +317,24 @@ expandOrgObject obj =
       fromList
         [ ("debug:ast", pure (show obj))
         ]
-    expObjs :: [OrgObject] -> Expansion tag (ObjectNode tag)
-    expObjs o = const $ expandOrgObjects o
-    call x = callExpansion x (pure (nullObj @tag))
+    expObjs :: [OrgObject] -> Expansion tag obj
+    expObjs o = const $ expandOrgObjects bk o
+    call x = callExpansion x (pure nullObj)
 
-expandOrgElements :: ExportBackend tag => [OrgElement] -> Ondim tag [ElementNode tag]
-expandOrgElements = foldMapM expandOrgElement
+expandOrgElements ::
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
+  [OrgElement] ->
+  Ondim tag [elm]
+expandOrgElements = foldMapM . expandOrgElement
 
 expandOrgElement ::
-  forall tag.
-  ExportBackend tag =>
+  forall tag obj elm.
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
   OrgElement ->
-  Ondim tag [ElementNode tag]
-expandOrgElement el =
+  Ondim tag [elm]
+expandOrgElement bk@(ExportBackend {..}) el =
   withText debugExps $
     case el of
       (Paragraph aff [Image tgt]) ->
@@ -331,7 +344,7 @@ expandOrgElement el =
       (Paragraph aff c) ->
         call "org:element:paragraph"
           `bindingAff` aff
-          `binding` ("content" ## const $ expandOrgObjects c)
+          `binding` ("content" ## const $ expandOrgObjects bk c)
       (GreaterBlock aff Quote c) ->
         call "org:element:quote-block"
           `bindingAff` aff
@@ -349,21 +362,21 @@ expandOrgElement el =
           `binding` do
             "content" ## expEls c
       (PlainList aff k i) ->
-        plainList k i
+        plainList bk k i
           `bindingAff` aff
       (DynamicBlock _ _ els) ->
-        expandOrgElements els
+        expandOrgElements bk els
       (Drawer _ els) ->
-        expandOrgElements els
+        expandOrgElements bk els
       (ExportBlock lang code) ->
-        pure $ rawBlock @tag lang code
+        pure $ rawBlock lang code
       (ExampleBlock aff i c) ->
-        srcOrExample "org:element:example-block" i c
+        srcOrExample bk "org:element:example-block" aff "" i c
           `bindingAff` aff
           `bindingText` do
             "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
       (SrcBlock aff lang i _ c) ->
-        srcOrExample "org:element:src-block" i c
+        srcOrExample bk "org:element:src-block" aff lang i c
           `bindingAff` aff
           `bindingText` do
             "language" ## pure lang
@@ -379,14 +392,14 @@ expandOrgElement el =
           `bindingText` do
             "keyword:key" ## pure k
             "keyword:value" ## pure v
-          `binding` switchCases @(ElementNode tag) "keyword:textual"
+          `binding` switchCases @elm "keyword:textual"
       Keyword k (ParsedKeyword _ v) ->
         call "org:element:keyword"
           `bindingText` do
             "keyword:key" ## pure k
-          `binding` switchCases @(ElementNode tag) "keyword:parsed"
+          `binding` switchCases @elm "keyword:parsed"
           `binding` do
-            "keyword:value" ## const $ expandOrgObjects v
+            "keyword:value" ## const $ expandOrgObjects bk v
       Keyword {} -> pure []
       VerseBlock {} ->
         error "TODO"
@@ -400,46 +413,52 @@ expandOrgElement el =
     bindingAff x aff =
       x
         `binding` affiliatedAttrExpansions "html" aff
-        `binding` parsedKwExpansions aff "akw:"
+        `binding` parsedKwExpansions bk aff "akw:"
         `bindingText` textKwExpansions aff "akw:"
-    expEls :: [OrgElement] -> Expansion tag (ElementNode tag)
-    expEls o = const $ expandOrgElements o
-    call x = callExpansion x (pure (nullEl @tag))
+    expEls :: [OrgElement] -> Expansion tag elm
+    expEls o = const $ expandOrgElements bk o
+    call x = callExpansion x (pure nullEl)
 
 expandOrgSections ::
-  forall tag.
-  ExportBackend tag =>
+  forall tag obj elm.
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
   [OrgSection] ->
-  Ondim tag [ElementNode tag]
-expandOrgSections [] = pure []
-expandOrgSections sections@(OrgSection {sectionLevel = level} : _) = do
+  Ondim tag [elm]
+expandOrgSections _ [] = pure []
+expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) = do
+  let level = sectionLevel fstSection
   hlevels <- getSetting orgExportHeadlineLevels
   shift <- getSetting headlineLevelShift
-  callExpansion "org:sections" (pure $ nullEl @tag)
+  callExpansion "org:sections" (pure $ nullEl)
     `binding` do
       if level + shift > hlevels
-        then switchCases @(ElementNode tag) "over-level"
-        else switchCases @(ElementNode tag) "normal"
+        then switchCases @elm "over-level"
+        else switchCases @elm "normal"
       "sections" ## \x ->
         mergeLists $
-          join <$> forM sections \section ->
+          join <$> forM sections \section@(OrgSection {..}) ->
             children x
               `binding` do
                 "section:headline"
                   ## const
-                  $ toList <$> expandOrgObjects (sectionTitle section)
+                  $ toList <$> expandOrgObjects bk sectionTitle
                 "tags" ## \inner ->
-                  join <$> forM (sectionTags section) (`tags` inner)
+                  join <$> forM sectionTags (`tags` inner)
               `binding` do
-                "section:children" ## const $ toList <$> expandOrgElements (sectionChildren section)
-                "section:subsections" ## const $ expandOrgSections (sectionSubsections section)
-                "h-n" ## hN (sectionLevel section + shift)
+                "section:children" ## const $ toList <$> expandOrgElements bk sectionChildren
+                "section:subsections" ## const $
+                  withoutText "priority" $
+                    withoutText "todo-state" $
+                      withoutText "todo-name" $
+                        expandOrgSections bk sectionSubsections
+                "h-n" ## hN (sectionLevel + shift)
               `bindingText` do
-                for_ (sectionTodo section) todo
-                for_ (sectionPriority section) priority
-                for_ (toPairs $ sectionProperties section) \(k, v) ->
+                for_ sectionTodo todo
+                for_ sectionPriority priority
+                for_ (toPairs $ sectionProperties) \(k, v) ->
                   "prop:" <> k ## pure v
-                "anchor" ## pure $ sectionAnchor section
+                "anchor" ## pure $ sectionAnchor
                 -- Debug
                 "debug:ast" ## pure (show section)
   where
@@ -454,53 +473,57 @@ expandOrgSections sections@(OrgSection {sectionLevel = level} : _) = do
         (NumericPriority n) -> show n
 
 liftDocument ::
-  forall tag.
-  ExportBackend tag =>
+  forall tag obj elm doc.
+  OndimNode tag doc =>
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
   OrgDocument ->
-  DocumentNode tag ->
-  Ondim tag (DocumentNode tag)
-liftDocument doc node = do
-  modify (\s -> s {allFootnotes = documentFootnotes doc})
+  doc ->
+  Ondim tag doc
+liftDocument bk (OrgDocument {..}) node = do
+  modify (\s -> s {allFootnotes = documentFootnotes})
   liftSubstructures node
     `binding` do
       parsedKwExpansions
-        (keywordsFromList $ documentKeywords doc)
+        bk
+        (keywordsFromList $ documentKeywords)
         "doc:kw:"
     `bindingText` do
       textKwExpansions
-        (keywordsFromList $ documentKeywords doc)
+        (keywordsFromList $ documentKeywords)
         "doc:kw:"
-      for_ (toPairs $ documentProperties doc) \(k, v) ->
+      for_ (toPairs $ documentProperties) \(k, v) ->
         "doc:prop:" <> k ## pure v
     `binding` do
-      "doc:children" ## const $ expandOrgElements (documentChildren doc)
-      "doc:sections" ## const $ expandOrgSections (documentSections doc)
+      "doc:children" ## const $ expandOrgElements bk documentChildren
+      "doc:sections" ## const $ expandOrgSections bk documentSections
       "doc:footnotes" ## \node' -> do
         fns <-
           gets (toPairs . snd . footnoteCounter)
             <&> mapMaybe \(ref, num) ->
-              (,num) <$> lookup ref (documentFootnotes doc)
+              (,num) <$> lookup ref documentFootnotes
         if not (null fns)
           then
             children node'
               `binding` do
                 "footnote-defs" ## \inner ->
                   join <$> forM fns \(els, num) ->
-                    children @(ElementNode tag) inner
+                    children @elm inner
                       `bindingText` do
                         "footnote-def:number" ## pure (show num)
                       `binding` do
-                        "footnote-def:content" ## const $ expandOrgElements els
+                        "footnote-def:content" ## const $ expandOrgElements bk els
           else pure []
 
 plainList ::
-  forall tag.
-  ExportBackend tag =>
+  forall tag obj elm.
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
   ListType ->
   [ListItem] ->
-  Ondim tag [ElementNode tag]
-plainList kind items =
-  callExpansion "org:element:plain-list" (pure $ nullEl @tag)
+  Ondim tag [elm]
+plainList bk@(ExportBackend {..}) kind items =
+  callExpansion "org:element:plain-list" (pure $ nullEl)
     `binding` do
       "list-items" ## listItems
       case kind of
@@ -513,7 +536,7 @@ plainList kind items =
         "bullet" ## pure (one b)
       _ -> mempty
   where
-    listItems :: Expansion tag (ElementNode tag)
+    listItems :: Expansion tag elm
     listItems inner =
       mergeLists $
         join <$> forM items \(ListItem _ i cbox t c) ->
@@ -522,13 +545,13 @@ plainList kind items =
               "counter-set" ## pure $ maybe "" show i
               "checkbox" ## pure $ maybe "" checkbox cbox
             `binding` do
-              "descriptive-tag" ## const $ expandOrgObjects t
+              "descriptive-tag" ## const $ expandOrgObjects bk t
             `binding` do
               "list-item-content" ## const $ doPlainOrPara c
       where
-        doPlainOrPara :: [OrgElement] -> Ondim tag [ElementNode tag]
-        doPlainOrPara [Paragraph _ objs] = plainObjsToEls @tag <$> (expandOrgObjects objs)
-        doPlainOrPara els = expandOrgElements els
+        doPlainOrPara :: [OrgElement] -> Ondim tag [elm]
+        doPlainOrPara [Paragraph _ objs] = plainObjsToEls <$> (expandOrgObjects bk objs)
+        doPlainOrPara els = expandOrgElements bk els
 
         _start = join $ flip viaNonEmpty items \(ListItem _ i _ _ _ :| _) -> i
 
@@ -544,49 +567,62 @@ plainList kind items =
         checkbox PartialBox = "partial"
 
 srcOrExample ::
-  forall tag.
-  ExportBackend tag =>
+  forall tag obj elm.
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
+  Text ->
+  Affiliated ->
   Text ->
   Maybe Int ->
   [SrcLine] ->
-  Ondim tag [ElementNode tag]
-srcOrExample name stNumber lins =
-  callExpansion name (pure $ nullEl @tag)
+  Ondim tag [elm]
+srcOrExample (ExportBackend {..}) name aff lang stNumber lins =
+  callExpansion name (pure $ nullEl)
     `binding` ("src-lines" ## runLines)
     `bindingText` do
       whenJust stNumber \num ->
         "starting-number" ## pure $ show num
       "content" ## pure $ T.intercalate "\n" (srcLineContent <$> lins)
   where
-    runLines :: Expansion tag (ObjectNode tag)
-    runLines inner =
-      intercalate (plain @tag "\n")
-        <$> mapM (flip lineExps inner) (zip [0 ..] lins)
+    runLines :: Expansion tag obj
+    runLines inner = do
+      cP <- liftO contentPretty
+      intercalate (plain "\n")
+        <$> mapM (flip lineExps inner) (zip3 [0 ..] lins cP)
 
     number offset =
       whenJust ((offset +) <$> stNumber) \n ->
         "number" ## pure $ show n
 
-    lineExps (offset, SrcLine c) inner =
+    contentPretty =
+      let code = T.intercalate "\n" (srcLineContent <$> lins)
+      in sequence <$> srcPretty aff lang code
+
+    bPretty p = whenJust p \inls -> "content-pretty" ## const $ pure inls
+
+    lineExps (offset, SrcLine c, pretty) inner =
       switch "plain" inner
         `bindingText` do
           number offset
           "content" ## pure c
-    lineExps (offset, RefLine i ref c) inner =
+        `binding` bPretty pretty
+    lineExps (offset, RefLine i ref c, pretty) inner =
       switch "ref" inner
         `bindingText` do
           number offset
           "ref" ## pure ref
           "id" ## pure i
           "content" ## pure c
+        `binding` bPretty pretty
 
 timestamp ::
-  forall tag.
-  ExportBackend tag =>
+  forall tag obj elm.
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
   TimestampData ->
-  Ondim tag [ObjectNode tag]
-timestamp ts =
-  callExpansion "org:object:timestamp" (pure $ nullObj @tag)
+  Ondim tag [obj]
+timestamp (ExportBackend {..}) ts =
+  callExpansion "org:object:timestamp" (pure $ nullObj)
     `binding` case ts of
       TimestampData a (dateToDay -> d, fmap toTime -> t, r, w) -> do
         dtExps d t r w
@@ -597,7 +633,7 @@ timestamp ts =
         (dateToDay -> d2, fmap toTime -> t2, r2, w2) -> do
           "from" ## \x -> children x `binding` dtExps d1 t1 r1 w1
           "to" ## \x -> children x `binding` dtExps d2 t2 r2 w2
-          switchCases @(ObjectNode tag) (active a <> "-range")
+          switchCases @obj (active a <> "-range")
   where
     dtExps d t r w = do
       "repeater"
@@ -618,16 +654,16 @@ timestamp ts =
     dateToDay (y, m, d, _) = fromGregorian (toInteger y) m d
     toTime (h, m) = TimeOfDay h m 0
 
-    tsDate :: Day -> Expansion tag (ObjectNode tag)
+    tsDate :: Day -> Expansion tag obj
     tsDate day input' = do
       input <- input'
       locale <- getSetting timeLocale
-      let format = toString $ stringify @tag input
-      pure . plain @tag . toText $ formatTime locale format day
+      let format = toString $ stringify input
+      pure . plain . toText $ formatTime locale format day
 
-    tsTime :: Maybe TimeOfDay -> Expansion tag (ObjectNode tag)
+    tsTime :: Maybe TimeOfDay -> Expansion tag obj
     tsTime time input' = do
       input <- input'
       locale <- getSetting timeLocale
-      let format = toString $ stringify @tag input
-      maybe (pure []) (pure . plain @tag . toText . formatTime locale format) time
+      let format = toString $ stringify input
+      maybe (pure []) (pure . plain . toText . formatTime locale format) time

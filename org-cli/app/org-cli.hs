@@ -56,9 +56,8 @@ main = do
             layout <-
               maybe empty H.loadLayout (usrDir <|> lclDir)
                 <|> (H.loadLayout defDir)
-            pure $
-              either (error . show) toStrict $
-                H.renderDoc (O.settings oo) tpls layout parsed
+            either (error . show) toStrict
+              <$> H.renderDoc H.defHtmlBackend (O.settings oo) tpls layout parsed
           O.Pandoc fmt tplo oo -> do
             let usrDir = O.templateDir oo
                 lclDir = (</> "pandoc") <$> udir
@@ -69,7 +68,7 @@ main = do
                 <|> (P.loadPandocDoc defDir)
             let doc =
                   either (error . show) id $
-                    P.renderDoc (O.settings oo) tpls layout parsed
+                    P.renderDoc P.defPandocBackend (O.settings oo) tpls layout parsed
             TP.runIOorExplode do
               (w, ext) <- TP.getWriter fmt
               tpl <- TP.compileDefaultTemplate fmt
