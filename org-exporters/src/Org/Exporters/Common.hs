@@ -307,7 +307,21 @@ expandOrgObject bk@(ExportBackend {..}) obj =
             whenJust ref \ ~(num, _) ->
               "footnote-ref:number" ## pure num
       (Cite _) ->
-        pure $ plain "(unresolved citation)"
+        pure $ plain "(unresolved citation)" -- TODO
+      (StatisticCookie c) ->
+        call "org:object:statistic-cookie"
+          & \x -> case c of
+            Left (show -> n, show -> d) ->
+              x `binding` switchCases @obj "fraction"
+                `bindingText` do
+                  "statistic-cookie:numerator" ## pure n
+                  "statistic-cookie:denominator" ## pure d
+                  "statistic-cookie:value" ## pure $ n <> "/" <> d
+            Right (show -> p) ->
+              x `binding` switchCases @obj "percentage"
+                `bindingText` do
+                  "statistic-cookie:percentage" ## pure p
+                  "statistic-cookie:value" ## pure $ p <> "%"
       InlBabelCall {} ->
         error "TODO"
       Macro {} ->
