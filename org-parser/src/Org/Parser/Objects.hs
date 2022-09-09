@@ -26,7 +26,8 @@ minimalSet =
       texMathFragment,
       singleQuoted,
       doubleQuoted,
-      suscript
+      suscript,
+      statisticCookie
     ]
 
 standardSet :: Marked OrgParser (F OrgObjects)
@@ -621,3 +622,15 @@ parseTimestamp = try $ do
     tsmark marks = do
       mtype <- (,,) <$> choice (map string marks)
       mtype <$> integer <*> oneOf ['h', 'd', 'w', 'm', 'y']
+
+-- * Statistic Cookies
+
+statisticCookie :: Marked OrgParser (F OrgObjects)
+statisticCookie = mark' '[' $ try do
+  _ <- char '['
+  res <- Left <$> fra <|> Right <$> pct
+  _ <- char ']'
+  pureF $ B.statisticCookie res
+  where
+    fra = try $ liftA2 (,) integer (char '/' *> integer)
+    pct = try $ integer <* char '%'

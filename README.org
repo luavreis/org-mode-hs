@@ -115,7 +115,7 @@ In the spec terms (see below the table for other features), the following compon
 | Citation            | X                | X     |
 | RadioTarget         |                  |       |
 | Target              | X                | X     |
-| StatisticsCookie    |                  |       |
+| StatisticsCookie    | X                | X     |
 | Subscript           | X                | X     |
 | Superscript         | X                | X     |
 | TableCell           |                  |       |
