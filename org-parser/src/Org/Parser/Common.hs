@@ -1,4 +1,3 @@
--- |
 module Org.Parser.Common where
 
 import Data.Char (digitToInt, isAsciiLower, isAsciiUpper)
@@ -10,7 +9,10 @@ digitIntChar :: MonadParser m => m Int
 digitIntChar = digitToInt <$> digitChar
 
 digits :: MonadParser m => m Text
-digits = takeWhile1P (Just "digits") isDigit
+digits = takeWhileP (Just "digits") isDigit
+
+digits1 :: MonadParser m => m Text
+digits1 = takeWhile1P (Just "digits") isDigit
 
 integer :: MonadParser m => m Int
 integer = try $ do
@@ -174,29 +176,27 @@ parseFromText (prevPS, prevOS) txt parser = do
   (cPS, cOS) <- getFullState
   setFullState
     ( prevPS {stateInput = txt},
+      -- NOTE: using cOS instead of prevOS
+      -- is an implementation quirk. We
+      -- don't want neither the changes of
+      -- state done by the end parser in
+      -- markupContext nor the ones in the
+      -- fromText parser to be lost. But
+      -- this will have the effect of
+      -- commuting the change of state: the
+      -- end changes will be registered
+      -- before the body ones. This is not a
+      -- problem because most of state
+      -- building is commutative and most
+      -- querying is done in Future anyway.
+      -- The problematic ones are either
+      -- irrelevant to a paragraph (like the
+      -- order in which title keywords are
+      -- concatenated) or must be handled
+      -- manually like affiliated keywords.
       cOS
-        { orgStateLastChar -- NOTE: using cOS instead of prevOS
-        -- is an implementation quirk. We
-        -- don't want neither the changes of
-        -- state done by the end parser in
-        -- markupContext nor the ones in the
-        -- fromText parser to be lost. But
-        -- this will have the effect of
-        -- commuting the change of state: the
-        -- end changes will be registered
-        -- before the body ones. This is not a
-        -- problem because most of state
-        -- building is commutative and most
-        -- querying is done in Future anyway.
-        -- The problematic ones are either
-        -- irrelevant to a paragraph (like the
-        -- order in which title keywords are
-        -- concatenated) or must be handled
-        -- manually like affiliated keywords.
-          =
-            orgStateLastChar prevOS,
-          orgStatePendingAffiliated =
-            orgStatePendingAffiliated prevOS
+        { orgStateLastChar = orgStateLastChar prevOS,
+          orgStatePendingAffiliated = orgStatePendingAffiliated prevOS
         }
     )
   result <- parser

@@ -61,7 +61,8 @@ elementIndentable =
         latexEnvironment,
         drawer,
         keyword,
-        horizontalRule
+        horizontalRule,
+        table
       ]
       <* clearPendingAffiliated
       <?> "org element"
@@ -124,7 +125,7 @@ listItem = try do
           <|> try ((,) <$> spacesOrTabs1 <*> char '*')
     counterBullet = try do
       indent <- spacesOrTabs
-      counter <- digits <|> T.singleton <$> satisfy isAsciiAlpha
+      counter <- digits1 <|> T.singleton <$> satisfy isAsciiAlpha
       d <- satisfy \c -> c == '.' || c == ')'
       pure (indent, Counter counter d)
 
@@ -200,8 +201,8 @@ indentedElements indent =
 
 exampleBlock :: OrgParser (F OrgElements)
 exampleBlock = try do
-  f <- withAffiliated B.example
   hspace
+  f <- withAffiliated B.example
   _ <- string' "#+begin_example"
   switches <- blockSwitches
   _ <- anyLine
@@ -213,8 +214,8 @@ exampleBlock = try do
 
 srcBlock :: OrgParser (F OrgElements)
 srcBlock = try do
-  f <- withAffiliated B.srcBlock
   hspace
+  f <- withAffiliated B.srcBlock
   _ <- string' "#+begin_src"
   lang <- option "" $ hspace1 *> someNonSpace
   switches <- blockSwitches
@@ -531,3 +532,53 @@ horizontalRule = try do
   guard (l >= 5)
   blankline'
   pureF B.horizontalRule
+
+-- * Tables
+
+table :: OrgParser (F OrgElements)
+table = try do
+  hspace
+  f <- withAffiliated B.table
+  _ <- lookAhead $ char '|'
+  rows <- sequence <$> some tableRow
+  pure (f <*> rows)
+  where
+    tableRow :: OrgParser (F TableRow)
+    tableRow = ruleRow <|> columnPropRow <|> standardRow
+
+    ruleRow = try $ pure RuleRow <$ (hspace >> string "|-" >> anyLine')
+
+    columnPropRow = try do
+      hspace
+      _ <- char '|'
+      pure . ColumnPropsRow <$> some cell
+        <* blankline'
+      where
+        cell = do
+          hspace
+          c <- Just <$> cookie <|> Nothing <$ void (char '|')
+          pure c
+        cookie = try do
+          a <- string "<l" $> AlignLeft
+           <|> string "<c" $> AlignCenter
+           <|> string "<r" $> AlignRight
+          _ <- digits
+          _ <- char '>'
+          hspace
+          void (char '|') <|> lookAhead newline'
+          pure a
+
+    standardRow = try do
+      hspace
+      _ <- char '|'
+      B.standardRow <<$>> sequence <$> some cell
+        <* blankline'
+      where
+        cell = do
+          hspace
+          char '|' $> mempty <|>
+            withMContext end
+              (plainMarkupContext standardSet)
+        end =
+          Marked (\c -> isSpace c || c == '|') ["space or |"] $
+            try $ hspace >> void (char '|') <|> lookAhead newline'

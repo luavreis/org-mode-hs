@@ -399,6 +399,9 @@ expandOrgElement bk@(ExportBackend {..}) el =
         call "org:element:latex-environment"
           `bindingAff` aff
           `bindingText` do "content" ## pure text
+      (Table aff rs) ->
+        table bk rs
+          `bindingAff` aff
       HorizontalRule ->
         call "org:element:horizontal-rule"
       Keyword k (ValueKeyword _ v) ->
@@ -528,6 +531,64 @@ liftDocument bk (OrgDocument {..}) node = do
                       `binding` do
                         "footnote-def:content" ## const $ expandOrgElements bk els
           else pure []
+
+table ::
+  forall tag obj elm.
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
+  [TableRow] ->
+  Ondim tag [elm]
+table bk@(ExportBackend {..}) rows =
+  callExpansion "org:element:table" (pure $ nullEl)
+    `binding` do
+      "table:head" ## \inner ->
+        fromMaybe (pure []) do
+          rs <- tableHead
+          pure $
+            children inner `binding` do
+              "head:rows" ## tableRows rs
+      "table:bodies" ## tableBodies
+  where
+    (groups, props) = foldr go ([], []) rows
+      where
+        go (ColumnPropsRow p) ~(l, r) = (l, p : r)
+        go (StandardRow cs) ~(l, r)
+          | g : gs <- l = ((cs : g) : gs, r)
+          | [] <- l = ([cs] : l, r)
+        go RuleRow ~(l, r) = ([] : l, r)
+
+    (tableHead, bodies) = case groups of
+      [] -> (Nothing, [])
+      [b] -> (Nothing, [b])
+      h : b -> (Just h, b)
+
+    tableBodies :: Expansion tag elm
+    tableBodies inner =
+      mergeLists $
+        join <$> forM bodies \body ->
+          children inner `binding` do
+            "body:rows" ## tableRows body
+
+    tableRows :: [[TableCell]] -> Expansion tag obj
+    tableRows rs inner =
+      join <$> forM rs \cells ->
+        children inner
+          `binding` do
+            "row:cells" ## \inner' ->
+              join <$> forM (zip cells alignment) \(row, alig) ->
+                children @obj inner'
+                  `binding` do
+                    "cell:content" ## const $ expandOrgObjects bk row
+                  `bindingText` for_ alig \a ->
+                    "cell:alignment" ## pure case a of
+                      AlignLeft -> "left"
+                      AlignRight -> "right"
+                      AlignCenter -> "center"
+
+    alignment =
+      (++ repeat Nothing) $
+        fromMaybe [] $
+          listToMaybe $ props
 
 plainList ::
   forall tag obj elm.
