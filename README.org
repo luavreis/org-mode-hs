@@ -21,7 +21,8 @@
 #+begin_src bash
 git clone https://github.com/lucasvreis/org-hs.git
 cd org-hs
-cabal install horg
+# The -O2 flag compiles with more optimizations, and is optional.
+cabal install -O2 horg
 #+end_src
 ** Usage
 The =horg= CLI tool has some basic help pages, to see them type:
@@ -159,6 +160,6 @@ Another noteworthy difference is that =haskell-org-parser= uses a different pars
 ** Defining a new export backend
 Basically:
  - Use the [[https://github.com/lucasvreis/ondim][~ondim~ library]] to create a Ondim template system for the desired format, if it does not already exist.
- - Import ~Org.Exporters.Common~ and instantiate the ~ExportBackend~ class. 
+ - Import ~Org.Exporters.Common~ and create an ~ExportBackend~ for your format.
  - Create auxiliary functions for loading templates and rendering the document.
 
