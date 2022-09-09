@@ -163,6 +163,7 @@ data OrgElement
       Text
       -- ^ Environment contents
   | Paragraph Affiliated [OrgObject]
+  | Table Affiliated [TableRow]
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 data QuoteType = SingleQuote | DoubleQuote
@@ -258,6 +259,19 @@ data BabelCall = BabelCall
     babelCallHeader2 :: Text,
     babelCallArguments :: Text
   }
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+
+-- Tables
+
+data TableRow
+  = StandardRow [TableCell]
+  | ColumnPropsRow [Maybe ColumnAlignment]
+  | RuleRow
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+
+type TableCell = [OrgObject]
+
+data ColumnAlignment = AlignLeft | AlignCenter | AlignRight
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 -- * Objects (inline elements)

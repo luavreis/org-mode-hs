@@ -78,7 +78,7 @@ In the spec terms (see below the table for other features), the following compon
 | Item                | X                | X     |
 | List                | X                | X     |
 | PropertyDrawer      | X                | X     |
-| Table               |                  |       |
+| Table               | X                | X     |
 |---------------------+------------------+-------|
 | BabelCall           | X                |       |
 | Comment Block       | X                | X     |
@@ -96,8 +96,8 @@ In the spec terms (see below the table for other features), the following compon
 | LaTeXEnvironment    | X                | X     |
 | NodeProperty        | X                | X     |
 | Paragraph           | X                | X     |
-| TableRow            |                  |       |
-| TableHRule          |                  |       |
+| TableRow            | X                | X     |
+| TableHRule          | X                | X     |
 |---------------------+------------------+-------|
 | OrgEntity           | X                | X     |
 | LaTeXFragment       | X                | X     |
@@ -118,7 +118,7 @@ In the spec terms (see below the table for other features), the following compon
 | StatisticsCookie    | X                | X     |
 | Subscript           | X                | X     |
 | Superscript         | X                | X     |
-| TableCell           |                  |       |
+| TableCell           | X                | X     |
 | Timestamp           | X                | X     |
 | Plain               | X                | X     |
 | Markup              | X                | X     |

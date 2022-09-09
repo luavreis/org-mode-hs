@@ -131,6 +131,25 @@ testElements =
           "    --   "
             =!> ()
         ],
+      "Tables" ~: table $
+        [ --
+          [text|
+             | foo | bar | baz |
+                |foo bar | baz
+            |----
+            |<r>  | | <l>|<c>
+            | <r> | foo /bar/ | *ba* | baz
+            | foo || bar | |
+          |]
+            =?> B.table mempty
+            [ B.standardRow ["foo", "bar", "baz"],
+              B.standardRow ["foo bar", "baz"],
+              RuleRow,
+              ColumnPropsRow [Just AlignRight, Nothing, Just AlignLeft, Just AlignCenter],
+              B.standardRow ["<r>", "foo " <> B.italic "bar", B.bold "ba", "baz"],
+              B.standardRow ["foo", mempty, "bar", mempty]
+            ]
+        ],
       "Tricky" ~: elements $
         [ "\n    " =?> mempty
         ]

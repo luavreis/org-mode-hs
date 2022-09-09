@@ -258,3 +258,9 @@ statisticCookie = one . StatisticCookie
 
 horizontalRule :: OrgElements
 horizontalRule = one HorizontalRule
+
+table :: Affiliated -> [TableRow] -> OrgElements
+table aff = one . Table aff
+
+standardRow :: [OrgObjects] -> TableRow
+standardRow = StandardRow . map toList
