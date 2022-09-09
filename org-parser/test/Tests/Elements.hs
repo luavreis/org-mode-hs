@@ -125,6 +125,12 @@ testElements =
               (Special "fun")
               mempty
         ],
+      "Horizontal Rules" ~: horizontalRule $
+        [ "    ----------------   "
+            =?> B.horizontalRule,
+          "    --   "
+            =!> ()
+        ],
       "Tricky" ~: elements $
         [ "\n    " =?> mempty
         ]

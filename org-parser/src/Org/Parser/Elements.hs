@@ -60,7 +60,8 @@ elementIndentable =
         plainList,
         latexEnvironment,
         drawer,
-        keyword
+        keyword,
+        horizontalRule
       ]
       <* clearPendingAffiliated
       <?> "org element"
@@ -520,3 +521,13 @@ footnoteDef = try do
           (Just "footnote def label")
           (\c -> isAlphaNum c || c == '-' || c == '_')
         <* char ']'
+
+-- * Horizontal Rules
+
+horizontalRule :: OrgParser (F OrgElements)
+horizontalRule = try do
+  hspace
+  l <- T.length <$> takeWhile1P (Just "hrule dashes") (== '-')
+  guard (l >= 5)
+  blankline'
+  pureF B.horizontalRule
