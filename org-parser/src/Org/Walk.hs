@@ -120,6 +120,7 @@ walkObjectM _ x@Src {} = pure x
 walkObjectM _ x@Macro {} = pure x
 walkObjectM _ x@Image {} = pure x
 walkObjectM _ x@Target {} = pure x
+walkObjectM _ x@StatisticCookie {} = pure x
 
 queryObject :: (Monoid c, Walkable a OrgObject, Walkable a Citation) => (a -> c) -> OrgObject -> c
 queryObject f (Italic o) = query f o
@@ -146,6 +147,7 @@ queryObject _ Src {} = mempty
 queryObject _ Macro {} = mempty
 queryObject _ Image {} = mempty
 queryObject _ Target {} = mempty
+queryObject _ StatisticCookie {} = mempty
 
 -- Elements
 

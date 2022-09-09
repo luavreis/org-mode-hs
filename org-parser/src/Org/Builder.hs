@@ -253,5 +253,8 @@ target = one . Target
 footnoteRef :: Text -> OrgObjects
 footnoteRef = one . FootnoteRef
 
+statisticCookie :: Either (Int, Int) Int -> OrgObjects
+statisticCookie = one . StatisticCookie
+
 horizontalRule :: OrgElements
 horizontalRule = one HorizontalRule

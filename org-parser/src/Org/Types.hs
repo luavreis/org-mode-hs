@@ -299,6 +299,10 @@ data OrgObject
       -- ^ Macro name (e.g. @"poem"@)
       [Text]
       -- ^ Arguments (e.g. @["red", "blue"]@)
+  | -- | Statistic cookies.
+    StatisticCookie
+      (Either (Int, Int) Int)
+      -- ^ Either [num1/num2] or [percent%].
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 type Protocol = Text
