@@ -164,13 +164,8 @@ walkElementM f (Paragraph af o) = Paragraph <$> walkM f af <*> walkM f o
 walkElementM f (GreaterBlock af t o) = GreaterBlock <$> walkM f af ?? t <*> walkM f o
 walkElementM f (Drawer a o) = Drawer a <$> walkM f o
 walkElementM f (DynamicBlock n p o) = DynamicBlock n p <$> walkM f o
-walkElementM f (PlainList af t i) = PlainList <$> walkM f af ?? t <*> mapM walkListItemM i
-  where
-    walkListItemM (ListItem b i' c t' e) = ListItem b i' c <$> walkM f t' <*> walkM f e
-walkElementM f (Table af rs) = Table <$> walkM f af <*> mapM walkTableRowM rs
-  where
-    walkTableRowM (StandardRow cs) = StandardRow <$> walkM f cs
-    walkTableRowM r = pure r
+walkElementM f (PlainList af t i) = PlainList <$> walkM f af ?? t <*> mapM (walkListItemM f) i
+walkElementM f (Table af rs) = Table <$> walkM f af <*> mapM (walkTableRowM f) rs
 walkElementM f (ExampleBlock af i l) = ExampleBlock <$> walkM f af ?? i ?? l
 walkElementM f (SrcBlock af n i p l) = SrcBlock <$> walkM f af ?? n ?? i ?? p ?? l
 walkElementM f (VerseBlock af o) = VerseBlock <$> walkM f af <*> walkM f o
@@ -193,13 +188,8 @@ queryElement f (Paragraph af o) = query f af <> query f o
 queryElement f (GreaterBlock af _ o) = query f af <> query f o
 queryElement f (Drawer _ o) = query f o
 queryElement f (DynamicBlock _ _ o) = query f o
-queryElement f (PlainList af _ i) = query f af <> foldMap queryListItem i
-  where
-    queryListItem (ListItem _ _ _ t e) = query f t <> query f e
-queryElement f (Table af rs) = query f af <> foldMap queryTableRow rs
-  where
-    queryTableRow (StandardRow cs) = query f cs
-    queryTableRow _ = mempty
+queryElement f (PlainList af _ i) = query f af <> foldMap (queryListItem f) i
+queryElement f (Table af rs) = query f af <> foldMap (queryTableRow f) rs
 queryElement f (ExampleBlock af _ _) = query f af
 queryElement f (SrcBlock af _ _ _ _) = query f af
 queryElement f (VerseBlock af o) = query f af <> query f o
@@ -313,3 +303,33 @@ queryCitation f (Citation _ _ cpf csf cr) =
   query f cpf <> query f csf <> foldMap f' cr
   where
     f' (CiteReference _ p s) = query f p <> query f s
+
+-- * List items
+
+walkListItemM ::
+  (Monad f, Walkable a OrgObject, Walkable a OrgElement) =>
+  (a -> f a) ->
+  ListItem ->
+  f ListItem
+walkListItemM f (ListItem b i' c t' e) = ListItem b i' c <$> walkM f t' <*> walkM f e
+
+queryListItem ::
+  (Monoid m, Walkable a OrgObject, Walkable a OrgElement) =>
+  (a -> m) ->
+  ListItem ->
+  m
+queryListItem f (ListItem _ _ _ t e) = query f t <> query f e
+
+-- * Table rows
+
+walkTableRowM ::
+  (Walkable a OrgObject, Monad f) =>
+  (a -> f a) ->
+  TableRow ->
+  f TableRow
+walkTableRowM f (StandardRow cs) = StandardRow <$> walkM f cs
+walkTableRowM _ r = pure r
+
+queryTableRow :: (Walkable a OrgObject, Monoid c) => (a -> c) -> TableRow -> c
+queryTableRow f (StandardRow cs) = query f cs
+queryTableRow _ _ = mempty
