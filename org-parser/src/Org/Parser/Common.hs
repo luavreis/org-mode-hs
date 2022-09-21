@@ -5,6 +5,11 @@ import Data.Text qualified as T
 import Org.Parser.Definitions
 import Prelude hiding (State, many, some)
 
+-- | The same as 'string'', but cheaper (?)
+string'' :: MonadParser m => Text -> m Text
+string'' = tokens ((==) `on` T.toLower)
+{-# INLINE string'' #-}
+
 digitIntChar :: MonadParser m => m Int
 digitIntChar = digitToInt <$> digitChar
 
@@ -119,6 +124,7 @@ anyLine :: MonadParser m => m (Tokens Text)
 anyLine =
   takeWhileP (Just "rest of line") (/= '\n')
     <* newline
+{-# INLINE anyLine #-}
 
 -- | Parse the rest of line, returning the contents without the final newline or EOF.
 -- Consumes no input at EOF!
@@ -139,37 +145,6 @@ blankline = try $ hspace <* newline
 -- function may consume NO INPUT! Be mindful of infinite loops!
 blankline' :: MonadParser m => m ()
 blankline' = try $ hspace <* newline'
-
-findMarked ::
-  forall b.
-  Marked OrgParser b ->
-  OrgParser (Text, b)
-findMarked end = try $
-  fix $ \search -> do
-    str <-
-      takeWhileP
-        ( Just $
-            "insides of mcontext (not "
-              ++ getMDescription end
-              ++ ")"
-        )
-        (not . getMarks end)
-    setLastChar (snd <$> T.unsnoc str)
-    ((str,) <$> try (getParser end) <?> "end of mcontext")
-      <|> ( do
-              c <- anySingle <?> "insides of mcontext (single)"
-              first (T.snoc str c <>) <$> search
-          )
-
--- {-# INLINE findMarked #-}
-
-findChars2 :: MonadParser m => Char -> Char -> Maybe String -> m Text
-findChars2 needle post descr = try $
-  fix $ \search -> do
-    partial <- takeWhileP descr (/= needle)
-    _ <- char needle
-    char post $> partial
-      <|> (partial `T.snoc` needle <>) <$> search
 
 parseFromText :: FullState -> Text -> OrgParser b -> OrgParser b
 parseFromText (prevPS, prevOS) txt parser = do

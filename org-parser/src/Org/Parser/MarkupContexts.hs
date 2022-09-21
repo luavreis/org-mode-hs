@@ -5,36 +5,91 @@ module Org.Parser.MarkupContexts where
 import Data.Text qualified as T
 import Org.Parser.Common
 import Org.Parser.Definitions
+import Data.Set (notMember)
+
+skipManyTill' ::
+  forall skip end m.
+  MonadParser m =>
+  m skip ->
+  m end ->
+  m (Text, end)
+skipManyTill' skip end = try $ do
+  o0 <- getOffset
+  s0 <- getInput
+  (o1, final) <- skipManyTill skip (liftA2 (,) getOffset end)
+  pure $ (T.take (o1 - o0) s0, final)
+{-# INLINEABLE skipManyTill' #-}
+
+findSkipping ::
+  forall end.
+  (Char -> Bool) ->
+  OrgParser end ->
+  OrgParser (Text, end)
+findSkipping skip = skipManyTill' toSkip
+  where
+    toSkip = anySingle *> takeWhileP Nothing skip
+{-# INLINEABLE findSkipping #-}
+
+withContext__ ::
+  forall a end skip.
+  OrgParser skip ->
+  OrgParser end ->
+  OrgParser a ->
+  OrgParser (a, end, Text)
+withContext__ skip end p = try do
+  clearLastChar
+  st <- getFullState
+  (str, final) <- skipManyTill' skip end
+  guard (not $ T.null str)
+  (,final,str) <$> parseFromText st str p
+{-# INLINEABLE withContext__ #-}
+
+withContext_ ::
+  forall a end skip.
+  OrgParser skip ->
+  OrgParser end ->
+  OrgParser a ->
+  OrgParser (a, end)
+withContext_ skip end p =
+  withContext__ skip end p
+    <&> \ ~(x, y, _) -> (x, y)
+{-# INLINEABLE withContext_ #-}
+
+withContext ::
+  forall a end skip.
+  OrgParser skip ->
+  OrgParser end ->
+  OrgParser a ->
+  OrgParser a
+withContext skip end = fmap fst . withContext_ skip end
+{-# INLINEABLE withContext #-}
 
 withMContext__ ::
   forall a b.
-  Marked OrgParser b ->
+  (Char -> Bool) ->
+  OrgParser b ->
   OrgParser a ->
   OrgParser (a, b, Text)
-withMContext__ end p = try do
+withMContext__ skip end p = try do
   clearLastChar
   st <- getFullState
-  (str, final) <- findMarked end
+  prelim <- takeWhileP Nothing skip
+  ((prelim <>) -> str, final) <- skipManyTill' toSkip end
   guard (not $ T.null str)
-  -- traceM $ "parsing in substring: " ++ show str
-  -- traceM $ "with last char: " ++ show ctx
-  -- traceM $ "with last char after substring: " ++ show ctx'
   (,final,str) <$> parseFromText st str p
-
-withMContext_ ::
-  forall a b.
-  Marked OrgParser b ->
-  OrgParser a ->
-  OrgParser (a, b)
-withMContext_ end p =
-  withMContext__ end p
-    <&> \ ~(x, y, _) -> (x, y)
+  where
+    toSkip = anySingle *> takeWhileP Nothing skip
+{-# INLINEABLE withMContext__ #-}
 
 withMContext ::
-  Marked OrgParser b ->
+  (Char -> Bool) ->
+  OrgParser b ->
   OrgParser a ->
   OrgParser a
-withMContext end = fmap fst . withMContext_ end
+withMContext skip end p =
+  withMContext__ skip end p
+    <&> \ ~(x, _, _) -> x
+{-# INLINEABLE withMContext #-}
 
 withBalancedContext ::
   Char ->
@@ -45,25 +100,26 @@ withBalancedContext ::
   OrgParser a
 withBalancedContext lchar rchar allowed p = try do
   _ <- char lchar
-  let find' :: StateT Int OrgParser Text
-      find' = do
-        str <-
+  let skip :: StateT Int OrgParser ()
+      skip = do
+        _ <-
           takeWhileP
             (Just "insides of markup")
             (\c -> allowed c && c /= lchar && c /= rchar)
-        c <- satisfy allowed <?> "balanced delimiters"
+        c <- lookAhead (satisfy allowed) <?> "balanced delimiters"
         when (c == lchar) $ modify (+ 1)
         when (c == rchar) $ modify (subtract 1)
-        balance <- get
-        if
-            | balance == 0 -> pure str
-            | balance > 0 -> (T.snoc str c <>) <$> find'
-            | otherwise -> fail "unbalaced delimiters"
+        get >>= \case
+          balance | balance < 0 -> fail "unbalaced delimiters"
+                  | balance == 0 -> pure ()
+                  | otherwise -> void anySingle
+      end = try do
+        guard . (== 0) =<< get
+        _ <- char rchar
+        lift $ setLastChar (Just rchar)
   st <- getFullState
-  str <- evalStateT find' 1
-  -- traceM $ "balanced parsing in substring: " ++ show str
+  (str, _) <- evalStateT (skipManyTill' skip end) 1
   parseFromText st str p
-    <* setLastChar (Just rchar)
 
 markupContext ::
   Monoid k =>
@@ -73,16 +129,12 @@ markupContext ::
 markupContext f elems = go
   where
     go = try $ do
-      let specials = getMarks elems
+      let specials :: Set Char = fromList $ getMarks elems
       str <-
         optional $
           takeWhile1P
-            ( Just $
-                "insides of markup (not "
-                  <> getMDescription elems
-                  <> ")"
-            )
-            (not . specials)
+            Nothing
+            (`notMember` specials)
       -- traceM $ "consumed: " ++ show str
       let self = maybe mempty f str
       setLastChar (T.last <$> str)
