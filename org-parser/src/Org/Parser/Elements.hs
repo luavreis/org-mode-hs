@@ -38,7 +38,7 @@ elements' end = mconcat <$> manyTill (element <|> para) end
 element :: OrgParser (F OrgElements)
 element =
   elementNonEmpty
-    <|> space1 $> mempty
+    <|> blankline' $> mempty
     <* clearPendingAffiliated
       <?> "org element or blank line"
 
