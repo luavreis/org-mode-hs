@@ -350,3 +350,30 @@ data CiteReference = CiteReference
     refSuffix :: [OrgObject]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
+
+instance NFData OrgDocument
+instance NFData KeywordValue
+instance NFData OrgObject
+instance NFData QuoteType
+instance NFData TimestampData
+instance NFData FragmentType
+instance NFData Citation
+instance NFData CiteReference
+instance NFData BabelCall
+instance NFData LinkTarget
+instance NFData OrgElement
+instance NFData GreaterBlockType
+instance NFData ListType
+instance NFData OrderedStyle
+instance NFData ListItem
+instance NFData Bullet
+instance NFData Checkbox
+instance NFData SrcLine
+instance NFData ClockData
+instance NFData TableRow
+instance NFData ColumnAlignment
+instance NFData OrgSection
+instance NFData TodoKeyword
+instance NFData TodoState
+instance NFData Priority
+instance NFData PlanningInfo
