@@ -34,7 +34,8 @@ standardSet :: Marked OrgParser (F OrgObjects)
 standardSet =
   mconcat
     [ minimalSet,
-      citation,
+      regularLinkOrImage,
+      footnoteReference,
       timestamp,
       exportSnippet,
       inlBabel,
@@ -42,8 +43,7 @@ standardSet =
       linebreak,
       target,
       angleLink,
-      regularLinkOrImage,
-      footnoteReference
+      citation
     ]
 
 plainMarkupContext :: Marked OrgParser (F OrgObjects) -> OrgParser (F OrgObjects)
@@ -61,15 +61,14 @@ emphasisPreChars = "-\t ('\"{\8203"
 emphasisPostChars :: String
 emphasisPostChars = " ,.-\t\n:!?;'\")}[\8203"
 
-emphasisPost :: Char -> Marked OrgParser ()
-emphasisPost e = mark [e] $
-  try $ do
-    lchar <- gets orgStateLastChar
-    for_ lchar $ guard . not . isSpace
-    _ <- char e
-    setLastChar (Just e)
-    lookAhead
-      (eof <|> void (satisfy (`elem` emphasisPostChars)))
+emphasisPost :: Char -> OrgParser ()
+emphasisPost e = try $ do
+  lchar <- gets orgStateLastChar
+  for_ lchar $ guard . not . isSpace
+  _ <- char e
+  setLastChar (Just e)
+  lookAhead
+    (eof <|> void (satisfy (`elem` emphasisPostChars)))
 
 emphasisPre :: Char -> OrgParser ()
 emphasisPre s = try $ do
@@ -83,11 +82,12 @@ markup ::
   (OrgObjects -> OrgObjects) ->
   Char ->
   Marked OrgParser (F OrgObjects)
-markup f c = mark [c] $
+markup f c = Marked [c] $
   try $ do
     emphasisPre c
     f
       <<$>> withMContext
+        (/= c)
         (emphasisPost c)
         (plainMarkupContext standardSet)
 
@@ -95,11 +95,12 @@ rawMarkup ::
   (Text -> OrgObjects) ->
   Char ->
   Marked OrgParser (F OrgObjects)
-rawMarkup f d = mark [d] $
+rawMarkup f d = Marked [d] $
   try $ do
     emphasisPre d
     str <-
       withMContext
+        (/= d)
         (emphasisPost d)
         getInput
     pureF $ f str
@@ -131,7 +132,7 @@ doubleQuoted = markup B.doubleQuoted '"'
 -- | An endline character that can be treated as a space, not a line break.
 endline :: Marked OrgParser (F OrgObjects)
 endline =
-  mark' '\n' $
+  Marked "\n" $
     try $
       newlineAndClear
         *> hspace
@@ -140,7 +141,7 @@ endline =
 -- * Entities and LaTeX fragments
 
 entityOrFragment :: Marked OrgParser (F OrgObjects)
-entityOrFragment = mark' '\\' $
+entityOrFragment = Marked "\\" $
   try $ do
     _ <- char '\\'
     entity <|> fragment
@@ -165,32 +166,30 @@ entityOrFragment = mark' '\\' $
       pure $ open `T.cons` str `T.snoc` close
 
 mathFragment :: Marked OrgParser (F OrgObjects)
-mathFragment = mark' '\\' $
+mathFragment = Marked "\\" $
   try $ do
     _ <- char '\\'
-    open <- satisfy (\c -> c == '(' || c == '[')
-    str <-
-      findChars2
-        '\\'
-        (if open == '(' then ')' else ']')
-        (Just "insides of math fragment")
+    inline <-
+      char '(' $> True
+        <|> char '[' $> False
+    (str, _) <-
+      findSkipping
+        (/= '\\')
+        (char '\\' *> char if inline then ')' else ']')
     pureF $
-      if open == '('
+      if inline
         then B.inlMath str
         else B.dispMath str
 
 texMathFragment :: Marked OrgParser (F OrgObjects)
-texMathFragment = mark' '$' $
-  try $ do
-    display <|> inline
+texMathFragment = Marked "$" $ try $ display <|> inline
   where
     display = try $ do
       _ <- string "$$"
-      str <-
-        findChars2
-          '$'
-          '$'
-          (Just "insides of math fragment")
+      (str, _) <-
+        findSkipping
+          (/= '$')
+          (string "$$")
       pureF $ B.dispMath str
 
     post = do
@@ -227,15 +226,16 @@ texMathFragment = mark' '$' $
 -- * Export snippets
 
 exportSnippet :: Marked OrgParser (F OrgObjects)
-exportSnippet = mark' '@' . try $ do
-  _ <- string "@@"
-  backend <-
-    takeWhile1P
-      (Just "export snippet backend")
-      (\c -> isAsciiAlpha c || isDigit c || c == '-')
-  _ <- char ':'
-  pure . B.exportSnippet backend
-    <$> findChars2 '@' '@' (Just "export snippet contents")
+exportSnippet = Marked "@" $
+  try $ do
+    _ <- string "@@"
+    backend <-
+      takeWhile1P
+        (Just "export snippet backend")
+        (\c -> isAsciiAlpha c || isDigit c || c == '-')
+    _ <- char ':'
+    pure . B.exportSnippet backend . fst
+      <$> findSkipping (/= '@') (string "@@")
 
 -- * Citations
 
@@ -243,7 +243,7 @@ exportSnippet = mark' '@' . try $ do
 
 citation :: Marked OrgParser (F OrgObjects)
 citation =
-  mark' '[' $
+  Marked "[" $
     B.citation <<$>> withBalancedContext '[' ']' (const True) orgCite
 
 -- | A citation in org-cite style
@@ -312,9 +312,9 @@ citePrefix :: OrgParser (F OrgObjects)
 citePrefix = try $ do
   clearLastChar
   withMContext
-    ( mark "@;" $
-        try $
-          eof <|> void (lookAhead $ oneOf ['@', ';'])
+    (\c -> c /= '@' && c /= ';')
+    ( try $
+        eof <|> void (lookAhead $ oneOf ['@', ';'])
     )
     (plainMarkupContext minimalSet)
 
@@ -322,9 +322,9 @@ citeSuffix :: OrgParser (F OrgObjects)
 citeSuffix = try $ do
   clearLastChar
   withMContext
-    ( mark ";" $
-        try $
-          eof <|> void (lookAhead $ single ';')
+    (/= ';')
+    ( try $
+        eof <|> void (lookAhead $ single ';')
     )
     (plainMarkupContext minimalSet)
 
@@ -366,7 +366,7 @@ orgCiteKeyChar c =
 -- * Inline Babel calls
 
 inlBabel :: Marked OrgParser (F OrgObjects)
-inlBabel = mark' 'c' . try $ do
+inlBabel = Marked "c" . try $ do
   _ <- string "call_"
   name <-
     takeWhile1P
@@ -383,7 +383,7 @@ inlBabel = mark' 'c' . try $ do
 -- * Inline source blocks
 
 inlSrc :: Marked OrgParser (F OrgObjects)
-inlSrc = mark' 's' . try $ do
+inlSrc = Marked "s" . try $ do
   _ <- string "src_"
   name <-
     takeWhile1P
@@ -400,13 +400,13 @@ inlSrc = mark' 's' . try $ do
 
 linebreak :: Marked OrgParser (F OrgObjects)
 linebreak =
-  mark' '\\' . try $
+  Marked "\\" . try $
     pure B.linebreak <$ string "\\\\" <* hspace <* newlineAndClear' <* hspace
 
 -- * Links
 
 angleLink :: Marked OrgParser (F OrgObjects)
-angleLink = mark' '<' . try $ do
+angleLink = Marked "<" . try $ do
   _ <- char '<'
   protocol <- manyAsciiAlpha
   _ <- char ':'
@@ -421,7 +421,7 @@ angleLink = mark' '<' . try $ do
 
 regularLinkOrImage :: Marked OrgParser (F OrgObjects)
 regularLinkOrImage =
-  mark "[" . try $
+  Marked "[" . try $
     do
       _ <- string "[["
       str <- linkTarget
@@ -450,10 +450,8 @@ regularLinkOrImage =
     linkDescr :: OrgParser (F OrgObjects)
     linkDescr = try $ do
       _ <- char '['
-      st <- getFullState
-      str <- findChars2 ']' ']' (Just "link description")
-      parsed <-
-        parseFromText st str $
+      (parsed, _, str) <-
+        withMContext__ (/= ']') (string "]]") $
           plainMarkupContext standardSet -- FIXME this is not the right set but... whatever
       return $ do
         (tgt', _) <- linkToTarget str
@@ -489,7 +487,7 @@ isImgTarget _ = False
 -- * Targets and radio targets
 
 target :: Marked OrgParser (F OrgObjects)
-target = mark' '<' $ try do
+target = Marked "<" $ try do
   _ <- string "<<"
   str <- takeWhile1P (Just "dedicated target") (\c -> c /= '<' && c /= '>' && c /= '\n')
   guard (not (isSpace $ T.head str))
@@ -504,7 +502,7 @@ target = mark' '<' $ try do
 -- * Subscripts and superscripts
 
 suscript :: Marked OrgParser (F OrgObjects)
-suscript = mark "_^" $ try do
+suscript = Marked "_^" $ try do
   lchar <- gets orgStateLastChar
   for_ lchar $ guard . not . isSpace
   start <- satisfy \c -> c == '_' || c == '^'
@@ -523,25 +521,22 @@ suscript = mark "_^" $ try do
 
     plain =
       liftA2 (<>) sign $
-        withMContext plainEnd $
+        withMContext isAlphaNum plainEnd $
           plainMarkupContext entityOrFragment
 
-    plainEnd :: Marked OrgParser ()
-    plainEnd = Marked
-      (not . isAlphaNum)
-      ["non-alphanum chars"]
-      $ try do
-        lookAhead $
-          eof
-            <|> try (some (oneOf [',', '.', '\\']) *> notFollowedBy (satisfy isAlphaNum))
-            <|> void (noneOf [',', '.', '\\'])
+    plainEnd :: OrgParser ()
+    plainEnd = try do
+      lookAhead $
+        eof
+          <|> try (some (oneOf [',', '.', '\\']) *> notFollowedBy (satisfy isAlphaNum))
+          <|> void (noneOf [',', '.', '\\'])
 
 -- * Macros
 
 -- * Footnote references
 
 footnoteReference :: Marked OrgParser (F OrgObjects)
-footnoteReference = mark' '[' $
+footnoteReference = Marked "[" $
   withBalancedContext '[' ']' (const True) do
     _ <- string "fn:"
     lbl <-
@@ -564,7 +559,7 @@ footnoteReference = mark' '[' $
 -- * Timestamps
 
 timestamp :: Marked OrgParser (F OrgObjects)
-timestamp = mark "<[" $ pure . B.timestamp <$> parseTimestamp
+timestamp = Marked "<[" $ pure . B.timestamp <$> parseTimestamp
 
 -- | Read a timestamp.
 parseTimestamp :: OrgParser TimestampData
@@ -626,7 +621,7 @@ parseTimestamp = try $ do
 -- * Statistic Cookies
 
 statisticCookie :: Marked OrgParser (F OrgObjects)
-statisticCookie = mark' '[' $ try do
+statisticCookie = Marked "[" $ try do
   _ <- char '['
   res <- Left <$> fra <|> Right <$> pct
   _ <- char ']'

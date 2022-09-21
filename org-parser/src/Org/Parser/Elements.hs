@@ -71,9 +71,10 @@ para :: OrgParser (F OrgElements)
 para = try do
   hspace
   f <- withAffiliated B.para
-  (inls, next) <-
-    withMContext_
-      (mark "\n" end)
+  (inls, next, _) <-
+    withMContext__
+      (/= '\n')
+      end
       (plainMarkupContext standardSet)
   pure $ (f <*> inls) <> next
   where
@@ -156,22 +157,22 @@ itemTag :: OrgParser (F OrgObjects)
 itemTag = try do
   clearLastChar
   st <- getFullState
-  (contents, found) <- findMarked end
+  (contents, found) <- findSkipping (not . isSpace) end
   guard found
   parseFromText st contents (plainMarkupContext standardSet)
   where
     end =
-      mark " \t\n" $
-        spaceOrTab *> string "::" *> spaceOrTab $> True
-          <|> newline' $> False
+      spaceOrTab *> string "::" *> spaceOrTab $> True
+        <|> newline' $> False
 
 indentedPara :: Int -> OrgParser (F OrgElements)
 indentedPara indent = try do
   hspace
   f <- withAffiliated B.para
-  (inls, next) <-
-    withMContext_
-      (mark "\n" end)
+  (inls, next, _) <-
+    withMContext__
+      (/= '\n')
+      end
       (plainMarkupContext standardSet)
   pure $ (f <*> inls) <> next
   where
@@ -203,20 +204,20 @@ exampleBlock :: OrgParser (F OrgElements)
 exampleBlock = try do
   hspace
   f <- withAffiliated B.example
-  _ <- string' "#+begin_example"
+  _ <- string'' "#+begin_example"
   switches <- blockSwitches
   _ <- anyLine
   startingNumber <- updateLineNumbers switches
   contents <- rawBlockContents end switches
   pure $ f ?? startingNumber ?? contents
   where
-    end = try $ hspace *> string' "#+end_example" <* blankline'
+    end = try $ hspace *> string'' "#+end_example" <* blankline'
 
 srcBlock :: OrgParser (F OrgElements)
 srcBlock = try do
   hspace
   f <- withAffiliated B.srcBlock
-  _ <- string' "#+begin_src"
+  _ <- string'' "#+begin_src"
   lang <- option "" $ hspace1 *> someNonSpace
   switches <- blockSwitches
   args <- headerArgs
@@ -224,7 +225,7 @@ srcBlock = try do
   contents <- rawBlockContents end switches
   pure $ f ?? lang ?? num ?? args ?? contents
   where
-    end = try $ hspace *> string' "#+end_src" <* blankline'
+    end = try $ hspace *> string'' "#+end_src" <* blankline'
 
 headerArgs :: StateT OrgParserState Parser [(Text, Text)]
 headerArgs = do
@@ -237,34 +238,34 @@ headerArgs = do
         (,)
         (char ':' *> someNonSpace)
         ( T.strip . fst
-            <$> findMarked
-              ( mark " \n" $
-                  try $
-                    lookAhead
-                      ( newline'
-                          <|> hspace1 <* char ':'
-                      )
+            <$> findSkipping
+              (not . isSpace)
+              ( try $
+                  lookAhead
+                    ( newline'
+                        <|> hspace1 <* char ':'
+                    )
               )
         )
 
 exportBlock :: OrgParser (F OrgElements)
 exportBlock = try do
   hspace
-  _ <- string' "#+begin_export"
+  _ <- string'' "#+begin_export"
   format <- option "" $ hspace1 *> someNonSpace
   _ <- anyLine
   contents <- T.unlines <$> manyTill anyLine end
   pureF $ B.export format contents
   where
-    end = try $ hspace *> string' "#+end_export" <* blankline'
+    end = try $ hspace *> string'' "#+end_export" <* blankline'
 
 -- verseBlock :: OrgParser (F OrgElements)
 -- verseBlock = try do
 --   hspace
---   _ <- string' "#+begin_verse"
+--   _ <- string'' "#+begin_verse"
 --   undefined
 --   where
--- end = try $ hspace *> string' "#+end_export" <* blankline'
+-- end = try $ hspace *> string'' "#+end_export" <* blankline'
 
 indentContents :: Int -> [SrcLine] -> [SrcLine]
 indentContents tabWidth (map (srcLineMap $ tabsToSpaces tabWidth) -> lins) =
@@ -382,10 +383,9 @@ greaterBlock :: OrgParser (F OrgElements)
 greaterBlock = try do
   f <- withAffiliated B.greaterBlock
   hspace
-  _ <- string' "#+begin_"
-  bname <- someNonSpace
-  _ <- takeWhileP Nothing (/= '\n')
-  els <- withMContext (end bname) elements
+  _ <- string'' "#+begin_"
+  bname <- someNonSpace <* anyLine
+  els <- withContext anyLine (end bname) elements
   clearPendingAffiliated
   pure $ f ?? blockType bname <*> els
   where
@@ -393,8 +393,8 @@ greaterBlock = try do
       (T.toLower -> "center") -> Center
       (T.toLower -> "quote") -> Quote
       other -> Special other
-    end :: Text -> Marked OrgParser Text
-    end name = mark "\n" . try $ newline *> hspace *> string' "#+end_" *> string' name <* blankline'
+    end :: Text -> OrgParser Text
+    end name = try $ hspace *> string'' "#+end_" *> string'' name <* blankline'
 
 -- * Drawers
 
@@ -403,12 +403,12 @@ drawer = try do
   hspace
   _ <- char ':'
   dname <- takeWhile1P (Just "drawer name") (\c -> c /= ':' && c /= '\n')
-  hspace <* lookAhead newline
-  els <- withMContext end elements
+  char ':' >> blankline
+  els <- withContext blankline end elements
   return $ B.drawer dname <$> els
   where
-    end :: Marked OrgParser ()
-    end = mark "\n" . try $ newline *> hspace <* string' ":end:"
+    end :: OrgParser ()
+    end = try $ newline *> hspace <* string'' ":end:"
 
 -- * LaTeX Environments
 
@@ -421,12 +421,12 @@ latexEnvironment = try do
       (Just "latex environment name")
       (\c -> isAsciiAlpha c || isDigit c || c == '*')
   _ <- char '}'
-  (str, _) <- findMarked (end ename)
+  (str, _) <- findSkipping (/= '\\') (end ename)
   f <- withAffiliated B.latexEnvironment
   pure $ f ?? ename ?? "\\begin{" <> ename <> "}" <> str <> "\\end{" <> ename <> "}"
   where
-    end :: Text -> Marked OrgParser ()
-    end name = mark "\\" . try $ string ("\\end{" <> name <> "}") *> blankline'
+    end :: Text -> OrgParser ()
+    end name = try $ string ("\\end{" <> name <> "}") *> blankline'
 
 -- * Keywords and affiliated keywords
 
@@ -438,7 +438,7 @@ affKeyword = try do
     (T.toLower -> name) <-
       liftA2
         (<>)
-        (string' "attr_")
+        (string'' "attr_")
         (takeWhile1P Nothing (\c -> not (isSpace c || c == ':')))
     _ <- char ':'
     args <- headerArgs
@@ -446,7 +446,7 @@ affKeyword = try do
     pure mempty
     <|> try do
       affkws <- getsO orgElementAffiliatedKeywords
-      name <- choice (fmap (\s -> string' s $> s) affkws)
+      name <- choice (fmap (\s -> string'' s $> s) affkws)
       isdualkw <- (name `elem`) <$> getsO orgElementDualKeywords
       isparsedkw <- (name `elem`) <$> getsO orgElementParsedKeywords
       value <-
@@ -455,7 +455,9 @@ affKeyword = try do
             optArg <- option (pure mempty) $ guard isdualkw *> optionalArgP
             _ <- char ':'
             hspace
-            value <- withMContext (mark' '\n' newline') (plainMarkupContext standardSet)
+            st <- getFullState
+            line <- anyLine'
+            value <- parseFromText st line (plainMarkupContext standardSet)
             pure $ B.parsedKeyword <$> optArg <*> value
           else do
             optArg <- option "" $ guard isdualkw *> optionalArg
@@ -484,8 +486,8 @@ keyword = try do
   name <-
     T.toLower . fst <$> fix \me -> do
       res@(name, ended) <-
-        findMarked $
-          Marked (ap2 (||) isSpace (== ':')) ["space", ":"] . try $
+        findSkipping (\c -> c /= ':' && not (isSpace c)) $
+          try $
             (newline' <|> void (satisfy isSpace)) $> False
               <|> char ':' *> notFollowedBy me $> True
       guard (not $ T.null name)
@@ -495,7 +497,11 @@ keyword = try do
   parsedkw <- (name `elem`) <$> getsO orgElementParsedKeywords
   value <-
     if parsedkw
-      then B.parsedKeyword' <<$>> withMContext (mark' '\n' newline') (plainMarkupContext standardSet)
+      then
+        B.parsedKeyword' <<$>> do
+          st <- getFullState
+          line <- anyLine'
+          parseFromText st line (plainMarkupContext standardSet)
       else pure . B.valueKeyword' . T.stripEnd <$> anyLine'
   let kw = (name,) <$> value
   registerKeyword kw
@@ -559,9 +565,10 @@ table = try do
           c <- Just <$> cookie <|> Nothing <$ void (char '|')
           pure c
         cookie = try do
-          a <- string "<l" $> AlignLeft
-           <|> string "<c" $> AlignCenter
-           <|> string "<r" $> AlignRight
+          a <-
+            string "<l" $> AlignLeft
+              <|> string "<c" $> AlignCenter
+              <|> string "<r" $> AlignRight
           _ <- digits
           _ <- char '>'
           hspace
@@ -576,9 +583,9 @@ table = try do
       where
         cell = do
           hspace
-          char '|' $> mempty <|>
-            withMContext end
+          char '|' $> mempty
+            <|> withMContext
+              (\c -> not $ isSpace c || c == '|')
+              end
               (plainMarkupContext standardSet)
-        end =
-          Marked (\c -> isSpace c || c == '|') ["space or |"] $
-            try $ hspace >> void (char '|') <|> lookAhead newline'
+        end = try $ hspace >> void (char '|') <|> lookAhead newline'
