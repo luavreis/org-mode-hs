@@ -21,8 +21,7 @@
 #+begin_src bash
 git clone https://github.com/lucasvreis/org-hs.git
 cd org-hs
-# The -O2 flag compiles with more optimizations, and is optional.
-cabal install -O2 horg
+cabal install horg
 #+end_src
 ** Usage
 The =horg= CLI tool has some basic help pages, to see them type:
