@@ -66,9 +66,9 @@ testElements =
           |]
             =?> let kw = BackendKeyword [("style", "color: red")]
                  in B.list
-                    (fromList [("attr_html", kw)])
-                    (Unordered '-')
-                    [ListItem (Bullet '-') Nothing Nothing [] [Paragraph mempty [Plain "foo"]]],
+                      (fromList [("attr_html", kw)])
+                      (Unordered '-')
+                      [ListItem (Bullet '-') Nothing Nothing [] [Paragraph mempty [Plain "foo"]]],
           [text|
             Some para
             #+caption: hi /guys/
@@ -94,7 +94,39 @@ testElements =
       -- Add case for affiliated keywords with:
       -- Add case showing preservation of state of end parser
       -- Add case showing preservation of state from inside to outside markupContext
-
+      "Ordered Lists in context" ~: elements $
+        [ --
+          unlines
+            [ "",
+              " 1. our",
+              " 2. moment's",
+              " 3. else's"
+            ]
+            =?> B.orderedList
+              mempty
+              OrderedNum
+              '.'
+              [ B.para mempty "our",
+                B.para mempty "moment's",
+                B.para mempty "else's"
+              ]
+        ],
+      "Ordered Lists" ~: plainList $
+        [ --
+          unlines
+            [ " 1. our",
+              " 2. moment's",
+              " 3. else's"
+            ]
+            =?> B.orderedList
+              mempty
+              OrderedNum
+              '.'
+              [ B.para mempty "our",
+                B.para mempty "moment's",
+                B.para mempty "else's"
+              ]
+        ],
       "Descriptive Lists" ~: plainList $
         [ "- foo :: bar"
             =?> B.list
@@ -114,12 +146,11 @@ testElements =
         ],
       "Greater Blocks" ~: greaterBlock $
         [ --
-          ( unlines
-              [ "#+begin_fun",
-                "    ",
-                "#+end_fun"
-              ]
-          )
+          unlines
+            [ "#+begin_fun",
+              "    ",
+              "#+end_fun"
+            ]
             =?> B.greaterBlock
               mempty
               (Special "fun")
@@ -141,14 +172,15 @@ testElements =
             | <r> | foo /bar/ | *ba* | baz
             | foo || bar | |
           |]
-            =?> B.table mempty
-            [ B.standardRow ["foo", "bar", "baz"],
-              B.standardRow ["foo bar", "baz"],
-              RuleRow,
-              ColumnPropsRow [Just AlignRight, Nothing, Just AlignLeft, Just AlignCenter],
-              B.standardRow ["<r>", "foo " <> B.italic "bar", B.bold "ba", "baz"],
-              B.standardRow ["foo", mempty, "bar", mempty]
-            ]
+            =?> B.table
+              mempty
+              [ B.standardRow ["foo", "bar", "baz"],
+                B.standardRow ["foo bar", "baz"],
+                RuleRow,
+                ColumnPropsRow [Just AlignRight, Nothing, Just AlignLeft, Just AlignCenter],
+                B.standardRow ["<r>", "foo " <> B.italic "bar", B.bold "ba", "baz"],
+                B.standardRow ["foo", mempty, "bar", mempty]
+              ]
         ],
       "Tricky" ~: elements $
         [ "\n    " =?> mempty

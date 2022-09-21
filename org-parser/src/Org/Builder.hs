@@ -118,6 +118,21 @@ list ::
   OrgElements
 list aff kind = one . PlainList aff kind
 
+orderedList ::
+  Affiliated ->
+  OrderedStyle ->
+  Char ->
+  [OrgElements] ->
+  OrgElements
+orderedList aff style separator =
+  one
+    . PlainList aff (Ordered style)
+    . zipWith (\b -> ListItem b Nothing Nothing [] . toList) bullets
+  where
+    bullets = case style of
+      OrderedNum -> [Counter (show i) separator | i :: Int <- [1 ..]]
+      OrderedAlpha -> [Counter (one a) separator | a <- ['a' ..]]
+
 parsedKeyword ::
   OrgObjects ->
   OrgObjects ->
