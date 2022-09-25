@@ -23,6 +23,9 @@ git clone https://github.com/lucasvreis/org-hs.git
 cd org-hs
 cabal install horg
 #+end_src
+
+Please note that this library and some of its dependencies are not on Hackage yet, so you need to clone this repository first. 
+
 ** Usage
 The =horg= CLI tool has some basic help pages, to see them type:
 #+begin_src bash
@@ -32,7 +35,8 @@ horg -h
 horg export -h
 #+end_src
 ** Customizing templates
-TODO
+TODO: write this. It's completely possible, just not documented.
+
 * org-parser library
 ** Demo
 [[file:demo/demo.png]]
@@ -129,14 +133,15 @@ In the spec terms (see below the table for other features), the following compon
 
 Since the aspects listed above are genuine /org-mode features/, and not optional extensions, its preferable that should be resolved in the AST outputted by this parser. Below is a table with more Org features that are not listed in the spec but are planned to be supported:
 
-| Feature                                    | Implemented?                                         |
-|--------------------------------------------+------------------------------------------------------|
-| ​=#+include:= keywords                      | no                                                   |
-| Src/example blocks switches and references | yes                                                  |
-| Resolving all inner links                  | some                                                 |
-| Parsing image links into =Image=​s          | yes                                                  |
-| Pre-processing radio links                 | no; conformant implementation requires parsing twice |
-| Per-file TODO keywords                     | no                                                   |
+| Feature                                    | Implemented?                                                                       |
+|--------------------------------------------+------------------------------------------------------------------------------------|
+| ​=#+include:= keywords                      | not yet                                                                            |
+| Src/example blocks switches and references | yes                                                                                |
+| Resolving all inner links                  | some                                                                               |
+| Parsing image links into =Image=​s          | yes                                                                                |
+| Processing radio links                     | no; conformant implementation /requires/ parsing twice. May be added under a flag. |
+| Per-file TODO keywords                     | not yet (on the way, some work is done)                                            |
+| Macro definitions and substitution         | not yet (on the way, some work is done)                                            |
 
 ** Comparasion to Pandoc
 The main difference between =org-parser= and the Pandoc Org Reader is that this one parses into an AST is more similar to the org-element's AST, while Pandoc's parses into the =Pandoc= AST, which cannot express all Org elements directly. This has the effect that some Org features are either unsupported by the reader or "projected" onto =Pandoc= in ways that bundle less information about the Org source. In contrast, this parser aims to represent Org documents more faithfully before "projecting" them into formats like HTML or the Pandoc AST itself. So you can expect more org-specific features to be parsed, and a hopefully more accurate parsing in general.
