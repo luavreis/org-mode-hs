@@ -18,7 +18,7 @@ defaultOrgOptions =
   OrgOptions
     { orgSrcPreserveIndentation = False,
       orgTabWidth = 4,
-      orgElementParsedKeywords = ["caption", "title", "date", "author"],
+      orgElementParsedKeywords = ["caption", "title", "subtitle", "date", "author"],
       orgElementDualKeywords = ["caption", "results"],
       orgElementAffiliatedKeywords = ["caption", "data", "header", "headers", "label", "name", "plot", "resname", "result", "source", "srcname", "tblname"]
     }

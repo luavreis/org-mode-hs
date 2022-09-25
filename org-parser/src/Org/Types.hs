@@ -128,8 +128,7 @@ data OrgElement
       -- ^ Drawer elements
   | DynamicBlock Text (Map Text Text) [OrgElement]
   | PlainList Affiliated ListType [ListItem]
-  | -- Table Affiliated [OrgObject] [ColSpec] TableHead [TableBody] TableFoot
-    ExportBlock
+  | ExportBlock
       Text
       -- ^ Format
       Text

@@ -45,6 +45,10 @@ testObjects =
           "<<this \n is not a target>>" =!> (),
           "<<this > is not a target>>" =!> ()
         ],
+      "Math fragment" ~: mathFragment $
+        [ "\\(\\LaTeX + 2\\)" =?> B.inlMath "\\LaTeX + 2",
+          "\\[\\LaTeX + 2\\]" =?> B.dispMath "\\LaTeX + 2"
+        ],
       "TeX Math Fragments" ~: plainMarkupContext texMathFragment $
         [ "$e = mc^2$" =?> B.inlMath "e = mc^2",
           "$$foo bar$" =?> "$$foo bar$",

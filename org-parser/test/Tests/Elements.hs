@@ -182,7 +182,10 @@ testElements =
                 B.standardRow ["foo", mempty, "bar", mempty]
               ]
         ],
-      "Tricky" ~: elements $
+      "Tricky whitespace" ~: elements $
         [ "\n    " =?> mempty
+        , "" =?> mempty
+        , "\n" =?> mempty
+        , "\n\n a" =?> B.para mempty "a"
         ]
     ]

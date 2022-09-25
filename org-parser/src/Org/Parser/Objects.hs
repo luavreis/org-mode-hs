@@ -21,9 +21,9 @@ minimalSet =
       underline,
       bold,
       striketrough,
-      entityOrFragment,
       mathFragment,
       texMathFragment,
+      entityOrFragment,
       singleQuoted,
       doubleQuoted,
       suscript,
@@ -175,7 +175,7 @@ mathFragment = Marked "\\" $
     (str, _) <-
       findSkipping
         (/= '\\')
-        (char '\\' *> char if inline then ')' else ']')
+        (try $ char '\\' *> char if inline then ')' else ']')
     pureF $
       if inline
         then B.inlMath str
