@@ -32,13 +32,6 @@ type OrgParser = StateT OrgParserState Parser
 
 type OrgParseError = ParseErrorBundle Text Void
 
-popUniqueId :: OrgParser Text
-popUniqueId = do
-  ids <- gets orgStateIdStack
-  case ids of
-    (x : xs) -> x <$ updateState (\s -> s {orgStateIdStack = xs})
-    [] -> error "something's wrong. out of unique ids"
-
 setSrcLineNum :: Int -> OrgParser ()
 setSrcLineNum n = updateState $ \s ->
   s {orgStateSrcLineNumber = n}
@@ -49,39 +42,6 @@ incSrcLineNum n = updateState $ \s ->
 
 getSrcLineNum :: OrgParser Int
 getSrcLineNum = gets orgStateSrcLineNumber
-
-makeAnchorUnique :: Text -> OrgParser Text
-makeAnchorUnique a = do
-  anchors <- gets orgStateKnownAnchors
-  pure
-    if a `member` anchors
-      then
-        fromMaybe a $
-          find (`notMember` anchors) $
-            map (\n -> a <> "-" <> show (n :: Int)) [1 ..]
-      else a
-
-registerTarget :: Text -> F OrgObjects -> OrgParser Text
-registerTarget name alias = do
-  targets <- gets orgStateInternalTargets
-  anchors <- gets orgStateKnownAnchors
-  uid <- makeAnchorUnique =<< popUniqueId
-  updateState \s ->
-    s
-      { orgStateInternalTargets = insert name (uid, alias) targets,
-        orgStateKnownAnchors = Set.insert uid anchors
-      }
-  pure uid
-
-registerAnchorTarget :: Text -> Text -> F OrgObjects -> OrgParser ()
-registerAnchorTarget name anchor alias = do
-  targets <- gets orgStateInternalTargets
-  anchors <- gets orgStateKnownAnchors
-  updateState \s ->
-    s
-      { orgStateInternalTargets = insert name (anchor, alias) targets,
-        orgStateKnownAnchors = Set.insert anchor anchors
-      }
 
 registerKeyword :: F (KeywordKey, KeywordValue) -> OrgParser ()
 registerKeyword kw =
@@ -115,11 +75,6 @@ withAffiliated f = do
   affs <- sequence <$> gets orgStatePendingAffiliated
   (f . keywordsFromList <$> affs)
     <$ clearPendingAffiliated
-
-withTargetDescription :: F OrgObjects -> OrgParser a -> OrgParser a
-withTargetDescription descr f = do
-  updateState \s -> s {orgStateTargetDescriptionCtx = Just descr}
-  f <* updateState \s -> s {orgStateTargetDescriptionCtx = Nothing}
 
 -- * Last char
 
