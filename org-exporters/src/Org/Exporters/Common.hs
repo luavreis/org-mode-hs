@@ -187,7 +187,9 @@ data ExportBackend tag obj elm = ExportBackend
     mergeLists :: Filter tag (elm),
     hN :: Int -> Expansion tag (elm),
     plainObjsToEls :: [obj] -> [elm],
-    stringify :: obj -> Text
+    stringify :: obj -> Text,
+    srcExpansionType :: Text,
+    srcExpansion :: Text -> Ondim tag [elm]
   }
 
 expandOrgObjects ::
@@ -393,6 +395,11 @@ expandOrgElement bk@(ExportBackend {..}) el =
           `bindingAff` aff
           `bindingText` do
             "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
+      (SrcBlock _ lang _ k c)
+        | lang == srcExpansionType,
+          Just "t" == L.lookup "expand" k ->
+            srcExpansion $
+              T.intercalate "\n" (srcLineContent <$> c)
       (SrcBlock aff lang i _ c) ->
         srcOrExample bk "org:element:src-block" aff lang i c
           `bindingAff` aff
@@ -687,7 +694,7 @@ srcOrExample (ExportBackend {..}) name aff lang stNumber lins =
 
     contentPretty =
       let code = T.intercalate "\n" (srcLineContent <$> lins)
-      in sequence <$> srcPretty aff lang code
+       in sequence <$> srcPretty aff lang code
 
     bPretty p = whenJust p \inls -> "content-pretty" ## const $ pure inls
 
