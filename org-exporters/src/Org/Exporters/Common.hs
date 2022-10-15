@@ -7,11 +7,12 @@
 
 module Org.Exporters.Common where
 
+import Data.List qualified as L
 import Data.Map.Syntax
 import Data.Text qualified as T
 import Data.Time (Day, TimeLocale, TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
 import Ondim
-import Ondim.Extra (Attribute, HasAttrChild, ifElse, ignore, switch, switchCases)
+import Ondim.Extra
 import Org.Data.Entities qualified as Data
 import Org.Types
 import Org.Walk
@@ -148,17 +149,20 @@ affiliatedAttrExpansions lang aff =
 
 -- | Text expansion for link target.
 linkTarget :: OndimTag t => LinkTarget -> MapSyntax Text (Ondim t Text)
-linkTarget tgt = do
+linkTarget tgt = prefixed "link:" do
   "target" ## pure case tgt of
     URILink "file" (changeExtension -> file)
       | isRelative file -> toText file
       | otherwise -> "file:///" <> T.dropWhile (== '/') (toText file)
-    URILink protocol uri -> protocol <> ":" <> uri
+    URILink scheme uri -> scheme <> ":" <> uri
     InternalLink anchor -> "#" <> anchor
     UnresolvedLink tgt' -> tgt'
   case tgt of
-    URILink protocol _ -> "protocol" ## pure protocol
-    InternalLink {} -> "protocol" ## pure "internal"
+    URILink scheme uri -> do
+      "scheme" ## pure scheme
+      "path" ## pure uri
+      "extension" ## pure uri
+    InternalLink {} -> "scheme" ## pure "internal"
     _ -> pure ()
   where
     changeExtension (toString -> file) =
@@ -456,21 +460,21 @@ expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) = do
         mergeLists $
           join <$> forM sections \section@(OrgSection {..}) ->
             children x
-              `binding` do
-                "section:headline"
+              `binding` prefixed "section:" do
+                "headline"
                   ## const
                   $ toList <$> expandOrgObjects bk sectionTitle
                 "tags" ## \inner ->
                   join <$> forM sectionTags (`tags` inner)
-              `binding` do
-                "section:children" ## const $ toList <$> expandOrgElements bk sectionChildren
-                "section:subsections" ## const $
+              `binding` prefixed "section:" do
+                "children" ## const $ toList <$> expandOrgElements bk sectionChildren
+                "subsections" ## const $
                   withoutText "priority" $
                     withoutText "todo-state" $
                       withoutText "todo-name" $
                         expandOrgSections bk sectionSubsections
                 "h-n" ## hN (sectionLevel + shift)
-              `bindingText` do
+              `bindingText` prefixed "section:" do
                 for_ sectionTodo todo
                 for_ sectionPriority priority
                 for_ (toPairs $ sectionProperties) \(k, v) ->
@@ -497,24 +501,36 @@ liftDocument ::
   OrgDocument ->
   doc ->
   Ondim tag doc
-liftDocument bk (OrgDocument {..}) node = do
+liftDocument bk doc node =
+  bindDocument bk "doc:" doc (liftSubstructures node)
+
+bindDocument ::
+  forall tag obj elm doc.
+  BackendC tag obj elm =>
+  ExportBackend tag obj elm ->
+  -- | Prefix for expansion names
+  Text ->
+  OrgDocument ->
+  Ondim tag doc ->
+  Ondim tag doc
+bindDocument bk pfx (OrgDocument {..}) node = do
   modify (\s -> s {allFootnotes = documentFootnotes})
-  liftSubstructures node
+  node
     `binding` do
       parsedKwExpansions
         bk
         (keywordsFromList $ documentKeywords)
-        "doc:kw:"
+        (pfx <> "kw:")
     `bindingText` do
       textKwExpansions
         (keywordsFromList $ documentKeywords)
-        "doc:kw:"
+        (pfx <> "kw:")
       for_ (toPairs $ documentProperties) \(k, v) ->
-        "doc:prop:" <> k ## pure v
-    `binding` do
-      "doc:children" ## const $ expandOrgElements bk documentChildren
-      "doc:sections" ## const $ expandOrgSections bk documentSections
-      "doc:footnotes" ## \node' -> do
+        (pfx <> "prop:") <> k ## pure v
+    `binding` prefixed pfx do
+      "children" ## const $ expandOrgElements bk documentChildren
+      "sections" ## const $ expandOrgSections bk documentSections
+      "footnotes" ## \node' -> do
         fns <-
           gets (toPairs . snd . footnoteCounter)
             <&> mapMaybe \(ref, num) ->
