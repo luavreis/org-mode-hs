@@ -20,7 +20,7 @@ type HTag m = HtmlTag (StateT ExporterState m)
 
 type HtmlBackend m = ExportBackend (HTag m) HtmlNode HtmlNode
 
-defHtmlBackend :: Monad m => HtmlBackend m
+defHtmlBackend :: forall m. Monad m => HtmlBackend m
 defHtmlBackend =
   let nullObj = TextNode ""
       plain = one . TextNode
@@ -35,7 +35,21 @@ defHtmlBackend =
       hN level y = fmap one $ Element True ("h" <> show level) <$> attributes y <*> children y
       plainObjsToEls = id
       stringify = nodeText
+      srcExpansionType = "html"
+      srcExpansion src = do
+        fromMaybe (pure []) do
+          parsed <-
+            rightToMaybe $
+              X.parseHTML "" $ encodeUtf8 src
+          pure $ liftNodes @(HTag m) $ fromNodeList $ X.docContent parsed
    in ExportBackend {..}
+
+-- srcExpansion src = do
+--   fromMaybe (pure []) do
+--     parsed <-
+--       rightToMaybe $
+--         X.parseHTML "" $ encodeUtf8 src
+--     pure $ liftNodes $ fromNodeList $ X.docContent parsed
 
 htmlTemplateDir :: IO FilePath
 htmlTemplateDir = (</> "html") <$> templateDir
