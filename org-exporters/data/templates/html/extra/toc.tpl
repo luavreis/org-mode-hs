@@ -1,5 +1,5 @@
 <div id="table-of-contents">
-  <apply-content />
+  <extra:toc:content />
   <scope>
     <bind org:sections>
       <ul>
