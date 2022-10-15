@@ -7,7 +7,6 @@ module Org.Walk
   )
 where
 
-import Data.Bitraversable (bimapM)
 import Org.Types
 import Text.Pandoc.Walk (Walkable, query, walk, walkM)
 
@@ -171,6 +170,7 @@ walkElementM f (SrcBlock af n i p l) = SrcBlock <$> walkM f af ?? n ?? i ?? p ??
 walkElementM f (VerseBlock af o) = VerseBlock <$> walkM f af <*> walkM f o
 walkElementM f (Keyword k v) = Keyword k <$> walkM f v
 walkElementM f (LaTeXEnvironment af name c) = LaTeXEnvironment <$> walkM f af ?? name ?? c
+walkElementM f (FootnoteDef k v) = FootnoteDef k <$> walkM f v
 walkElementM _ x@ExportBlock {} = pure x
 walkElementM _ x@Clock {} = pure x
 walkElementM _ x@HorizontalRule {} = pure x
@@ -195,6 +195,7 @@ queryElement f (SrcBlock af _ _ _ _) = query f af
 queryElement f (VerseBlock af o) = query f af <> query f o
 queryElement f (Keyword _ v) = query f v
 queryElement f (LaTeXEnvironment af _ _) = query f af
+queryElement f (FootnoteDef _ o) = query f o
 queryElement _ ExportBlock {} = mempty
 queryElement _ Clock {} = mempty
 queryElement _ HorizontalRule {} = mempty
@@ -210,8 +211,8 @@ walkDocumentM ::
   (a -> m a) ->
   OrgDocument ->
   m OrgDocument
-walkDocumentM f (OrgDocument p k fn c s) =
-  OrgDocument p <$> mapM (bimapM pure (walkM f)) k <*> walkM f fn <*> walkM f c <*> walkM f s
+walkDocumentM f (OrgDocument p c s) =
+  OrgDocument p <$> walkM f c <*> walkM f s
 
 queryDocument ::
   ( Monoid c,
@@ -222,8 +223,7 @@ queryDocument ::
   (a -> c) ->
   OrgDocument ->
   c
-queryDocument f (OrgDocument _ k fn c s) =
-  query f (map snd k) <> query f fn <> query f c <> query f s
+queryDocument f (OrgDocument _ c s) = query f c <> query f s
 
 -- * Section
 
@@ -236,8 +236,8 @@ walkSectionM ::
   (a -> m a) ->
   OrgSection ->
   m OrgSection
-walkSectionM f (OrgSection i p t pr ttl tgs pl an c s) =
-  OrgSection i p t pr <$> walkM f ttl ?? tgs ?? pl ?? an <*> walkM f c <*> walkM f s
+walkSectionM f (OrgSection i p t pr ttl tgs pl c s) =
+  OrgSection i p t pr <$> walkM f ttl ?? tgs ?? pl <*> walkM f c <*> walkM f s
 
 querySection ::
   ( Monoid c,
@@ -248,7 +248,7 @@ querySection ::
   (a -> c) ->
   OrgSection ->
   c
-querySection f (OrgSection _ _ _ _ ttl _ _ _ c s) =
+querySection f (OrgSection _ _ _ _ ttl _ _ c s) =
   query f ttl <> query f c <> query f s
 
 -- * KeywordValue

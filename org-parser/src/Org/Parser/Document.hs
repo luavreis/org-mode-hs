@@ -27,17 +27,13 @@ orgDocument = do
   finalState <- getState
   return $
     flip runReader finalState . getAp $ do
-      keywords' <- sequence $ orgStateKeywords finalState
-      footnotes' <- sequence $ orgStateFootnotes finalState
       topLevel' <- topLevel
       sections' <- sequence sections
       return
         OrgDocument
           { documentProperties = properties,
-            documentKeywords = keywords',
             documentChildren = toList topLevel',
-            documentSections = sections',
-            documentFootnotes = M.map toList footnotes'
+            documentSections = sections'
           }
 
 -- | Read an Org mode section and its contents. @lvl@
@@ -56,15 +52,6 @@ section lvl = try $ do
   clearPendingAffiliated
   contents <- elements
   children <- many (section (level + 1))
-  anchor <- case lookup "CUSTOM_ID" properties of
-    Just a -> do
-      registerAnchorTarget ("#" <> a) a title
-      registerAnchorTarget ("*" <> titleTxt) a title
-      pure a
-    Nothing -> do
-      a <- makeAnchorUnique $ slugify titleTxt
-      registerAnchorTarget ("*" <> titleTxt) a title
-      pure a
   return $ do
     title' <- title
     contents' <- contents
@@ -76,7 +63,6 @@ section lvl = try $ do
           sectionTodo = todoKw,
           sectionPriority = priority,
           sectionTitle = toList title',
-          sectionAnchor = anchor,
           sectionTags = tags,
           sectionPlanning = planning,
           sectionChildren = toList contents',

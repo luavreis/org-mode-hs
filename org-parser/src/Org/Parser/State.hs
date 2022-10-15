@@ -7,7 +7,7 @@ type F = Ap (Reader OrgParserState)
 
 data OrgOptions = OrgOptions
   { orgSrcPreserveIndentation :: Bool,
-    orgTabWidth :: Int,
+    orgSrcTabWidth :: Int,
     orgElementParsedKeywords :: [Text],
     orgElementDualKeywords :: [Text],
     orgElementAffiliatedKeywords :: [Text]
@@ -17,53 +17,31 @@ defaultOrgOptions :: OrgOptions
 defaultOrgOptions =
   OrgOptions
     { orgSrcPreserveIndentation = False,
-      orgTabWidth = 4,
-      orgElementParsedKeywords = ["caption", "title", "subtitle", "date", "author"],
+      orgSrcTabWidth = 4,
+      orgElementParsedKeywords = ["caption"],
       orgElementDualKeywords = ["caption", "results"],
       orgElementAffiliatedKeywords = ["caption", "data", "header", "headers", "label", "name", "plot", "resname", "result", "source", "srcname", "tblname"]
     }
 
 -- | Org-mode parser state
 data OrgParserState = OrgParserState
-  { -- | Key is target name and value is (anchor, default alias)
-    orgStateInternalTargets :: Map Text (Id, F OrgObjects),
-    -- | This is the set of known anchors, in order to avoid invalid documents.
-    orgStateKnownAnchors :: Set Id,
-    orgStatePendingAffiliated :: [F (KeywordKey, KeywordValue)],
-    orgStateTargetDescriptionCtx :: Maybe (F OrgObjects),
+  { orgStatePendingAffiliated :: [F (KeywordKey, KeywordValue)],
     orgStateOptions :: OrgOptions,
-    orgStateIdStack :: [Id],
     orgStateLastChar :: Maybe Char,
-    orgStateExcludeTags :: Set Tag,
-    orgStateExcludeTagsChanged :: Bool,
     orgStateKeywords :: [F (KeywordKey, KeywordValue)],
     orgStateLinkFormatters :: OrgLinkFormatters,
-    orgStateMacros :: Map Text MacroExpander,
-    orgStateSrcLineNumber :: Int,
-    orgStateNotes' :: OrgNoteTable,
-    orgStateTodoSequences :: [TodoSequence],
-    orgStateFootnotes :: Map Text (F OrgElements)
+    orgStateTodoSequences :: [TodoSequence]
   }
 
 defaultState :: OrgParserState
 defaultState =
   OrgParserState
-    { orgStateInternalTargets = mempty,
-      orgStateKnownAnchors = mempty,
-      orgStatePendingAffiliated = mempty,
-      orgStateTargetDescriptionCtx = Nothing,
+    { orgStatePendingAffiliated = mempty,
       orgStateOptions = defaultOrgOptions,
-      orgStateIdStack = fmap show [0 :: Int ..],
       orgStateLastChar = Nothing,
-      orgStateExcludeTags = mempty,
-      orgStateExcludeTagsChanged = False,
       orgStateKeywords = [],
       orgStateLinkFormatters = mempty,
-      orgStateMacros = mempty,
-      orgStateSrcLineNumber = 1,
-      orgStateNotes' = [],
-      orgStateTodoSequences = [],
-      orgStateFootnotes = mempty
+      orgStateTodoSequences = []
     }
 
 -- | Map of functions for link transformations.  The map key is refers to the
@@ -72,12 +50,6 @@ type OrgLinkFormatters = Map Text (Text -> Text)
 
 -- | Macro expander function
 type MacroExpander = [Text] -> Text
-
--- | An inline note / footnote containing the note key and its (inline) value.
-type OrgNoteRecord = (Text, F OrgElements)
-
--- | Table of footnotes
-type OrgNoteTable = [OrgNoteRecord]
 
 -- | Collection of todo markers in the order in which items should progress
 type TodoSequence = [TodoKeyword]

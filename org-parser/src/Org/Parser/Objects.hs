@@ -30,6 +30,9 @@ minimalSet =
       statisticCookie
     ]
 
+-- minimalSetChars :: Set Char
+-- minimalSetChars = fromList "\n~=/_*+\\$'\"^["
+
 standardSet :: Marked OrgParser (F OrgObjects)
 standardSet =
   mconcat
@@ -45,6 +48,9 @@ standardSet =
       angleLink,
       citation
     ]
+
+-- standardSetChars :: Set Char
+-- standardSetChars = minimalSetChars <> fromList "@cs<"
 
 plainMarkupContext :: Marked OrgParser (F OrgObjects) -> OrgParser (F OrgObjects)
 plainMarkupContext = markupContext (pure . B.plain)
