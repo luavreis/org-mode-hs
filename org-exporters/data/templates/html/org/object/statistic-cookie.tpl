@@ -1,1 +1,1 @@
-<code class="statistic-cookie"><statistic-cookie:value /></code>
+<code class="statistic-cookie">[<statistic-cookie:value />]</code>

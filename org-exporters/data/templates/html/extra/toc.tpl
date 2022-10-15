@@ -5,7 +5,7 @@
       <ul>
         <sections>
           <li>
-            <a href="#!(anchor)"><section:headline /></a>
+            <a href="#!(section:anchor)"><section:headline /></a>
             <section:subsections />
           </li>
         </sections>

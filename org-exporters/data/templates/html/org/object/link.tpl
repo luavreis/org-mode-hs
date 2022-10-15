@@ -1,1 +1,1 @@
-<a href="!(target)"><content /></a>
+<a href="!(link:target)"><content /></a>
