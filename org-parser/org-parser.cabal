@@ -26,7 +26,8 @@ common common-options
                    , directory
                    , filepath
                    , megaparsec
-                   , pandoc-types
+                   , mtl
+                   , multiwalk
                    , relude
                    , slugify
                    , text

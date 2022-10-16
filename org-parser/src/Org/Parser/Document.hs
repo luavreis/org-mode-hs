@@ -3,15 +3,12 @@
 -- So all credit where credit is due to Albert Krewinkel and John MacFarlane.
 module Org.Parser.Document where
 
-import Data.Map qualified as M
 import Data.Text qualified as T
 import Org.Parser.Common
 import Org.Parser.Definitions
 import Org.Parser.Elements
 import Org.Parser.MarkupContexts
 import Org.Parser.Objects
-import Relude.Extra (lookup)
-import Text.Slugify (slugify)
 import Prelude hiding (many, some)
 
 -- | Parse input as org document tree.
@@ -63,6 +60,8 @@ section lvl = try $ do
           sectionTodo = todoKw,
           sectionPriority = priority,
           sectionTitle = toList title',
+          sectionRawTitle = titleTxt,
+          sectionAnchor = "", -- Dealt with later
           sectionTags = tags,
           sectionPlanning = planning,
           sectionChildren = toList contents',

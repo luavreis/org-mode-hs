@@ -1,18 +1,33 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Org.Walk
-  ( module Org.Walk,
-    module Text.Pandoc.Walk,
-  )
-where
+module Org.Walk where
 
 import Org.Types
-import Text.Pandoc.Walk (Walkable, query, walk, walkM)
+
+class Walkable a b where
+  -- | @walk f x@ walks the structure @x@ (bottom up) and replaces every
+  -- occurrence of an @a@ with the result of applying @f@ to it.
+  walk :: (a -> a) -> b -> b
+  walk f = runIdentity . walkM (pure . f)
+
+  -- | A monadic version of 'walk'.
+  walkM :: Monad m => (a -> m a) -> b -> m b
+
+  -- | @query f x@ walks the structure @x@ (bottom up) and applies @f@
+  -- to every @a@, appending the results.
+  query :: Monoid c => (a -> c) -> b -> c
+
+  {-# MINIMAL walkM, query #-}
 
 -- * Instances
 
 -- Objects
+
+instance (Foldable t, Traversable t, Walkable a b) => Walkable a (t b) where
+  walk f = fmap (walk f)
+  walkM f = mapM (walkM f)
+  query f = foldMap (query f)
 
 instance Walkable OrgObject OrgDocument where
   walkM f x = walkDocumentM f x
@@ -94,7 +109,11 @@ instance Walkable OrgSection Citation where
 
 -- Objects
 
-walkObjectM :: (Monad m, Walkable a OrgObject, Walkable a Citation) => (a -> m a) -> OrgObject -> m OrgObject
+walkObjectM ::
+  (Monad m, Walkable a OrgObject, Walkable a Citation) =>
+  (a -> m a) ->
+  OrgObject ->
+  m OrgObject
 walkObjectM f (Italic o) = Italic <$> walkM f o
 walkObjectM f (Underline o) = Underline <$> walkM f o
 walkObjectM f (Bold o) = Bold <$> walkM f o
@@ -121,7 +140,11 @@ walkObjectM _ x@Image {} = pure x
 walkObjectM _ x@Target {} = pure x
 walkObjectM _ x@StatisticCookie {} = pure x
 
-queryObject :: (Monoid c, Walkable a OrgObject, Walkable a Citation) => (a -> c) -> OrgObject -> c
+queryObject ::
+  (Monoid c, Walkable a OrgObject, Walkable a Citation) =>
+  (a -> c) ->
+  OrgObject ->
+  c
 queryObject f (Italic o) = query f o
 queryObject f (Underline o) = query f o
 queryObject f (Bold o) = query f o
@@ -236,8 +259,8 @@ walkSectionM ::
   (a -> m a) ->
   OrgSection ->
   m OrgSection
-walkSectionM f (OrgSection i p t pr ttl tgs pl c s) =
-  OrgSection i p t pr <$> walkM f ttl ?? tgs ?? pl <*> walkM f c <*> walkM f s
+walkSectionM f (OrgSection i p t pr ttl rttl a tgs pl c s) =
+  OrgSection i p t pr <$> walkM f ttl ?? rttl ?? a ?? tgs ?? pl <*> walkM f c <*> walkM f s
 
 querySection ::
   ( Monoid c,
@@ -248,7 +271,7 @@ querySection ::
   (a -> c) ->
   OrgSection ->
   c
-querySection f (OrgSection _ _ _ _ ttl _ _ c s) =
+querySection f (OrgSection _ _ _ _ ttl _ _ _ _ c s) =
   query f ttl <> query f c <> query f s
 
 -- * KeywordValue

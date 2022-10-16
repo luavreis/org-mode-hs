@@ -20,21 +20,14 @@ data OrgDocument = OrgDocument
 lookupProperty :: Text -> OrgDocument -> Maybe Text
 lookupProperty k = M.lookup k . documentProperties
 
--- lookupKeyword :: Text -> OrgDocument -> [KeywordValue]
--- lookupKeyword k = map snd . filter ((k ==) . fst) . documentKeywords
-
--- documentTitle :: OrgDocument -> [OrgObject]
--- documentTitle doc = foldMap justParsed (lookupKeyword "title" doc)
---   where
---     justParsed (ParsedKeyword _ o) = o
---     justParsed _ = []
-
 data OrgSection = OrgSection
   { sectionLevel :: Int,
     sectionProperties :: Properties,
     sectionTodo :: Maybe TodoKeyword,
     sectionPriority :: Maybe Priority,
     sectionTitle :: [OrgObject],
+    sectionRawTitle :: Text,
+    sectionAnchor :: Id,
     sectionTags :: Tags,
     sectionPlanning :: PlanningInfo,
     sectionChildren :: [OrgElement],
@@ -117,37 +110,64 @@ type Properties = Map Text Text
 
 -- | Org element. Like a Pandoc Block.
 data OrgElement
-  = GreaterBlock Affiliated GreaterBlockType [OrgElement]
-  | Drawer
-      Text
-      -- ^ Drawer name
-      [OrgElement]
-      -- ^ Drawer elements
-  | DynamicBlock Text (Map Text Text) [OrgElement]
-  | PlainList Affiliated ListType [ListItem]
-  | ExportBlock
+  = -- | Greater block
+    GreaterBlock
+      { -- | Affiliated keywords
+        affKws :: Affiliated,
+        -- | Greater block type
+        blkType :: GreaterBlockType,
+        -- | Greater block elements
+        blkElements :: [OrgElement]
+      }
+  | -- | Drawer
+    Drawer
+      { -- | Drawer name
+        drawerName :: Text,
+        -- | Drawer elements
+        drawerElements :: [OrgElement]
+      }
+  | -- | Dynamic block
+    DynamicBlock
+      { dynBlkName :: Text,
+        dynBlkArguments :: [(Text, Text)],
+        dynBlkElements :: [OrgElement]
+      }
+  | -- | Plain list
+    PlainList
+      { -- | Affiliated keywords
+        affKws :: Affiliated,
+        -- | List types
+        listType :: ListType,
+        -- | List items
+        listItems :: [ListItem]
+      }
+  | -- | Export block
+    ExportBlock
       Text
       -- ^ Format
       Text
       -- ^ Contents
-  | ExampleBlock
+  | -- | Example block
+    ExampleBlock
       Affiliated
       -- ^ Affiliated keywords
       (Maybe Int)
       -- ^ Starting line number
       [SrcLine]
       -- ^ Contents
-  | SrcBlock
-      Affiliated
-      -- ^ Affiliated keywords
-      Text
-      -- ^ Language
-      (Maybe Int)
-      -- ^ Starting line number
-      [(Text, Text)]
-      -- ^ Header arguments
-      [SrcLine]
-      -- ^ Contents
+  | -- | Source blocks
+    SrcBlock
+      { -- | Affiliated keywords
+        affKws :: Affiliated,
+        -- | Language
+        srcBlkLang :: Text,
+        -- | Header arguments
+        srcBlkSwitches :: [Map Text Text],
+        -- | Header arguments
+        srcBlkArguments :: [(Text, Text)],
+        -- | Contents
+        srcBlkLines :: [SrcLine]
+      }
   | VerseBlock Affiliated [[OrgObject]]
   | Clock ClockData
   | HorizontalRule
@@ -358,6 +378,8 @@ data CiteReference = CiteReference
 instance NFData OrgDocument
 
 instance NFData KeywordValue
+
+instance NFData FootnoteRefData
 
 instance NFData OrgObject
 
