@@ -1,22 +1,32 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 -- | This module deals with internal link resolution.
 module Org.AfterParse.InternalLinks where
 
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Org.Types
+import Org.Walk
+import Control.Monad.Writer.Strict -- TODO: change to CPS when relude updates
+import Text.Slugify (slugify)
 
-type F = Ap (Reader InternalLinkData)
+type F = Reader OrgData
 
-type M = State InternalLinkData
+type M = WriterT OrgData (State ResolveState)
 
 -- | State for doing internal link resolution
-data InternalLinkData = InternalLinkData
-  { internalTargets :: Map Text (Id, F [OrgObject]),
-    targetDescriptionCtx :: Maybe (F [OrgObject]),
+data ResolveState = ResolveState
+  { targetDescriptionCtx :: Maybe [OrgObject],
     knownAnchors :: Set Id,
     idStack :: [Id]
   }
+
+-- | State for doing internal link resolution
+newtype OrgData = OrgData
+  { internalTargets :: Map Text (Id, [OrgObject])
+  }
+  deriving (Semigroup, Monoid)
 
 popUniqueId :: M Text
 popUniqueId = do
@@ -36,48 +46,67 @@ makeAnchorUnique a = do
             map (\n -> a <> "-" <> show (n :: Int)) [1 ..]
       else a
 
-registerTarget :: Text -> F [OrgObject] -> M Text
+registerTarget :: Text -> [OrgObject] -> M Text
 registerTarget name alias = do
-  targets <- gets internalTargets
   anchors <- gets knownAnchors
   uid <- makeAnchorUnique =<< popUniqueId
-  modify' \s ->
-    s
-      { internalTargets = Map.insert name (uid, alias) targets,
-        knownAnchors = Set.insert uid anchors
-      }
+  modify' \s -> s {knownAnchors = Set.insert uid anchors}
+  tell (OrgData $ Map.singleton name (uid, alias))
   pure uid
 
-registerAnchorTarget :: Text -> Text -> F [OrgObject] -> M ()
+registerAnchorTarget :: Text -> Text -> [OrgObject] -> M ()
 registerAnchorTarget name anchor alias = do
-  targets <- gets internalTargets
   anchors <- gets knownAnchors
-  modify' \s ->
-    s
-      { internalTargets = Map.insert name (anchor, alias) targets,
-        knownAnchors = Set.insert anchor anchors
-      }
+  modify' \s -> s {knownAnchors = Set.insert anchor anchors}
+  tell (OrgData $ Map.singleton name (anchor, alias))
 
-withTargetDescription :: F [OrgObject] -> M a -> M a
-withTargetDescription descr =
-  withState' \s -> s {targetDescriptionCtx = Just descr}
-  where
-    withState' f st = state \s -> (evalState st (f s), s)
+withTargetDescription :: [OrgObject] -> M a -> M a
+withTargetDescription descr x = do
+  oldCtx <- gets targetDescriptionCtx
+  modify' \s -> s {targetDescriptionCtx = Just descr}
+  x <* modify' \s -> s {targetDescriptionCtx = oldCtx}
 
 -- | Create anchors for sections
-resolveSection :: OrgSection -> M (F OrgSection)
+resolveSection :: OrgSection -> M OrgSection
 resolveSection s@OrgSection {..} = do
-  title <- sequence <$> mapM resolveObject sectionTitle
+  title <- walkM resolveObject sectionTitle
+  child <- mapM resolveElement sectionChildren
   anchor <- case Map.lookup "custom_id" sectionProperties of
     Just a -> do
       registerAnchorTarget ("#" <> a) a title
-      registerAnchorTarget ("*" <> titleTxt) a title
+      registerAnchorTarget ("*" <> sectionRawTitle) a title
       pure a
     Nothing -> do
-      a <- makeAnchorUnique $ slugify titleTxt
-      registerAnchorTarget ("*" <> titleTxt) a title
+      a <- makeAnchorUnique $ slugify sectionRawTitle
+      registerAnchorTarget ("*" <> sectionRawTitle) a title
       pure a
-  return $ s {sectionProperties = Map.insert "custom_id"  }
+  return s {sectionTitle = title, sectionChildren = child, sectionAnchor = anchor}
 
-resolveObject :: OrgObject -> M (F OrgObject)
+resolveElement :: OrgElement -> M OrgElement
+resolveElement = \case
+  s@PlainList {..} -> do
+    aff <- walkM resolveObject affKws
+    items <-
+      flip evalStateT 1 $
+        forM listItems \(ListItem b i c t e) -> do
+          case i of
+            Just n0 -> put n0
+            Nothing -> modify (+ 1)
+          n <- one . Plain . show <$> get
+          lift $ withTargetDescription n do
+            tag <- mapM resolveObject t
+            els <- mapM resolveElement e
+            return $ ListItem b i c tag els
+    return s {affKws = aff, listItems = items}
+  e -> walkElementM resolveElement e
+
+-- items <- flip evalStateT 0 $ undefined
+-- return do
+--   aff' <- aff
+--   items' <- items
+--   s
+--     { affKws = aff'
+--     }
+
+resolveObject :: OrgObject -> M OrgObject
 resolveObject = undefined
