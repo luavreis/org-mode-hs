@@ -24,7 +24,7 @@ main = do
     ifM
       (doesDirExist tdir)
       (pure $ Just ".horg")
-      (pure $ Nothing)
+      (pure Nothing)
   execParser O.appCmd >>= \case
     O.CmdInitTemplates -> do
       ifM
@@ -55,7 +55,7 @@ main = do
             tpls <- H.loadTemplates $ catMaybes [usrDir, lclDir, Just defDir]
             layout <-
               maybe empty H.loadLayout (usrDir <|> lclDir)
-                <|> (H.loadLayout defDir)
+                <|> H.loadLayout defDir
             either (error . show) toStrict
               <$> H.renderDoc H.defHtmlBackend (O.settings oo) tpls layout parsed
           O.Pandoc fmt tplo oo -> do
@@ -65,7 +65,7 @@ main = do
             tpls <- P.loadTemplates $ catMaybes [usrDir, lclDir, Just defDir]
             layout <-
               maybe empty P.loadPandocDoc (usrDir <|> lclDir)
-                <|> (P.loadPandocDoc defDir)
+                <|> P.loadPandocDoc defDir
             let doc =
                   either (error . show) id $
                     P.renderDoc P.defPandocBackend (O.settings oo) tpls layout parsed

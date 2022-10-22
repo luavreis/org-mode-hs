@@ -2,6 +2,9 @@ packages: org-cli
           org-parser
           org-exporters
 
+package *
+  split-sections: True
+
 source-repository-package
   type: git
   location: https://github.com/lucasvreis/ondim.git
