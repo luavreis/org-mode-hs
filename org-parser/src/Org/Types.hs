@@ -151,8 +151,8 @@ data OrgElement
     ExampleBlock
       Affiliated
       -- ^ Affiliated keywords
-      (Maybe Int)
-      -- ^ Starting line number
+      (Map Text Text)
+      -- ^ Switches
       [SrcLine]
       -- ^ Contents
   | -- | Source blocks
@@ -161,8 +161,8 @@ data OrgElement
         affKws :: Affiliated,
         -- | Language
         srcBlkLang :: Text,
-        -- | Header arguments
-        srcBlkSwitches :: [Map Text Text],
+        -- | Switches
+        srcBlkSwitches :: Map Text Text,
         -- | Header arguments
         srcBlkArguments :: [(Text, Text)],
         -- | Contents
@@ -324,8 +324,12 @@ data OrgObject
   | InlBabelCall BabelCall
   | Src Text Text Text
   | Link LinkTarget [OrgObject]
-  | Image LinkTarget
-  | Target Id
+  | -- | Inline target (e.g. @<<<foo>>>@)
+    Target
+      Id
+      -- ^ Anchor
+      Text
+      -- ^ Name
   | -- | Org inline macro (e.g. @{{{poem(red,blue)}}}@)
     Macro
       Text
@@ -340,7 +344,7 @@ data OrgObject
 
 data FootnoteRefData
   = FootnoteRefLabel Text
-  | FootnoteRefDef (Maybe Text) [OrgElement]
+  | FootnoteRefDef (Maybe Text) [OrgObject]
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 type Protocol = Text

@@ -6,12 +6,11 @@ import Org.Data.Entities (defaultEntitiesNames)
 import Org.Parser.Common
 import Org.Parser.Definitions
 import Org.Parser.MarkupContexts
-import Relude.Extra
 import Prelude hiding (many, some)
 
 -- * Sets of objects
 
-minimalSet :: Marked OrgParser (F OrgObjects)
+minimalSet :: Marked OrgParser OrgObjects
 minimalSet =
   mconcat
     [ endline,
@@ -33,7 +32,7 @@ minimalSet =
 -- minimalSetChars :: Set Char
 -- minimalSetChars = fromList "\n~=/_*+\\$'\"^["
 
-standardSet :: Marked OrgParser (F OrgObjects)
+standardSet :: Marked OrgParser OrgObjects
 standardSet =
   mconcat
     [ minimalSet,
@@ -52,8 +51,8 @@ standardSet =
 -- standardSetChars :: Set Char
 -- standardSetChars = minimalSetChars <> fromList "@cs<"
 
-plainMarkupContext :: Marked OrgParser (F OrgObjects) -> OrgParser (F OrgObjects)
-plainMarkupContext = markupContext (pure . B.plain)
+plainMarkupContext :: Marked OrgParser OrgObjects -> OrgParser OrgObjects
+plainMarkupContext = markupContext B.plain
 
 newlineAndClear :: OrgParser Char
 newlineAndClear = newline <* clearLastChar
@@ -87,20 +86,16 @@ emphasisPre s = try $ do
 markup ::
   (OrgObjects -> OrgObjects) ->
   Char ->
-  Marked OrgParser (F OrgObjects)
+  Marked OrgParser OrgObjects
 markup f c = Marked [c] $
   try $ do
     emphasisPre c
-    f
-      <<$>> withMContext
-        (/= c)
-        (emphasisPost c)
-        (plainMarkupContext standardSet)
+    f <$> withMContext (/= c) (emphasisPost c) (plainMarkupContext standardSet)
 
 rawMarkup ::
   (Text -> OrgObjects) ->
   Char ->
-  Marked OrgParser (F OrgObjects)
+  Marked OrgParser OrgObjects
 rawMarkup f d = Marked [d] $
   try $ do
     emphasisPre d
@@ -109,60 +104,60 @@ rawMarkup f d = Marked [d] $
         (/= d)
         (emphasisPost d)
         getInput
-    pureF $ f str
+    return $ f str
 
-code :: Marked OrgParser (F OrgObjects)
+code :: Marked OrgParser OrgObjects
 code = rawMarkup B.code '~'
 
-verbatim :: Marked OrgParser (F OrgObjects)
+verbatim :: Marked OrgParser OrgObjects
 verbatim = rawMarkup B.verbatim '='
 
-italic :: Marked OrgParser (F OrgObjects)
+italic :: Marked OrgParser OrgObjects
 italic = markup B.italic '/'
 
-underline :: Marked OrgParser (F OrgObjects)
+underline :: Marked OrgParser OrgObjects
 underline = markup B.underline '_'
 
-bold :: Marked OrgParser (F OrgObjects)
+bold :: Marked OrgParser OrgObjects
 bold = markup B.bold '*'
 
-striketrough :: Marked OrgParser (F OrgObjects)
+striketrough :: Marked OrgParser OrgObjects
 striketrough = markup B.strikethrough '+'
 
-singleQuoted :: Marked OrgParser (F OrgObjects)
+singleQuoted :: Marked OrgParser OrgObjects
 singleQuoted = markup B.singleQuoted '\''
 
-doubleQuoted :: Marked OrgParser (F OrgObjects)
+doubleQuoted :: Marked OrgParser OrgObjects
 doubleQuoted = markup B.doubleQuoted '"'
 
 -- | An endline character that can be treated as a space, not a line break.
-endline :: Marked OrgParser (F OrgObjects)
+endline :: Marked OrgParser OrgObjects
 endline =
   Marked "\n" $
     try $
       newlineAndClear
         *> hspace
-        $> pure B.softbreak
+        $> B.softbreak
 
 -- * Entities and LaTeX fragments
 
-entityOrFragment :: Marked OrgParser (F OrgObjects)
+entityOrFragment :: Marked OrgParser OrgObjects
 entityOrFragment = Marked "\\" $
   try $ do
     _ <- char '\\'
     entity <|> fragment
   where
-    entity :: MonadParser m => m (F OrgObjects)
+    entity :: MonadParser m => m OrgObjects
     entity = try $ do
       name <- choice (map string defaultEntitiesNames)
       void (string "{}") <|> notFollowedBy asciiAlpha
-      pureF $ B.entity name
+      pure $ B.entity name
 
-    fragment :: MonadParser m => m (F OrgObjects)
+    fragment :: MonadParser m => m OrgObjects
     fragment = try $ do
       name <- someAsciiAlpha
       text <- (name <>) <$> option "" brackets
-      pureF $ B.fragment ("\\" <> text)
+      pure $ B.fragment ("\\" <> text)
 
     brackets :: MonadParser m => m Text
     brackets = try $ do
@@ -171,7 +166,7 @@ entityOrFragment = Marked "\\" $
       close <- char (if open == '{' then '}' else ']')
       pure $ open `T.cons` str `T.snoc` close
 
-mathFragment :: Marked OrgParser (F OrgObjects)
+mathFragment :: Marked OrgParser OrgObjects
 mathFragment = Marked "\\" $
   try $ do
     _ <- char '\\'
@@ -182,12 +177,12 @@ mathFragment = Marked "\\" $
       findSkipping
         (/= '\\')
         (try $ char '\\' *> char if inline then ')' else ']')
-    pureF $
+    pure $
       if inline
         then B.inlMath str
         else B.dispMath str
 
-texMathFragment :: Marked OrgParser (F OrgObjects)
+texMathFragment :: Marked OrgParser OrgObjects
 texMathFragment = Marked "$" $ try $ display <|> inline
   where
     display = try $ do
@@ -196,7 +191,7 @@ texMathFragment = Marked "$" $ try $ display <|> inline
         findSkipping
           (/= '$')
           (string "$$")
-      pureF $ B.dispMath str
+      pure $ B.dispMath str
 
     post = do
       _ <- char '$'
@@ -210,7 +205,7 @@ texMathFragment = Marked "$" $ try $ display <|> inline
       for_ lchar $ guard . (/= '$')
       _ <- char '$'
       str <- singleChar <|> moreChars
-      pureF $ B.inlMath str
+      pure $ B.inlMath str
 
     moreChars = try $ do
       str <- takeWhile1P (Just "inside of inline math") (/= '$')
@@ -231,7 +226,7 @@ texMathFragment = Marked "$" $ try $ display <|> inline
 
 -- * Export snippets
 
-exportSnippet :: Marked OrgParser (F OrgObjects)
+exportSnippet :: Marked OrgParser OrgObjects
 exportSnippet = Marked "@" $
   try $ do
     _ <- string "@@"
@@ -240,20 +235,20 @@ exportSnippet = Marked "@" $
         (Just "export snippet backend")
         (\c -> isAsciiAlpha c || isDigit c || c == '-')
     _ <- char ':'
-    pure . B.exportSnippet backend . fst
+    B.exportSnippet backend . fst
       <$> findSkipping (/= '@') (string "@@")
 
 -- * Citations
 
 -- The following code for org-cite citations was adapted and improved upon pandoc's.
 
-citation :: Marked OrgParser (F OrgObjects)
+citation :: Marked OrgParser OrgObjects
 citation =
   Marked "[" $
-    B.citation <<$>> withBalancedContext '[' ']' (const True) orgCite
+    B.citation <$> withBalancedContext '[' ']' (const True) orgCite
 
 -- | A citation in org-cite style
-orgCite :: OrgParser (F Citation)
+orgCite :: OrgParser Citation
 orgCite = try $ do
   _ <- string "cite"
   (style, variant) <- citeStyle
@@ -264,18 +259,14 @@ orgCite = try $ do
   globalSuffix <- option mempty (try (char ';' *> citeSuffix))
   space
   eof
-  return $ do
-    prefix' <- globalPrefix
-    suffix' <- globalSuffix
-    refs' <- items
-    return
-      Citation
-        { citationStyle = style,
-          citationVariant = variant,
-          citationPrefix = toList prefix',
-          citationSuffix = toList suffix',
-          citationReferences = refs'
-        }
+  return
+    Citation
+      { citationStyle = style,
+        citationVariant = variant,
+        citationPrefix = toList globalPrefix,
+        citationSuffix = toList globalSuffix,
+        citationReferences = items
+      }
 
 citeStyle :: OrgParser (Tokens Text, Tokens Text)
 citeStyle = do
@@ -294,27 +285,24 @@ citeStyle = do
           (Just "alphaNum, '_', '-' or '/' characters")
           (\c -> isAlphaNum c || c == '_' || c == '-' || c == '/')
 
-citeItems :: OrgParser (F [CiteReference])
-citeItems = sequence <$> (citeItem `sepBy1'` char ';')
+citeItems :: OrgParser [CiteReference]
+citeItems = citeItem `sepBy1'` char ';'
   where
     sepBy1' p sep = (:) <$> p <*> many (try $ sep >> p)
 
-citeItem :: OrgParser (F CiteReference)
+citeItem :: OrgParser CiteReference
 citeItem = do
   pref <- option mempty citePrefix
   itemKey <- orgCiteKey
   suff <- option mempty citeSuffix
-  return $ do
-    pre' <- pref
-    suf' <- suff
-    return
-      CiteReference
-        { refId = itemKey,
-          refPrefix = toList pre',
-          refSuffix = toList suf'
-        }
+  return
+    CiteReference
+      { refId = itemKey,
+        refPrefix = toList pref,
+        refSuffix = toList suff
+      }
 
-citePrefix :: OrgParser (F OrgObjects)
+citePrefix :: OrgParser OrgObjects
 citePrefix = try $ do
   clearLastChar
   withMContext
@@ -324,7 +312,7 @@ citePrefix = try $ do
     )
     (plainMarkupContext minimalSet)
 
-citeSuffix :: OrgParser (F OrgObjects)
+citeSuffix :: OrgParser OrgObjects
 citeSuffix = try $ do
   clearLastChar
   withMContext
@@ -341,37 +329,38 @@ orgCiteKey = do
 
 orgCiteKeyChar :: Char -> Bool
 orgCiteKeyChar c =
-  isAlphaNum c || c
-    `elem` [ '.',
-             ':',
-             '?',
-             '!',
-             '`',
-             '\'',
-             '/',
-             '*',
-             '@',
-             '+',
-             '|',
-             '(',
-             ')',
-             '{',
-             '}',
-             '<',
-             '>',
-             '&',
-             '_',
-             '^',
-             '$',
-             '#',
-             '%',
-             '~',
-             '-'
-           ]
+  isAlphaNum c
+    || c
+      `elem` [ '.',
+               ':',
+               '?',
+               '!',
+               '`',
+               '\'',
+               '/',
+               '*',
+               '@',
+               '+',
+               '|',
+               '(',
+               ')',
+               '{',
+               '}',
+               '<',
+               '>',
+               '&',
+               '_',
+               '^',
+               '$',
+               '#',
+               '%',
+               '~',
+               '-'
+             ]
 
 -- * Inline Babel calls
 
-inlBabel :: Marked OrgParser (F OrgObjects)
+inlBabel :: Marked OrgParser OrgObjects
 inlBabel = Marked "c" . try $ do
   _ <- string "call_"
   name <-
@@ -381,14 +370,14 @@ inlBabel = Marked "c" . try $ do
   header1 <- option "" header
   args <- arguments
   header2 <- option "" header
-  pureF $ B.inlBabel name header1 header2 args
+  return $ B.inlBabel name header1 header2 args
   where
     header = withBalancedContext '[' ']' (/= '\n') getInput
     arguments = withBalancedContext '(' ')' (/= '\n') getInput
 
 -- * Inline source blocks
 
-inlSrc :: Marked OrgParser (F OrgObjects)
+inlSrc :: Marked OrgParser OrgObjects
 inlSrc = Marked "s" . try $ do
   _ <- string "src_"
   name <-
@@ -396,22 +385,21 @@ inlSrc = Marked "s" . try $ do
       (Just "babel call name")
       (\c -> not (isSpace c) && c /= '{' && c /= '[')
   headers <- option "" header
-  str <- body
-  pureF $ B.inlSrc name headers str
+  B.inlSrc name headers <$> body
   where
     header = withBalancedContext '[' ']' (/= '\n') getInput
     body = withBalancedContext '{' '}' (/= '\n') getInput
 
 -- * Line breaks
 
-linebreak :: Marked OrgParser (F OrgObjects)
+linebreak :: Marked OrgParser OrgObjects
 linebreak =
   Marked "\\" . try $
-    pure B.linebreak <$ string "\\\\" <* hspace <* newlineAndClear' <* hspace
+    B.linebreak <$ string "\\\\" <* hspace <* newlineAndClear' <* hspace
 
 -- * Links
 
-angleLink :: Marked OrgParser (F OrgObjects)
+angleLink :: Marked OrgParser OrgObjects
 angleLink = Marked "<" . try $ do
   _ <- char '<'
   protocol <- manyAsciiAlpha
@@ -423,25 +411,17 @@ angleLink = Marked "<" . try $ do
         (\c -> c /= '\n' && c /= '>')
     char '>' $> partial
       <|> newline *> hspace *> ((T.stripEnd partial <>) <$> search)
-  pureF $ B.uriLink protocol tgt (B.plain $ protocol <> ":" <> tgt)
+  return $ B.uriLink protocol tgt (B.plain $ protocol <> ":" <> tgt)
 
-regularLinkOrImage :: Marked OrgParser (F OrgObjects)
+regularLinkOrImage :: Marked OrgParser OrgObjects
 regularLinkOrImage =
   Marked "[" . try $
     do
       _ <- string "[["
       str <- linkTarget
-      optional linkDescr >>= \case
-        Just descr -> pure $ liftA2 B.link (fst <$> linkToTarget str) descr
-        Nothing -> do
-          _ <- char ']'
-          return $ do
-            (tgt, alias) <- linkToTarget str
-            pure $
-              if isImgTarget tgt
-                then B.image tgt
-                else B.link tgt alias
-      <* setLastChar (Just ']')
+      descr <- linkDescr <|> char ']' $> mempty
+      setLastChar (Just ']')
+      return $ B.link (UnresolvedLink str) descr
   where
     linkTarget :: MonadParser m => m Text
     linkTarget = fix $ \rest -> do
@@ -453,77 +433,42 @@ regularLinkOrImage =
         <|> char '\\' *> liftA2 T.cons (option '\\' $ oneOf ['[', ']']) rest
         <|> newline *> hspace *> ((T.stripEnd partial `T.snoc` ' ' <>) <$> rest)
 
-    linkDescr :: OrgParser (F OrgObjects)
+    linkDescr :: OrgParser OrgObjects
     linkDescr = try $ do
       _ <- char '['
-      (parsed, _, str) <-
-        withMContext__ (/= ']') (string "]]") $
-          plainMarkupContext standardSet -- FIXME this is not the right set but... whatever
-      return $ do
-        (tgt', _) <- linkToTarget str
-        if isImgTarget tgt'
-          then pure $ B.image tgt'
-          else parsed
-
-linkToTarget :: Text -> F (LinkTarget, OrgObjects)
-linkToTarget l@(T.stripPrefix "/" -> Just fp) = pure (URILink "file" ("//" <> fp), B.plain l)
-linkToTarget l@(T.stripPrefix "./" -> Just fp) = pure (URILink "file" fp, B.plain l)
-linkToTarget fp | "../" `T.isPrefixOf` fp = pure (URILink "file" fp, B.plain fp)
-linkToTarget l@(T.break (== ':') -> (T.toLower -> protocol, T.uncons -> Just (_, uri))) = do
-  formatters <- asksF orgStateLinkFormatters
-  case lookup protocol formatters of
-    Just f -> linkToTarget (f uri)
-    Nothing -> pure (URILink protocol uri, B.plain l)
-linkToTarget link = do
-  docTargets <- asksF orgStateInternalTargets
-  case lookup link docTargets of
-    Just (li, alias) -> (InternalLink li,) <$> alias
-    Nothing -> pure (UnresolvedLink link, B.plain link)
-
--- | FIXME This is not exactly how org figures out if a link is an image. But
--- for simplicity I may leave it like this anyway.
-isImgTarget :: LinkTarget -> Bool
-isImgTarget (URILink protocol rest) = hasImgExtension && (protocol `elem` imgProtocols)
-  where
-    hasImgExtension = any (`T.isSuffixOf` T.toLower rest) imgExtensions
-    imgExtensions = [".jpeg", ".jpg", ".png", ".gif", ".svg"]
-    imgProtocols = ["file", "http", "https", "attachment"]
-isImgTarget _ = False
+      -- FIXME this is not the right set but... whatever
+      withMContext (/= ']') (string "]]") (plainMarkupContext standardSet)
 
 -- * Targets and radio targets
 
-target :: Marked OrgParser (F OrgObjects)
+target :: Marked OrgParser OrgObjects
 target = Marked "<" $ try do
   _ <- string "<<"
   str <- takeWhile1P (Just "dedicated target") (\c -> c /= '<' && c /= '>' && c /= '\n')
   guard (not (isSpace $ T.head str))
   guard (not (isSpace $ T.last str))
   _ <- string ">>"
-  descr <-
-    fromMaybe (pure $ B.text "No description for this link")
-      <$> gets orgStateTargetDescriptionCtx
-  uid <- registerTarget str descr
-  pureF $ B.target uid
+  return $ B.target "" str
 
 -- * Subscripts and superscripts
 
-suscript :: Marked OrgParser (F OrgObjects)
+suscript :: Marked OrgParser OrgObjects
 suscript = Marked "_^" $ try do
   lchar <- gets orgStateLastChar
   for_ lchar $ guard . not . isSpace
   start <- satisfy \c -> c == '_' || c == '^'
   contents <- asterisk <|> balanced <|> plain
-  if start == '_'
-    then pure $ B.subscript <$> contents
-    else pure $ B.superscript <$> contents
+  pure $ if start == '_'
+    then B.subscript contents
+    else B.superscript contents
   where
-    asterisk = pure . B.plain . one <$> char '*'
+    asterisk = B.plain . one <$> char '*'
 
     balanced =
       withBalancedContext '{' '}' (const True) $
         plainMarkupContext minimalSet
 
-    sign = pure <$> option mempty (B.plain . one <$> oneOf ['+', '-'])
+    sign = option mempty (B.plain . one <$> oneOf ['+', '-'])
 
     plain =
       liftA2 (<>) sign $
@@ -541,7 +486,7 @@ suscript = Marked "_^" $ try do
 
 -- * Footnote references
 
-footnoteReference :: Marked OrgParser (F OrgObjects)
+footnoteReference :: Marked OrgParser OrgObjects
 footnoteReference = Marked "[" $
   withBalancedContext '[' ']' (const True) do
     _ <- string "fn:"
@@ -556,16 +501,15 @@ footnoteReference = Marked "[" $
         plainMarkupContext standardSet
     case (lbl, def) of
       (Nothing, Nothing) -> empty
-      _ -> do
-        lbl' <- maybe popUniqueId pure lbl
-        whenJust def \def' ->
-          registerFootnote lbl' (B.para mempty <$> def')
-        pureF $ B.footnoteRef lbl'
+      (Just lbl', Nothing) ->
+        return $ B.footnoteLabel lbl'
+      (_, Just def') ->
+        return $ B.footnoteInlDef lbl def'
 
 -- * Timestamps
 
-timestamp :: Marked OrgParser (F OrgObjects)
-timestamp = Marked "<[" $ pure . B.timestamp <$> parseTimestamp
+timestamp :: Marked OrgParser OrgObjects
+timestamp = Marked "<[" $ B.timestamp <$> parseTimestamp
 
 -- | Read a timestamp.
 parseTimestamp :: OrgParser TimestampData
@@ -626,12 +570,12 @@ parseTimestamp = try $ do
 
 -- * Statistic Cookies
 
-statisticCookie :: Marked OrgParser (F OrgObjects)
+statisticCookie :: Marked OrgParser OrgObjects
 statisticCookie = Marked "[" $ try do
   _ <- char '['
   res <- Left <$> fra <|> Right <$> pct
   _ <- char ']'
-  pureF $ B.statisticCookie res
+  return $ B.statisticCookie res
   where
     fra = try $ liftA2 (,) integer (char '/' *> integer)
     pct = try $ integer <* char '%'

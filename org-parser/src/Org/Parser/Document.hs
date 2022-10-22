@@ -23,21 +23,15 @@ orgDocument = do
   -- This means an state with keywords is available.
   finalState <- getState
   return $
-    flip runReader finalState . getAp $ do
-      topLevel' <- topLevel
-      sections' <- sequence sections
-      return
-        OrgDocument
-          { documentProperties = properties,
-            documentChildren = toList topLevel',
-            documentSections = sections'
-          }
+    OrgDocument
+      { documentProperties = properties,
+        documentChildren = toList topLevel,
+        documentSections = sections
+      }
 
 -- | Read an Org mode section and its contents. @lvl@
 -- gives the minimum acceptable level of the heading.
-section ::
-  Int ->
-  OrgParser (F OrgSection)
+section :: Int -> OrgParser OrgSection
 section lvl = try $ do
   level <- headingStart
   guard (lvl <= level)
@@ -49,26 +43,22 @@ section lvl = try $ do
   clearPendingAffiliated
   contents <- elements
   children <- many (section (level + 1))
-  return $ do
-    title' <- title
-    contents' <- contents
-    children' <- sequence children
-    return
-      OrgSection
-        { sectionLevel = level,
-          sectionProperties = properties,
-          sectionTodo = todoKw,
-          sectionPriority = priority,
-          sectionTitle = toList title',
-          sectionRawTitle = titleTxt,
-          sectionAnchor = "", -- Dealt with later
-          sectionTags = tags,
-          sectionPlanning = planning,
-          sectionChildren = toList contents',
-          sectionSubsections = children'
-        }
+  return
+    OrgSection
+      { sectionLevel = level,
+        sectionProperties = properties,
+        sectionTodo = todoKw,
+        sectionPriority = priority,
+        sectionTitle = toList title,
+        sectionRawTitle = titleTxt,
+        sectionAnchor = "", -- Dealt with later
+        sectionTags = tags,
+        sectionPlanning = planning,
+        sectionChildren = toList contents,
+        sectionSubsections = children
+      }
   where
-    titleObjects :: OrgParser (F OrgObjects, Tags, Text)
+    titleObjects :: OrgParser (OrgObjects, Tags, Text)
     titleObjects =
       option mempty $
         withContext__
@@ -93,7 +83,7 @@ section lvl = try $ do
 -- | Parse a to-do keyword that is registered in the state.
 todoKeyword :: OrgParser TodoKeyword
 todoKeyword = try $ do
-  taskStates <- activeTodoMarkers <$> getState
+  taskStates <- getsO orgTodoKeywords
   choice (map kwParser taskStates)
   where
     kwParser :: TodoKeyword -> OrgParser TodoKeyword
@@ -162,9 +152,9 @@ propertyDrawer = try $ do
       skipSpaces
         *> char ':'
         *> takeWhile1P (Just "node property name") (not . isSpace)
-          <&> T.stripSuffix ":"
-          >>= guardMaybe "expecting ':' at end of node property name"
-          <&> T.toLower
+        <&> T.stripSuffix ":"
+        >>= guardMaybe "expecting ':' at end of node property name"
+        <&> T.toLower
 
     value :: OrgParser Text
     value =

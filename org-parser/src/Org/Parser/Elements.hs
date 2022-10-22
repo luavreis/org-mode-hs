@@ -7,7 +7,7 @@ import Org.Parser.Definitions
 import Org.Parser.MarkupContexts
 import Org.Parser.Objects
 import Relude.Extra hiding (elems, next)
-import Text.Slugify (slugify)
+import Replace.Megaparsec
 import Prelude hiding (many, some)
 
 -- | Read the start of a header line, return the header level
@@ -18,7 +18,7 @@ headingStart =
       <* char ' '
       <* skipSpaces
 
-commentLine :: OrgParser (F OrgElements)
+commentLine :: OrgParser OrgElements
 commentLine = try do
   hspace
   _ <- char '#'
@@ -27,28 +27,29 @@ commentLine = try do
       <|> char ' ' *> anyLine'
   pure mempty
 
-elements :: OrgParser (F OrgElements)
+elements :: OrgParser OrgElements
 elements = elements' (void (lookAhead headingStart) <|> eof)
 
-elements' :: OrgParser end -> OrgParser (F OrgElements)
+elements' :: OrgParser end -> OrgParser OrgElements
 elements' end = mconcat <$> manyTill (element <|> para) end
 
 -- | Each element parser must consume till the start of a line or EOF.
 -- This is necessary for correct counting of list indentations.
-element :: OrgParser (F OrgElements)
+element :: OrgParser OrgElements
 element =
   elementNonEmpty
-    <|> blankline' $> mempty
-    <* clearPendingAffiliated
-      <?> "org element or blank line"
+    <|> blankline'
+      $> mempty
+      <* clearPendingAffiliated
+    <?> "org element or blank line"
 
-elementNonEmpty :: OrgParser (F OrgElements)
+elementNonEmpty :: OrgParser OrgElements
 elementNonEmpty =
   elementIndentable
     <|> footnoteDef
       <* clearPendingAffiliated
 
-elementIndentable :: OrgParser (F OrgElements)
+elementIndentable :: OrgParser OrgElements
 elementIndentable =
   affKeyword
     <|> choice
@@ -65,9 +66,9 @@ elementIndentable =
         table
       ]
       <* clearPendingAffiliated
-      <?> "org element"
+    <?> "org element"
 
-para :: OrgParser (F OrgElements)
+para :: OrgParser OrgElements
 para = try do
   hspace
   f <- withAffiliated B.para
@@ -76,9 +77,9 @@ para = try do
       (/= '\n')
       end
       (plainMarkupContext standardSet)
-  pure $ (f <*> inls) <> next
+  return $ f inls <> next
   where
-    end :: OrgParser (F OrgElements)
+    end :: OrgParser OrgElements
     end = try do
       _ <- newline'
       lookAhead headingStart $> mempty
@@ -88,37 +89,32 @@ para = try do
 
 -- * Plain lists
 
-plainList :: OrgParser (F OrgElements)
+plainList :: OrgParser OrgElements
 plainList = try do
   f <- withAffiliated B.list
-  ((indent, fstItem), i0) <- runStateT listItem 0
-  rest <- evalStateT (many . try $ guardIndent indent =<< listItem) i0
-  let kind = listItemType <$> fstItem
-      items = (:) <$> fstItem <*> sequence rest
-  pure $ f <*> kind <*> items
+  (indent, fstItem) <- listItem
+  rest <- many . try $ guardIndent indent =<< listItem
+  let kind = listItemType fstItem
+      items = fstItem : rest
+  return $ f kind items
   where
     guardIndent indent (i, l) = guard (indent == i) $> l
 
-listItem :: StateT Int OrgParser (Int, F ListItem)
+listItem :: OrgParser (Int, ListItem)
 listItem = try do
-  (indent, bullet) <- lift $ unorderedBullet <|> counterBullet
+  (indent, bullet) <- unorderedBullet <|> counterBullet
   hspace1 <|> lookAhead (void newline')
-  cookie <- lift $ optional counterSet
-  box <- lift $ optional checkbox
-  case cookie of
-    Just n0 -> put n0
-    Nothing -> modify (+ 1)
-  n <- B.plain . show <$> get
-  lift $ withTargetDescription (pure n) do
-    tag <- case bullet of
-      Bullet _ -> toList <<$>> option mempty itemTag
-      _ -> pureF []
-    els <-
-      liftA2
-        (<>)
-        (blankline' $> mempty <|> indentedPara indent)
-        (indentedElements indent)
-    pure (indent, ListItem bullet cookie box <$> tag <*> (toList <$> els))
+  cookie <- optional counterSet
+  box <- optional checkbox
+  tag <- case bullet of
+    Bullet _ -> toList <$> option mempty itemTag
+    _ -> return []
+  els <-
+    liftA2
+      (<>)
+      (blankline' $> mempty <|> indentedPara indent)
+      (indentedElements indent)
+  return (indent, ListItem bullet cookie box tag (toList els))
   where
     unorderedBullet =
       fmap (second Bullet) $
@@ -153,7 +149,7 @@ checkbox =
         <|> char 'X' $> BoolBox True
         <|> char '-' $> PartialBox
 
-itemTag :: OrgParser (F OrgObjects)
+itemTag :: OrgParser OrgObjects
 itemTag = try do
   clearLastChar
   st <- getFullState
@@ -165,7 +161,7 @@ itemTag = try do
       spaceOrTab *> string "::" *> spaceOrTab $> True
         <|> newline' $> False
 
-indentedPara :: Int -> OrgParser (F OrgElements)
+indentedPara :: Int -> OrgParser OrgElements
 indentedPara indent = try do
   hspace
   f <- withAffiliated B.para
@@ -174,9 +170,9 @@ indentedPara indent = try do
       (/= '\n')
       end
       (plainMarkupContext standardSet)
-  pure $ (f <*> inls) <> next
+  return $ f inls <> next
   where
-    end :: OrgParser (F OrgElements)
+    end :: OrgParser OrgElements
     end = try do
       _ <- newline'
       lookAhead blankline' $> mempty
@@ -185,7 +181,7 @@ indentedPara indent = try do
         <|> lookAhead (try $ guard . (<= indent) =<< spacesOrTabs) $> mempty
         <|> element
 
-indentedElements :: Int -> OrgParser (F OrgElements)
+indentedElements :: Int -> OrgParser OrgElements
 indentedElements indent =
   mconcat <$> many indentedElement
   where
@@ -193,27 +189,27 @@ indentedElements indent =
       notFollowedBy headingStart
       blankline
         *> notFollowedBy blankline'
-        *> clearPendingAffiliated $> mempty
+        *> clearPendingAffiliated
+        $> mempty
         <|> do
           guard . (> indent) =<< lookAhead spacesOrTabs
           elementNonEmpty <|> indentedPara indent
 
 -- * Lesser blocks
 
-exampleBlock :: OrgParser (F OrgElements)
+exampleBlock :: OrgParser OrgElements
 exampleBlock = try do
   hspace
   f <- withAffiliated B.example
   _ <- string'' "#+begin_example"
   switches <- blockSwitches
   _ <- anyLine
-  startingNumber <- updateLineNumbers switches
   contents <- rawBlockContents end switches
-  pure $ f ?? startingNumber ?? contents
+  pure $ f switches contents
   where
     end = try $ hspace *> string'' "#+end_example" <* blankline'
 
-srcBlock :: OrgParser (F OrgElements)
+srcBlock :: OrgParser OrgElements
 srcBlock = try do
   hspace
   f <- withAffiliated B.srcBlock
@@ -221,16 +217,17 @@ srcBlock = try do
   lang <- option "" $ hspace1 *> someNonSpace
   switches <- blockSwitches
   args <- headerArgs
-  num <- updateLineNumbers switches
   contents <- rawBlockContents end switches
-  pure $ f ?? lang ?? num ?? args ?? contents
+  pure $ f lang switches args contents
   where
     end = try $ hspace *> string'' "#+end_src" <* blankline'
 
 headerArgs :: StateT OrgParserState Parser [(Text, Text)]
 headerArgs = do
   hspace
-  fromList <$> headerArg `sepBy` hspace1
+  fromList
+    <$> headerArg
+    `sepBy` hspace1
     <* anyLine'
   where
     headerArg =
@@ -248,18 +245,18 @@ headerArgs = do
               )
         )
 
-exportBlock :: OrgParser (F OrgElements)
+exportBlock :: OrgParser OrgElements
 exportBlock = try do
   hspace
   _ <- string'' "#+begin_export"
   format <- option "" $ hspace1 *> someNonSpace
   _ <- anyLine
   contents <- T.unlines <$> manyTill anyLine end
-  pureF $ B.export format contents
+  return $ B.export format contents
   where
     end = try $ hspace *> string'' "#+end_export" <* blankline'
 
--- verseBlock :: OrgParser (F OrgElements)
+-- verseBlock :: OrgParser OrgElements
 -- verseBlock = try do
 --   hspace
 --   _ <- string'' "#+begin_verse"
@@ -285,22 +282,10 @@ tabsToSpaces tabWidth txt =
       )
     & uncurry (<>)
 
-updateLineNumbers :: Map Text Text -> OrgParser (Maybe Int)
-updateLineNumbers switches =
-  case "-n" `lookup` switches of
-    Just (readMaybe . toString -> n) ->
-      setSrcLineNum (fromMaybe 1 n)
-        *> fmap Just getSrcLineNum
-    _ -> case "+n" `lookup` switches of
-      Just (readMaybe . toString -> n) ->
-        incSrcLineNum (fromMaybe 0 n)
-          *> fmap Just getSrcLineNum
-      _ -> pure Nothing
-
 rawBlockContents :: OrgParser void -> Map Text Text -> OrgParser [SrcLine]
 rawBlockContents end switches = do
   contents <- manyTill (rawBlockLine switches) end
-  tabWidth <- getsO orgTabWidth
+  tabWidth <- getsO orgSrcTabWidth
   preserveIndent <- getsO orgSrcPreserveIndentation
   pure $
     if preserveIndent || "-i" `member` switches
@@ -309,14 +294,13 @@ rawBlockContents end switches = do
 
 quotedLine :: OrgParser Text
 quotedLine = do
-  (<>) <$> option "" (try $ char ',' *> (string "*" <|> string "#+"))
+  (<>)
+    <$> option "" (try $ char ',' *> (string "*" <|> string "#+"))
     <*> anyLine
 
 rawBlockLine :: Map Text Text -> OrgParser SrcLine
 rawBlockLine switches =
-  try $
-    (applyRef =<< quotedLine)
-      <* incSrcLineNum 1
+  try $ applyRef =<< quotedLine
   where
     (refpre, refpos) =
       maybe
@@ -324,25 +308,16 @@ rawBlockLine switches =
         (second (T.drop 2) . T.breakOn "%s")
         $ lookup "-l" switches
     applyRef txt
-      | Just (ref, content) <- flip parseMaybe (T.reverse txt) do
-          (hspace :: Parsec Void Text ())
-          _ <- string (T.reverse refpos)
-          ref <-
-            toText . reverse
-              <$> someTill
-                (satisfy $ \c -> isAsciiAlpha c || isDigit c || c == '-' || c == ' ')
-                (string $ T.reverse refpre)
-          content <- T.stripEnd . T.reverse <$> takeInput
-          pure (ref, content) =
-          do
-            (ref', alias) <-
-              if "-r" `member` switches
-                then ("",) . show <$> getSrcLineNum
-                else pure (ref, ref)
-            let anchor = "coderef-" <> slugify ref
-            registerAnchorTarget ("(" <> ref <> ")") anchor (pure $ B.plain alias)
-            pure $ RefLine anchor ref' content
+      | Just (content, ref, _) <- breakCap refCookie txt =
+          pure $ RefLine "" ref content
       | otherwise = pure $ SrcLine txt
+    refCookie :: Parser Text
+    refCookie = do
+      space1 <* string refpre
+      toText
+        <$> someTill
+          (satisfy $ \c -> isAsciiAlpha c || isDigit c || c == '-' || c == ' ')
+          (string refpos)
 
 blockSwitches :: OrgParser (Map Text Text)
 blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
@@ -351,7 +326,8 @@ blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
     linum = try $ do
       hspace1
       s <-
-        T.snoc . one <$> oneOf ['+', '-']
+        T.snoc . one
+          <$> oneOf ['+', '-']
           <*> char 'n'
       num <- option "" $ try $ hspace1 *> takeWhileP Nothing isDigit
       _ <- lookAhead spaceChar
@@ -372,14 +348,15 @@ blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
     switch = try $ do
       hspace1
       s <-
-        T.snoc . one <$> char '-'
+        T.snoc . one
+          <$> char '-'
           <*> oneOf ['i', 'k', 'r']
       _ <- lookAhead spaceChar
       pure (s, "")
 
 -- * Greater Blocks
 
-greaterBlock :: OrgParser (F OrgElements)
+greaterBlock :: OrgParser OrgElements
 greaterBlock = try do
   f <- withAffiliated B.greaterBlock
   hspace
@@ -387,7 +364,7 @@ greaterBlock = try do
   bname <- someNonSpace <* anyLine
   els <- withContext anyLine (end bname) elements
   clearPendingAffiliated
-  pure $ f ?? blockType bname <*> els
+  return $ f (blockType bname) els
   where
     blockType = \case
       (T.toLower -> "center") -> Center
@@ -398,21 +375,21 @@ greaterBlock = try do
 
 -- * Drawers
 
-drawer :: OrgParser (F OrgElements)
+drawer :: OrgParser OrgElements
 drawer = try do
   hspace
   _ <- char ':'
   dname <- takeWhile1P (Just "drawer name") (\c -> c /= ':' && c /= '\n')
   char ':' >> blankline
   els <- withContext blankline end elements
-  return $ B.drawer dname <$> els
+  return $ B.drawer dname els
   where
     end :: OrgParser ()
     end = try $ newline *> hspace <* string'' ":end:"
 
 -- * LaTeX Environments
 
-latexEnvironment :: OrgParser (F OrgElements)
+latexEnvironment :: OrgParser OrgElements
 latexEnvironment = try do
   hspace
   _ <- string "\\begin{"
@@ -423,14 +400,14 @@ latexEnvironment = try do
   _ <- char '}'
   (str, _) <- findSkipping (/= '\\') (end ename)
   f <- withAffiliated B.latexEnvironment
-  pure $ f ?? ename ?? "\\begin{" <> ename <> "}" <> str <> "\\end{" <> ename <> "}"
+  return $ f ename $ "\\begin{" <> ename <> "}" <> str <> "\\end{" <> ename <> "}"
   where
     end :: Text -> OrgParser ()
     end name = try $ string ("\\end{" <> name <> "}") *> blankline'
 
 -- * Keywords and affiliated keywords
 
-affKeyword :: OrgParser (F OrgElements)
+affKeyword :: OrgParser OrgElements
 affKeyword = try do
   hspace
   _ <- string "#+"
@@ -442,7 +419,7 @@ affKeyword = try do
         (takeWhile1P Nothing (\c -> not (isSpace c || c == ':')))
     _ <- char ':'
     args <- headerArgs
-    registerAffiliated $ pure (name, B.attrKeyword args)
+    registerAffiliated (name, B.attrKeyword args)
     pure mempty
     <|> try do
       affkws <- getsO orgElementAffiliatedKeywords
@@ -452,19 +429,19 @@ affKeyword = try do
       value <-
         if isparsedkw
           then do
-            optArg <- option (pure mempty) $ guard isdualkw *> optionalArgP
+            optArg <- option mempty $ guard isdualkw *> optionalArgP
             _ <- char ':'
             hspace
             st <- getFullState
             line <- anyLine'
             value <- parseFromText st line (plainMarkupContext standardSet)
-            pure $ B.parsedKeyword <$> optArg <*> value
+            pure $ B.parsedKeyword optArg value
           else do
             optArg <- option "" $ guard isdualkw *> optionalArg
             _ <- char ':'
             hspace
-            pure . B.valueKeyword optArg . T.stripEnd <$> anyLine'
-      registerAffiliated $ (name,) <$> value
+            B.valueKeyword optArg . T.stripEnd <$> anyLine'
+      registerAffiliated (name, value)
       pure mempty
   where
     optionalArgP =
@@ -477,7 +454,7 @@ affKeyword = try do
         (\c -> c /= '\n' && c /= ':')
         takeInput
 
-keyword :: OrgParser (F OrgElements)
+keyword :: OrgParser OrgElements
 keyword = try do
   hspace
   _ <- string "#+"
@@ -498,18 +475,18 @@ keyword = try do
   value <-
     if parsedkw
       then
-        B.parsedKeyword' <<$>> do
+        B.parsedKeyword' <$> do
           st <- getFullState
           line <- anyLine'
           parseFromText st line (plainMarkupContext standardSet)
-      else pure . B.valueKeyword' . T.stripEnd <$> anyLine'
-  let kw = (name,) <$> value
+      else B.valueKeyword' . T.stripEnd <$> anyLine'
+  let kw = (name, value)
   registerKeyword kw
-  return $ uncurry B.keyword <$> kw
+  return $ uncurry B.keyword kw
 
 -- * Footnote definitions
 
-footnoteDef :: OrgParser (F OrgElements)
+footnoteDef :: OrgParser OrgElements
 footnoteDef = try do
   lbl <- start
   _ <- optional blankline'
@@ -519,8 +496,7 @@ footnoteDef = try do
         void headingStart
           <|> try (blankline' *> blankline')
           <|> void (try start)
-  registerFootnote lbl def
-  pureF mempty
+  return $ B.footnoteDef lbl def
   where
     start =
       string "[fn:"
@@ -531,39 +507,39 @@ footnoteDef = try do
 
 -- * Horizontal Rules
 
-horizontalRule :: OrgParser (F OrgElements)
+horizontalRule :: OrgParser OrgElements
 horizontalRule = try do
   hspace
   l <- T.length <$> takeWhile1P (Just "hrule dashes") (== '-')
   guard (l >= 5)
   blankline'
-  pureF B.horizontalRule
+  return B.horizontalRule
 
 -- * Tables
 
-table :: OrgParser (F OrgElements)
+table :: OrgParser OrgElements
 table = try do
   hspace
   f <- withAffiliated B.table
   _ <- lookAhead $ char '|'
-  rows <- sequence <$> some tableRow
-  pure (f <*> rows)
+  rows <- some tableRow
+  pure (f rows)
   where
-    tableRow :: OrgParser (F TableRow)
+    tableRow :: OrgParser TableRow
     tableRow = ruleRow <|> columnPropRow <|> standardRow
 
-    ruleRow = try $ pure RuleRow <$ (hspace >> string "|-" >> anyLine')
+    ruleRow = try $ RuleRow <$ (hspace >> string "|-" >> anyLine')
 
     columnPropRow = try do
       hspace
       _ <- char '|'
-      pure . ColumnPropsRow <$> some cell
+      ColumnPropsRow
+        <$> some cell
         <* blankline'
       where
         cell = do
           hspace
-          c <- Just <$> cookie <|> Nothing <$ void (char '|')
-          pure c
+          Just <$> cookie <|> Nothing <$ void (char '|')
         cookie = try do
           a <-
             string "<l" $> AlignLeft
@@ -578,7 +554,8 @@ table = try do
     standardRow = try do
       hspace
       _ <- char '|'
-      B.standardRow <<$>> sequence <$> some cell
+      B.standardRow
+        <$> some cell
         <* blankline'
       where
         cell = do

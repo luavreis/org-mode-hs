@@ -29,6 +29,7 @@ common common-options
                    , mtl
                    , multiwalk
                    , relude
+                   , replace-megaparsec
                    , slugify
                    , text
                    , time
@@ -60,6 +61,7 @@ library
                      Org.Parser.Document
                      Org.Parser.Elements
                      Org.Parser.Objects
+                     Org.AfterParse.InternalLinks
                      Org.Data.Entities
   other-modules:     Org.Parser.Common
                      Org.Parser.State

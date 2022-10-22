@@ -77,19 +77,19 @@ export format = one . ExportBlock format
 
 example ::
   Affiliated ->
-  Maybe Int ->
+  Map Text Text ->
   [SrcLine] ->
   OrgElements
-example aff nums = one . ExampleBlock aff nums
+example aff sw = one . ExampleBlock aff sw
 
 srcBlock ::
   Affiliated ->
   Text ->
-  Maybe Int ->
+  Map Text Text ->
   [(Text, Text)] ->
   [SrcLine] ->
   OrgElements
-srcBlock aff lang nums args = one . SrcBlock aff lang nums args
+srcBlock aff lang sw args = one . SrcBlock aff lang sw args
 
 greaterBlock ::
   Affiliated ->
@@ -259,14 +259,17 @@ link tgt = one . Link tgt . toList
 uriLink :: Text -> Text -> OrgObjects -> OrgObjects
 uriLink protocol tgt = one . Link (URILink protocol tgt) . toList
 
-image :: LinkTarget -> OrgObjects
-image = one . Image
+target :: Id -> Text -> OrgObjects
+target a = one . Target a
 
-target :: Id -> OrgObjects
-target = one . Target
+footnoteLabel :: Text -> OrgObjects
+footnoteLabel = one . FootnoteRef . FootnoteRefLabel
 
-footnoteRef :: Text -> OrgObjects
-footnoteRef = one . FootnoteRef
+footnoteInlDef :: Maybe Text -> OrgObjects -> OrgObjects
+footnoteInlDef l = one . FootnoteRef . FootnoteRefDef l . toList
+
+footnoteDef :: Text -> OrgElements -> OrgElements
+footnoteDef l = one . FootnoteDef l . toList
 
 statisticCookie :: Either (Int, Int) Int -> OrgObjects
 statisticCookie = one . StatisticCookie

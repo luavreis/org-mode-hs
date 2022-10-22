@@ -93,13 +93,13 @@ spacesOrTabs :: (MonadParser m, MonadState OrgParserState m) => m Int
 spacesOrTabs = try $ sum <$> many (oneSpace <|> oneTab)
   where
     oneSpace = char ' ' $> 1
-    oneTab = char '\t' >> getsO orgTabWidth
+    oneTab = char '\t' >> getsO orgSrcTabWidth
 
 spacesOrTabs1 :: (MonadParser m, MonadState OrgParserState m) => m Int
 spacesOrTabs1 = sum <$> some (oneSpace <|> oneTab)
   where
     oneSpace = char ' ' $> 1
-    oneTab = char '\t' >> getsO orgTabWidth
+    oneTab = char '\t' >> getsO orgSrcTabWidth
 
 -- | Skips one or more spaces or tabs.
 skipSpaces1 :: MonadParser m => m ()
