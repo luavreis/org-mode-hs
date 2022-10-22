@@ -14,17 +14,15 @@ module Org.Parser.Definitions
 where
 
 import Data.Char (isAlphaNum, isAscii, isDigit, isLetter, isPunctuation, isSpace)
-import Data.Set qualified as Set
 import Org.Builder (OrgElements, OrgObjects)
 import Org.Parser.State
 import Org.Types
-import Relude.Extra (insert, member, notMember)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Debug
 import Prelude hiding (State)
 
-type Parser = ParsecT Void Text Identity
+type Parser = Parsec Void Text
 
 type MonadParser m = MonadParsec Void Text m
 
@@ -32,18 +30,7 @@ type OrgParser = StateT OrgParserState Parser
 
 type OrgParseError = ParseErrorBundle Text Void
 
-setSrcLineNum :: Int -> OrgParser ()
-setSrcLineNum n = updateState $ \s ->
-  s {orgStateSrcLineNumber = n}
-
-incSrcLineNum :: Int -> OrgParser ()
-incSrcLineNum n = updateState $ \s ->
-  s {orgStateSrcLineNumber = orgStateSrcLineNumber s + n}
-
-getSrcLineNum :: OrgParser Int
-getSrcLineNum = gets orgStateSrcLineNumber
-
-registerKeyword :: F (KeywordKey, KeywordValue) -> OrgParser ()
+registerKeyword :: (KeywordKey, KeywordValue) -> OrgParser ()
 registerKeyword kw =
   updateState \s ->
     s
@@ -51,7 +38,7 @@ registerKeyword kw =
           kw : orgStateKeywords s
       }
 
-registerAffiliated :: F (KeywordKey, KeywordValue) -> OrgParser ()
+registerAffiliated :: (KeywordKey, KeywordValue) -> OrgParser ()
 registerAffiliated kw =
   updateState \s ->
     s
@@ -59,21 +46,13 @@ registerAffiliated kw =
           kw : orgStatePendingAffiliated s
       }
 
-registerFootnote :: Text -> F OrgElements -> OrgParser ()
-registerFootnote k v =
-  updateState \s ->
-    s
-      { orgStateFootnotes =
-          insert k v (orgStateFootnotes s)
-      }
-
 clearPendingAffiliated :: OrgParser ()
 clearPendingAffiliated = modify (\s -> s {orgStatePendingAffiliated = []})
 
-withAffiliated :: (Affiliated -> a) -> OrgParser (F a)
+withAffiliated :: (Affiliated -> a) -> OrgParser a
 withAffiliated f = do
-  affs <- sequence <$> gets orgStatePendingAffiliated
-  (f . keywordsFromList <$> affs)
+  affs <- gets orgStatePendingAffiliated
+  f (keywordsFromList affs)
     <$ clearPendingAffiliated
 
 -- * Last char
@@ -106,17 +85,8 @@ updateState ::
   OrgParser ()
 updateState = modify
 
-askF :: F OrgParserState
-askF = Ap ask
-
 getsO :: MonadState OrgParserState m => (OrgOptions -> a) -> m a
 getsO f = f <$> gets orgStateOptions
-
-asksF :: (OrgParserState -> a) -> F a
-asksF f = Ap $ asks f
-
-pureF :: Monad m => a -> m (F a)
-pureF = pure . pure
 
 -- * Marked parsers
 
