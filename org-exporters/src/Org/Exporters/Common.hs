@@ -680,7 +680,7 @@ srcOrExample (ExportBackend {..}) name aff lang stNumber lins =
     runLines inner = do
       cP <- liftO contentPretty
       intercalate (plain "\n")
-        <$> mapM (flip lineExps inner) (zip3 [0 ..] lins cP)
+        <$> mapM (`lineExps` inner) (zip3 [0 ..] lins cP)
 
     number offset =
       whenJust ((offset +) <$> stNumber) \n ->
@@ -688,7 +688,7 @@ srcOrExample (ExportBackend {..}) name aff lang stNumber lins =
 
     contentPretty =
       let code = T.intercalate "\n" (srcLineContent <$> lins)
-      in sequence <$> srcPretty aff lang code
+       in (++ repeat Nothing) . sequence <$> srcPretty aff lang code
 
     bPretty p = whenJust p \inls -> "content-pretty" ## const $ pure inls
 
