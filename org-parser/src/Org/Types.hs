@@ -240,7 +240,7 @@ data Checkbox = BoolBox Bool | PartialBox
 
 listItemType :: ListItem -> ListType
 listItemType (ListItem (Counter t _) _ _ _ _) = Ordered (orderedStyle t)
-listItemType (ListItem (Bullet '-') _ _ (_ : _) _) = Descriptive
+listItemType (ListItem (Bullet _) _ _ (_ : _) _) = Descriptive
 listItemType (ListItem (Bullet c) _ _ _ _) = Unordered c
 
 -- Clock
