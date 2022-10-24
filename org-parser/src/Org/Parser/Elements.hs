@@ -562,8 +562,7 @@ table = try do
       where
         cell = do
           hspace
-          c <- Just <$> cookie <|> Nothing <$ void (char '|')
-          pure c
+          Just <$> cookie <|> Nothing <$ void (char '|')
         cookie = try do
           a <-
             string "<l" $> AlignLeft

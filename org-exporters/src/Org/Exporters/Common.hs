@@ -1,13 +1,13 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Avoid lambda" #-}
 
 module Org.Exporters.Common where
 
-import Data.List qualified as L
 import Data.Map.Syntax
 import Data.Text qualified as T
 import Data.Time (Day, TimeLocale, TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
@@ -184,8 +184,8 @@ data ExportBackend tag obj elm = ExportBackend
     nullEl :: elm,
     srcPretty :: Affiliated -> Text -> Text -> OndimMonad tag (Maybe [[obj]]),
     rawBlock :: Text -> Text -> [elm],
-    mergeLists :: Filter tag (elm),
-    hN :: Int -> Expansion tag (elm),
+    mergeLists :: Filter tag elm,
+    hN :: Int -> Expansion tag elm,
     plainObjsToEls :: [obj] -> [elm],
     stringify :: obj -> Text
   }
@@ -211,7 +211,7 @@ expandOrgObject bk@(ExportBackend {..}) obj =
         pure $
           plain (if specialStrings then doSpecialStrings txt else txt)
       SoftBreak ->
-        pure $ softbreak
+        pure softbreak
       LineBreak ->
         call "org:object:linebreak"
       (Code txt) ->
@@ -451,7 +451,7 @@ expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) = do
   let level = sectionLevel fstSection
   hlevels <- getSetting orgExportHeadlineLevels
   shift <- getSetting headlineLevelShift
-  callExpansion "org:sections" (pure $ nullEl)
+  callExpansion "org:sections" (pure nullEl)
     `binding` do
       if level + shift > hlevels
         then switchCases @elm "over-level"
@@ -477,7 +477,7 @@ expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) = do
               `bindingText` prefixed "section:" do
                 for_ sectionTodo todo
                 for_ sectionPriority priority
-                for_ (toPairs $ sectionProperties) \(k, v) ->
+                for_ (toPairs sectionProperties) \(k, v) ->
                   "prop:" <> k ## pure v
                 "anchor" ## pure $ sectionAnchor
                 -- Debug
@@ -519,13 +519,13 @@ bindDocument bk pfx (OrgDocument {..}) node = do
     `binding` do
       parsedKwExpansions
         bk
-        (keywordsFromList $ documentKeywords)
+        (keywordsFromList documentKeywords)
         (pfx <> "kw:")
     `bindingText` do
       textKwExpansions
-        (keywordsFromList $ documentKeywords)
+        (keywordsFromList documentKeywords)
         (pfx <> "kw:")
-      for_ (toPairs $ documentProperties) \(k, v) ->
+      for_ (toPairs documentProperties) \(k, v) ->
         (pfx <> "prop:") <> k ## pure v
     `binding` prefixed pfx do
       "children" ## const $ expandOrgElements bk documentChildren
@@ -555,7 +555,7 @@ table ::
   [TableRow] ->
   Ondim tag [elm]
 table bk@(ExportBackend {..}) rows =
-  callExpansion "org:element:table" (pure $ nullEl)
+  callExpansion "org:element:table" (pure nullEl)
     `binding` do
       "table:head" ## \inner ->
         fromMaybe (pure []) do
@@ -604,7 +604,8 @@ table bk@(ExportBackend {..}) rows =
     alignment =
       (++ repeat Nothing) $
         fromMaybe [] $
-          listToMaybe $ props
+          listToMaybe
+            props
 
 plainList ::
   forall tag obj elm.
@@ -614,7 +615,7 @@ plainList ::
   [ListItem] ->
   Ondim tag [elm]
 plainList bk@(ExportBackend {..}) kind items =
-  callExpansion "org:element:plain-list" (pure $ nullEl)
+  callExpansion "org:element:plain-list" (pure nullEl)
     `binding` do
       "list-items" ## listItems
       case kind of
@@ -641,7 +642,7 @@ plainList bk@(ExportBackend {..}) kind items =
               "list-item-content" ## const $ doPlainOrPara c
       where
         doPlainOrPara :: [OrgElement] -> Ondim tag [elm]
-        doPlainOrPara [Paragraph _ objs] = plainObjsToEls <$> (expandOrgObjects bk objs)
+        doPlainOrPara [Paragraph _ objs] = plainObjsToEls <$> expandOrgObjects bk objs
         doPlainOrPara els = expandOrgElements bk els
 
         _start = join $ flip viaNonEmpty items \(ListItem _ i _ _ _ :| _) -> i
@@ -668,7 +669,7 @@ srcOrExample ::
   [SrcLine] ->
   Ondim tag [elm]
 srcOrExample (ExportBackend {..}) name aff lang stNumber lins =
-  callExpansion name (pure $ nullEl)
+  callExpansion name (pure nullEl)
     `binding` ("src-lines" ## runLines)
     `bindingText` do
       whenJust stNumber \num ->
@@ -713,7 +714,7 @@ timestamp ::
   TimestampData ->
   Ondim tag [obj]
 timestamp (ExportBackend {..}) ts =
-  callExpansion "org:object:timestamp" (pure $ nullObj)
+  callExpansion "org:object:timestamp" (pure nullObj)
     `binding` case ts of
       TimestampData a (dateToDay -> d, fmap toTime -> t, r, w) -> do
         dtExps d t r w
