@@ -128,21 +128,16 @@ testElements =
               ]
         ],
       "Descriptive Lists" ~: plainList $
-        [ "- foo :: bar"
-            =?> B.list
-              mempty
-              Descriptive
-              [ListItem (Bullet '-') Nothing Nothing (toList $ B.plain "foo") [Paragraph mempty (toList $ B.plain "bar")]],
+        [ "- foo ::   bar"
+            =?> B.descriptiveList mempty [("foo", B.para mempty "bar")],
+          "- foo bar  :: baz"
+            =?> B.descriptiveList mempty [("foo bar", B.para mempty "baz")],
           "- /foo/ :: bar"
-            =?> B.list
-              mempty
-              Descriptive
-              [ListItem (Bullet '-') Nothing Nothing (toList $ B.italic "foo") [Paragraph mempty (toList $ B.plain "bar")]],
+            =?> B.descriptiveList mempty [(B.italic "foo", B.para mempty "bar")],
           "- [[foo][bar]] :: bar"
-            =?> B.list
-              mempty
-              Descriptive
-              [ListItem (Bullet '-') Nothing Nothing (toList $ B.link (UnresolvedLink "foo") "bar") [Paragraph mempty (toList $ B.plain "bar")]]
+            =?> B.descriptiveList mempty [(B.link (UnresolvedLink "foo") "bar", B.para mempty "bar")],
+          "- [[foo:prot.co][bar baz]] :: bla :: ble"
+            =?> B.descriptiveList mempty [(B.link (URILink "foo" "prot.co") "bar baz", B.para mempty "bla :: ble")]
         ],
       "Greater Blocks" ~: greaterBlock $
         [ --
