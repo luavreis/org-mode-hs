@@ -133,6 +133,15 @@ orderedList aff style separator =
       OrderedNum -> [Counter (show i) separator | i :: Int <- [1 ..]]
       OrderedAlpha -> [Counter (one a) separator | a <- ['a' ..]]
 
+descriptiveList ::
+  Affiliated ->
+  [(OrgObjects, OrgElements)] ->
+  OrgElements
+descriptiveList aff =
+  one
+    . PlainList aff Descriptive
+    . map (\(tag, els) -> ListItem (Bullet '-') Nothing Nothing (toList tag) (toList els))
+
 parsedKeyword ::
   OrgObjects ->
   OrgObjects ->
