@@ -1,4 +1,4 @@
-::: {class="!(special-name)"}
+::: {class="!(special-name)" affiliated=""}
 :::: e:content
 ::::
 :::

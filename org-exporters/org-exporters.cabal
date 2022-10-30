@@ -58,7 +58,6 @@ library
                    , megaparsec
                    , monad-logger
                    , pandoc-types >= 1.22
-                   , pandoc
                    , relude
                    , slugify
                    , text

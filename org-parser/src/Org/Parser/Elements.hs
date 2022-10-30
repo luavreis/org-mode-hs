@@ -158,7 +158,7 @@ itemTag = try do
   parseFromText st contents (plainMarkupContext standardSet)
   where
     end =
-      spaceOrTab *> string "::" *> spaceOrTab $> True
+      try (space1 *> string "::" *> space1 $> True)
         <|> newline' $> False
 
 indentedPara :: Int -> OrgParser OrgElements
