@@ -437,22 +437,15 @@ affKeyword = try do
             value <- parseFromText st line (plainMarkupContext standardSet)
             pure $ B.parsedKeyword optArg value
           else do
-            optArg <- option "" $ guard isdualkw *> optionalArg
             _ <- char ':'
             hspace
-            B.valueKeyword optArg . T.stripEnd <$> anyLine'
+            B.valueKeyword . T.stripEnd <$> anyLine'
       registerAffiliated (name, value)
       pure mempty
   where
     optionalArgP =
       withBalancedContext '[' ']' (\c -> c /= '\n' && c /= ':') $
         plainMarkupContext standardSet
-    optionalArg =
-      withBalancedContext
-        '['
-        ']'
-        (\c -> c /= '\n' && c /= ':')
-        takeInput
 
 keyword :: OrgParser OrgElements
 keyword = try do
@@ -471,18 +464,8 @@ keyword = try do
       guard ended <?> "keyword end"
       pure res
   hspace
-  parsedkw <- (name `elem`) <$> getsO orgElementParsedKeywords
-  value <-
-    if parsedkw
-      then
-        B.parsedKeyword' <$> do
-          st <- getFullState
-          line <- anyLine'
-          parseFromText st line (plainMarkupContext standardSet)
-      else B.valueKeyword' . T.stripEnd <$> anyLine'
-  let kw = (name, value)
-  registerKeyword kw
-  return $ uncurry B.keyword kw
+  value <- T.stripEnd <$> anyLine'
+  return $ B.keyword name value
 
 -- * Footnote definitions
 

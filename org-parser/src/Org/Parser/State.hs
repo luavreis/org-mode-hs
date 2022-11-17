@@ -27,10 +27,9 @@ defaultOrgOptions =
 
 -- | Org-mode parser state
 data OrgParserState = OrgParserState
-  { orgStatePendingAffiliated :: [(KeywordKey, KeywordValue)],
+  { orgStatePendingAffiliated :: [(Text, AffKeywordValue)],
     orgStateOptions :: OrgOptions,
-    orgStateLastChar :: Maybe Char,
-    orgStateKeywords :: [(KeywordKey, KeywordValue)]
+    orgStateLastChar :: Maybe Char
   }
 
 defaultState :: OrgParserState
@@ -38,6 +37,5 @@ defaultState =
   OrgParserState
     { orgStatePendingAffiliated = mempty,
       orgStateOptions = defaultOrgOptions,
-      orgStateLastChar = Nothing,
-      orgStateKeywords = []
+      orgStateLastChar = Nothing
     }

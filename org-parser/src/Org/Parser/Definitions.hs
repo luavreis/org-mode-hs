@@ -30,15 +30,7 @@ type OrgParser = StateT OrgParserState Parser
 
 type OrgParseError = ParseErrorBundle Text Void
 
-registerKeyword :: (KeywordKey, KeywordValue) -> OrgParser ()
-registerKeyword kw =
-  updateState \s ->
-    s
-      { orgStateKeywords =
-          kw : orgStateKeywords s
-      }
-
-registerAffiliated :: (KeywordKey, KeywordValue) -> OrgParser ()
+registerAffiliated :: (Text, AffKeywordValue) -> OrgParser ()
 registerAffiliated kw =
   updateState \s ->
     s
@@ -49,7 +41,7 @@ registerAffiliated kw =
 clearPendingAffiliated :: OrgParser ()
 clearPendingAffiliated = modify (\s -> s {orgStatePendingAffiliated = []})
 
-withAffiliated :: (Affiliated -> a) -> OrgParser a
+withAffiliated :: (AffKeywords -> a) -> OrgParser a
 withAffiliated f = do
   affs <- gets orgStatePendingAffiliated
   f (keywordsFromList affs)

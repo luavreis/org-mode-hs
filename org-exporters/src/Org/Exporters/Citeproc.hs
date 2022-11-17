@@ -6,7 +6,6 @@ import Citeproc.CslJson
 import Data.Aeson (decode)
 import Org.Data.Entities (defaultEntitiesMap, utf8Replacement)
 import Org.Types
-import Org.Walk
 import Relude.Extra (lookup)
 
 toCslJson :: [OrgObject] -> CslJson Text
@@ -38,7 +37,6 @@ toCslJson (x : xs) = to x <> toCslJson xs
     to Timestamp {} = CslEmpty
     to Cite {} = CslEmpty
     to InlBabelCall {} = CslEmpty
-    to Image {} = CslEmpty
     to Macro {} = CslEmpty
     to Target {} = CslEmpty
 
@@ -123,32 +121,32 @@ citeToCiteproc cite =
     nonEmpty' [] = Nothing
     nonEmpty' x = Just x
 
-processCitations ::
-  Walkable OrgObject a =>
-  CiteprocOptions ->
-  Style (CslJson Text) ->
-  Maybe Lang ->
-  [Reference (CslJson Text)] ->
-  a ->
-  (a, [Text], [Text])
-processCitations opt sty lang refs doc =
-  (,map (render . snd) (resultBibliography result),resultWarnings result) $
-    flip evalState (resultCitations result) $
-      flip walkM doc \case
-        c@(Cite _) -> do
-          get >>= \case
-            x : xs -> do put xs; pure $ ExportSnippet "html" (render x)
-            [] -> pure c
-        x -> pure x
-  where
-    citations = flip query doc $ \case
-      Cite cite -> [citeToCiteproc cite]
-      _ -> []
-    result = citeproc opt sty lang refs citations
-    locale = fromMaybe mempty $ case lang of
-      l@(Just _) -> find ((l ==) . localeLanguage) (styleLocales sty)
-      Nothing -> Nothing
-    render = renderCslJson True locale
+-- processCitations ::
+--   Walkable OrgObject a =>
+--   CiteprocOptions ->
+--   Style (CslJson Text) ->
+--   Maybe Lang ->
+--   [Reference (CslJson Text)] ->
+--   a ->
+--   (a, [Text], [Text])
+-- processCitations opt sty lang refs doc =
+--   (,map (render . snd) (resultBibliography result),resultWarnings result) $
+--     flip evalState (resultCitations result) $
+--       flip walkM doc \case
+--         c@(Cite _) -> do
+--           get >>= \case
+--             x : xs -> do put xs; pure $ ExportSnippet "html" (render x)
+--             [] -> pure c
+--         x -> pure x
+--   where
+--     citations = flip query doc $ \case
+--       Cite cite -> [citeToCiteproc cite]
+--       _ -> []
+--     result = citeproc opt sty lang refs citations
+--     locale = fromMaybe mempty $ case lang of
+--       l@(Just _) -> find ((l ==) . localeLanguage) (styleLocales sty)
+--       Nothing -> Nothing
+--     render = renderCslJson True locale
 
 loadStyle :: MonadIO m => FilePath -> m (Style (CslJson Text))
 loadStyle fp = do

@@ -4,8 +4,6 @@
 module Options where
 
 import Options.Applicative
-import Org.Exporters.Common
-import Org.Parser (OrgOptions (..), defaultOrgOptions)
 
 data AppCmd
   = CmdExport AppOptions
@@ -14,7 +12,6 @@ data AppCmd
 data AppOptions = AppOptions
   { backend :: BackendOptions,
     input :: Input,
-    options :: OrgOptions,
     output :: Output
   }
 
@@ -23,9 +20,8 @@ data BackendOptions
   | HTML {ondimOptions :: OndimOptions}
   | Pandoc {formatSpec :: Text, template :: Maybe FilePath, ondimOptions :: OndimOptions}
 
-data OndimOptions = OndimOptions
-  { settings :: ExporterSettings,
-    templateDir :: Maybe FilePath
+newtype OndimOptions = OndimOptions
+  { templateDir :: Maybe FilePath
   }
 
 appCmd :: ParserInfo AppCmd
@@ -54,59 +50,7 @@ appCmd =
 
 appOptions :: Parser AppOptions
 appOptions =
-  AppOptions <$> backend' <*> input' <*> options' <*> output'
-
-options' :: Parser OrgOptions
-options' =
-  OrgOptions
-    <$> option
-      falsity
-      ( long "org-src-preserve-indentation"
-          <> value a
-          <> metavar "BOOL"
-          <> falsityShow
-      )
-    <*> option
-      auto
-      ( long "tab-width"
-          <> value b
-          <> showDefault
-          <> metavar "WIDTH"
-      )
-    <*> option
-      auto
-      ( long "org-element-parsed-keywords"
-          <> value c
-          <> showDefault
-          <> metavar "LIST"
-      )
-    <*> option
-      auto
-      ( long "org-element-dual-keywords"
-          <> value d
-          <> showDefault
-          <> metavar "LIST"
-      )
-    <*> option
-      auto
-      ( long "org-element-affiliated-keywords"
-          <> value e
-          <> showDefault
-          <> metavar "LIST"
-      )
-  where
-    OrgOptions a b c d e = defaultOrgOptions
-
-settings' :: Parser ExporterSettings
-settings' =
-  ExporterSettings
-    <$> option auto (long "org-export-headline-levels" <> value a <> showDefault)
-    <*> option falsity (long "org-export-with-special-strings" <> value b <> metavar "BOOL" <> falsityShow)
-    <*> option falsity (long "org-export-with-entities" <> value c <> metavar "BOOL" <> falsityShow)
-    <*> option auto (long "healine-level-shift" <> value d <> showDefault)
-    ?? e
-  where
-    ExporterSettings a b c d e = defaultExporterSettings
+  AppOptions <$> backend' <*> input' <*> output'
 
 falsity :: ReadM Bool
 falsity = maybeReader $ \case
@@ -123,8 +67,7 @@ falsityShow = showDefaultWith $ \case
 ondimOptions' :: Parser OndimOptions
 ondimOptions' =
   OndimOptions
-    <$> settings'
-    <*> optional (strOption (long "template-dir" <> metavar "DIR"))
+    <$> optional (strOption (long "template-dir" <> metavar "DIR"))
 
 backend' :: Parser BackendOptions
 backend' =

@@ -1,14 +1,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Org.Exporters.Pandoc where
 
 import Control.Exception (throw)
-import Ondim
 import Ondim.Extra.Loading (TemplateLoadingError (..))
 import Ondim.Pandoc
 import Org.Exporters.Common
@@ -19,18 +17,18 @@ import Text.Pandoc.Builder qualified as B
 import Text.Pandoc.Definition qualified as P
 import Text.Pandoc.Extensions (pandocExtensions)
 import Text.Pandoc.Readers.Markdown (readMarkdown)
+import Org.Exporters.Processing.OrgData
 
-type PTag = PandocTag (State ExporterState)
+type PandocBackend m = ExportBackend PandocTag m P.Inline P.Block
 
-type PandocBackend = ExportBackend PTag P.Inline P.Block
-
-defPandocBackend :: PandocBackend
+defPandocBackend :: Monad m => PandocBackend m
 defPandocBackend =
   let nullObj = P.Str ""
       plain = toList . B.text
       softbreak = [P.SoftBreak]
       exportSnippet l = one . P.RawInline (P.Format l)
       nullEl = P.Null
+      affiliatedEnv _ = id
       rawBlock l = one . P.RawBlock (P.Format l)
       hN level = fmap $ one . adjLevel level
         where
@@ -62,16 +60,17 @@ loadPandocDoc dir = do
     Right t -> pure t
 
 renderDoc ::
-  PandocBackend ->
-  ExporterSettings ->
-  OndimMS PTag ->
+  Monad m =>
+  PandocBackend m ->
+  OrgData ->
+  OndimMS PandocTag m ->
   P.Pandoc ->
   OrgDocument ->
-  Either OndimException P.Pandoc
-renderDoc bk s st layout doc =
+  m (Either OndimException P.Pandoc)
+renderDoc bk datum st layout doc =
   liftDocument bk doc layout
     & bindDefaults
     & runOndimTWith st
-    & flip evalState st'
+    & flip evalStateT st'
   where
-    st' = defaultExporterState {exporterSettings = s}
+    st' = initialExporterState {orgData = datum}

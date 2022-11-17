@@ -24,6 +24,7 @@ data OrgSection = OrgSection
   { sectionLevel :: Int,
     sectionProperties :: Properties,
     sectionTodo :: Maybe TodoKeyword,
+    sectionIsComment :: Bool,
     sectionPriority :: Maybe Priority,
     sectionTitle :: [OrgObject],
     sectionRawTitle :: Text,
@@ -113,7 +114,7 @@ data OrgElement
   = -- | Greater block
     GreaterBlock
       { -- | Affiliated keywords
-        affKws :: Affiliated,
+        affKws :: AffKeywords,
         -- | Greater block type
         blkType :: GreaterBlockType,
         -- | Greater block elements
@@ -134,8 +135,8 @@ data OrgElement
       }
   | -- | Plain list
     PlainList
-      { -- | Affiliated keywords
-        affKws :: Affiliated,
+      { -- | AffKeywords keywords
+        affKws :: AffKeywords,
         -- | List types
         listType :: ListType,
         -- | List items
@@ -149,16 +150,16 @@ data OrgElement
       -- ^ Contents
   | -- | Example block
     ExampleBlock
-      Affiliated
-      -- ^ Affiliated keywords
+      AffKeywords
+      -- ^ AffKeywords keywords
       (Map Text Text)
       -- ^ Switches
       [SrcLine]
       -- ^ Contents
   | -- | Source blocks
     SrcBlock
-      { -- | Affiliated keywords
-        affKws :: Affiliated,
+      { -- | AffKeywords keywords
+        affKws :: AffKeywords,
         -- | Language
         srcBlkLang :: Text,
         -- | Switches
@@ -168,18 +169,18 @@ data OrgElement
         -- | Contents
         srcBlkLines :: [SrcLine]
       }
-  | VerseBlock Affiliated [[OrgObject]]
+  | VerseBlock AffKeywords [[OrgObject]]
   | Clock ClockData
   | HorizontalRule
-  | Keyword KeywordKey KeywordValue
+  | Keyword Text Text
   | LaTeXEnvironment
-      Affiliated
+      AffKeywords
       Text
       -- ^ Environment name
       Text
       -- ^ Environment contents
-  | Paragraph Affiliated [OrgObject]
-  | Table Affiliated [TableRow]
+  | Paragraph AffKeywords [OrgObject]
+  | Table AffKeywords [TableRow]
   | FootnoteDef
       Text
       -- ^ Footnote name
@@ -209,28 +210,24 @@ srcLineMap :: (Text -> Text) -> SrcLine -> SrcLine
 srcLineMap f (SrcLine c) = SrcLine (f c)
 srcLineMap f (RefLine i t c) = RefLine i t (f c)
 
--- Keywords and affiliated keywords
+-- Keywords and AffKeywords keywords
 
-type KeywordKey = Text
-
-data KeywordValue
-  = ValueKeyword Text Text
+data AffKeywordValue
+  = ValueKeyword Text
   | ParsedKeyword [OrgObject] [OrgObject]
   | BackendKeyword [(Text, Text)]
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
-instance Semigroup KeywordValue where
-  (ValueKeyword o1 t1) <> (ValueKeyword o2 t2) = ValueKeyword (o1 <> "\n" <> o2) (t1 <> "\n" <> t2)
+instance Semigroup AffKeywordValue where
+  (ValueKeyword t1) <> (ValueKeyword t2) = ValueKeyword (t1 <> "\n" <> t2)
   (ParsedKeyword o1 t1) <> (ParsedKeyword o2 t2) = ParsedKeyword (o1 <> o2) (t1 <> t2)
   (BackendKeyword b1) <> (BackendKeyword b2) = BackendKeyword (b1 <> b2)
   _ <> x = x
 
-type Keywords = Map KeywordKey KeywordValue
+type AffKeywords = Map Text AffKeywordValue
 
-keywordsFromList :: [(KeywordKey, KeywordValue)] -> Keywords
+keywordsFromList :: [(Text, AffKeywordValue)] -> AffKeywords
 keywordsFromList = M.fromListWith (flip (<>))
-
-type Affiliated = Keywords
 
 -- Greater Blocks
 
@@ -324,6 +321,7 @@ data OrgObject
   | InlBabelCall BabelCall
   | Src Text Text Text
   | Link LinkTarget [OrgObject]
+  | Image LinkTarget
   | -- | Inline target (e.g. @<<<foo>>>@)
     Target
       Id
@@ -381,7 +379,7 @@ data CiteReference = CiteReference
 
 instance NFData OrgDocument
 
-instance NFData KeywordValue
+instance NFData AffKeywordValue
 
 instance NFData FootnoteRefData
 

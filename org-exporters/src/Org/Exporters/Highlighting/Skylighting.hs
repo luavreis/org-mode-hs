@@ -1,11 +1,11 @@
 module Org.Exporters.Highlighting.Skylighting where
 
 import Ondim.HTML (HtmlNode, fromNodeList)
-import Org.Types (Affiliated)
+import Org.Types (AffKeywords)
 import Skylighting
 import Text.Blaze.Renderer.XmlHtml qualified as X
 
-skylightingHtml :: Monad m => Affiliated -> Text -> Text -> m (Maybe [[HtmlNode]])
+skylightingHtml :: Monad m => AffKeywords -> Text -> Text -> m (Maybe [[HtmlNode]])
 skylightingHtml _ lang code = pure $ do
   let lang' = case lang of
         "C" -> "c"

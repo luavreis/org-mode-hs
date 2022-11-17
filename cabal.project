@@ -5,10 +5,10 @@ packages: org-cli
 package *
   split-sections: True
 
-source-repository-package
-  type: git
-  location: https://github.com/lucasvreis/ondim.git
-  tag: 7c67a8d9e026e845fa1f92663ef5a3d95941ee74
+-- source-repository-package
+--   type: git
+--   location: https://github.com/lucasvreis/ondim.git
+--   tag: 7c67a8d9e026e845fa1f92663ef5a3d95941ee74
 
 source-repository-package
   type: git

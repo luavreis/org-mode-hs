@@ -4,45 +4,77 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Avoid lambda" #-}
 
-module Org.Exporters.Common where
+module Org.Exporters.Common
+  ( module Org.Exporters.Common,
+    module Ondim,
+  )
+where
 
 import Data.Map.Syntax
 import Data.Text qualified as T
-import Data.Time (Day, TimeLocale, TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
-import Ondim
+import Data.Time (Day, TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
+import Ondim hiding (Expansion, Filter, Ondim, OndimMS)
+import Ondim qualified
 import Ondim.Extra
 import Org.Data.Entities qualified as Data
+import Org.Exporters.Processing.OrgData
+import Org.Exporters.Processing.SpecialStrings (doSpecialStrings)
 import Org.Types
-import Org.Walk
 import Paths_org_exporters (getDataDir)
 import Relude.Extra (insert, lookup, toPairs)
 import System.FilePath (isRelative, takeExtension, (-<.>), (</>))
 
-templateDir :: IO FilePath
-templateDir = (</> "templates") <$> getDataDir
+type ExporterMonad m = StateT ExporterState m
+
+type Ondim tag m a = Ondim.Ondim tag (ExporterMonad m) a
+
+type OndimMS tag m = Ondim.OndimMS tag (ExporterMonad m)
+
+type Expansion tag m a = Ondim.Expansion tag (ExporterMonad m) a
+
+type Filter tag m a = Ondim.Filter tag (ExporterMonad m) a
 
 data ExporterState = ExporterState
   { footnoteCounter :: (Int, Map Text Int),
-    allFootnotes :: Map Text [OrgElement],
-    exporterSettings :: ExporterSettings
+    linenumCounter :: Int,
+    orgData :: OrgData
   }
 
-defaultExporterState :: ExporterState
-defaultExporterState =
+data ExportBackend tag m obj elm = ExportBackend
+  { nullObj :: obj,
+    plain :: Text -> [obj],
+    softbreak :: [obj],
+    exportSnippet :: Text -> Text -> [obj],
+    nullEl :: elm,
+    srcPretty :: AffKeywords -> Text -> Text -> Ondim tag m (Maybe [[obj]]),
+    affiliatedEnv :: AffKeywords -> Ondim tag m [elm] -> Ondim tag m [elm],
+    rawBlock :: Text -> Text -> [elm],
+    mergeLists :: Filter tag m elm,
+    hN :: Int -> Expansion tag m elm,
+    plainObjsToEls :: [obj] -> [elm],
+    stringify :: obj -> Text
+  }
+
+templateDir :: IO FilePath
+templateDir = (</> "templates") <$> getDataDir
+
+initialExporterState :: ExporterState
+initialExporterState =
   ExporterState
     { footnoteCounter = (1, mempty),
-      allFootnotes = mempty,
-      exporterSettings = defaultExporterSettings
+      linenumCounter = 1,
+      orgData = initialOrgData
     }
 
-getSetting :: MonadExporter m => (ExporterSettings -> b) -> m b
-getSetting f = f <$> gets exporterSettings
+getSetting :: Monad m => (ExporterSettings -> b) -> Ondim tag m b
+getSetting f = f <$> gets (exporterSettings . orgData)
 
-getFootnoteRef :: MonadExporter n => Text -> n (Maybe (Text, [OrgElement]))
+getFootnoteRef :: Monad m => Text -> Ondim tag m (Maybe (Text, [OrgElement]))
 getFootnoteRef label =
-  gets (lookup label . allFootnotes) >>= \case
+  gets (lookup label . footnotes . orgData) >>= \case
     Just els -> do
       (i, m) <- gets footnoteCounter
       case lookup label m of
@@ -53,102 +85,35 @@ getFootnoteRef label =
           pure $ Just (show i, els)
     Nothing -> pure Nothing
 
-type MonadExporter n = MonadState ExporterState n
-
-data ExporterSettings = ExporterSettings
-  { -- | The last level which is still exported as a headline.
-    --
-    -- Inferior levels will usually produce itemize or enumerate lists
-    -- when exported, but back-end behavior may differ.
-    --
-    -- This option can also be set with the OPTIONS keyword,
-    -- e.g. "H:2".
-    orgExportHeadlineLevels :: Int,
-    -- | Interpret "\-", "--", "---" and "..." for export.
-    --
-    -- This option can also be set with the OPTIONS keyword,
-    -- e.g. "-:nil".
-    orgExportWithSpecialStrings :: Bool,
-    -- | Interpret entities when exporting.
-    --
-    -- This option can also be set with the OPTIONS keyword,
-    -- e.g. "e:nil".
-    orgExportWithEntities :: Bool,
-    -- | Global shift of headline levels.
-    headlineLevelShift :: Int,
-    timeLocale :: TimeLocale
-  }
-  deriving (Eq, Show)
-
-defaultExporterSettings :: ExporterSettings
-defaultExporterSettings =
-  ExporterSettings
-    { orgExportHeadlineLevels = 3,
-      orgExportWithSpecialStrings = True,
-      orgExportWithEntities = True,
-      headlineLevelShift = 0,
-      timeLocale = defaultTimeLocale
-    }
-
-doSpecialStrings :: Text -> Text
-doSpecialStrings txt =
-  txt & T.replace "---" "—"
-    & T.replace "--" "–"
-    & T.replace "..." "…"
-    & T.replace "\\-" "\173"
-
-processSpecialStrings :: Walkable OrgObject a => a -> a
-processSpecialStrings = walk process
-  where
-    process :: OrgObject -> OrgObject
-    process (Plain txt) = Plain $ doSpecialStrings txt
-    process x = x
-
-justOrIgnore :: OndimTag tag => Maybe a -> (a -> Expansion tag b) -> Expansion tag b
+justOrIgnore :: (OndimTag tag, Monad m) => Maybe a -> (a -> Expansion tag m b) -> Expansion tag m b
 justOrIgnore = flip (maybe ignore)
 
-tags :: HasAttrChild tag t => Tag -> Expansion tag t
+tags :: forall m tag t. (HasAttrChild tag t, Monad m) => Tag -> Expansion tag m t
 tags tag x = children x `bindingText` ("tag" ## pure tag)
 
-parsedKwExpansions ::
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
-  Affiliated ->
-  Text ->
-  Expansions' tag obj
-parsedKwExpansions bk kws prefix =
-  forM_ parsedKws \(name, t) ->
-    (prefix <> name) ## const $ expandOrgObjects bk t
+bindAffKwExpansions ::
+  BackendC tag m obj elm =>
+  Ondim tag m [elm] ->
+  (ExportBackend tag m obj elm, AffKeywords) ->
+  Ondim tag m [elm]
+bindAffKwExpansions x (bk, kws) =
+  affiliatedEnv bk kws x
+    `binding` do
+      prefixed "akw:" $ forM_ parsedKws \(name, t) -> name ## const $ expandOrgObjects bk t
+    `bindingText` do
+      prefixed "akw:" $ forM_ textKws \(name, t) -> name ## pure t
   where
     parsedKws =
       mapMaybe
-        (\case (n, ParsedKeyword _ t) -> Just (n, t); _ -> Nothing)
+        (\case (n, ParsedKeyword _ t) -> Just (n, t); _ -> Nothing) -- TODO: first slot
         (toPairs kws)
-
-textKwExpansions :: OndimTag t => Affiliated -> Text -> MapSyntax Text (Ondim t Text)
-textKwExpansions kws prefix =
-  forM_ textKws \(name, t) ->
-    (prefix <> name) ## pure t
-  where
     textKws =
       mapMaybe
-        (\case (n, ValueKeyword _ t) -> Just (n, t); _ -> Nothing)
+        (\case (n, ValueKeyword t) -> Just (n, t); _ -> Nothing)
         (toPairs kws)
 
--- | Attribute expansion for affiliated keywords.
-affiliatedAttrExpansions :: OndimTag t => Text -> Affiliated -> Expansions' t Attribute
-affiliatedAttrExpansions lang aff =
-  "affiliated" ## const $ pure affAttrs
-  where
-    affAttrs :: [(Text, Text)]
-    affAttrs = join $ mapMaybe getHtmlAttrs (toPairs aff)
-      where
-        getHtmlAttrs (k, BackendKeyword x)
-          | ("attr_" <> lang) `T.isPrefixOf` k = Just x
-        getHtmlAttrs _ = Nothing
-
 -- | Text expansion for link target.
-linkTarget :: OndimTag t => LinkTarget -> MapSyntax Text (Ondim t Text)
+linkTarget :: (OndimTag t, Monad m) => LinkTarget -> MapSyntax Text (Ondim t m Text)
 linkTarget tgt = prefixed "link:" do
   "target" ## pure case tgt of
     URILink "file" (changeExtension -> file)
@@ -170,39 +135,25 @@ linkTarget tgt = prefixed "link:" do
         then file -<.> ".html"
         else file
 
-type BackendC tag obj elm =
+type BackendC tag m obj elm =
   ( HasAttrChild tag obj,
     HasAttrChild tag elm,
-    MonadExporter (OndimMonad tag)
+    Monad m
   )
 
-data ExportBackend tag obj elm = ExportBackend
-  { nullObj :: obj,
-    plain :: Text -> [obj],
-    softbreak :: [obj],
-    exportSnippet :: Text -> Text -> [obj],
-    nullEl :: elm,
-    srcPretty :: Affiliated -> Text -> Text -> OndimMonad tag (Maybe [[obj]]),
-    rawBlock :: Text -> Text -> [elm],
-    mergeLists :: Filter tag elm,
-    hN :: Int -> Expansion tag elm,
-    plainObjsToEls :: [obj] -> [elm],
-    stringify :: obj -> Text
-  }
-
 expandOrgObjects ::
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
   [OrgObject] ->
-  Ondim tag [obj]
+  Ondim tag m [obj]
 expandOrgObjects = foldMapM . expandOrgObject
 
 expandOrgObject ::
-  forall tag obj elm.
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
+  forall tag m obj elm.
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
   OrgObject ->
-  Ondim tag [obj]
+  Ondim tag m [obj]
 expandOrgObject bk@(ExportBackend {..}) obj =
   withText debugExps $
     case obj of
@@ -249,7 +200,7 @@ expandOrgObject bk@(ExportBackend {..}) obj =
           `bindingText` do
             "language" ## pure lang
             "content" ## pure txt
-      (Target anchor) ->
+      (Target anchor name) ->
         call "org:object:target"
           `bindingText` do
             "anchor" ## pure anchor
@@ -300,7 +251,7 @@ expandOrgObject bk@(ExportBackend {..}) obj =
           `bindingText` linkTarget tgt
       (Timestamp ts) ->
         timestamp bk ts
-      (FootnoteRef name) -> do
+      (FootnoteRef (FootnoteRefLabel name)) -> do
         ref <- getFootnoteRef name
         call "org:object:footnote-ref"
           `binding` do
@@ -310,19 +261,22 @@ expandOrgObject bk@(ExportBackend {..}) obj =
             "footnote-ref:key" ## pure name
             whenJust ref \ ~(num, _) ->
               "footnote-ref:number" ## pure num
+      (FootnoteRef _) -> pure []
       (Cite _) ->
         pure $ plain "(unresolved citation)" -- TODO
       (StatisticCookie c) ->
         call "org:object:statistic-cookie"
           & \x -> case c of
             Left (show -> n, show -> d) ->
-              x `binding` switchCases @obj "fraction"
+              x
+                `binding` switchCases @obj "fraction"
                 `bindingText` do
                   "statistic-cookie:numerator" ## pure n
                   "statistic-cookie:denominator" ## pure d
                   "statistic-cookie:value" ## pure $ n <> "/" <> d
             Right (show -> p) ->
-              x `binding` switchCases @obj "percentage"
+              x
+                `binding` switchCases @obj "percentage"
                 `bindingText` do
                   "statistic-cookie:percentage" ## pure p
                   "statistic-cookie:value" ## pure $ p <> "%"
@@ -335,23 +289,23 @@ expandOrgObject bk@(ExportBackend {..}) obj =
       fromList
         [ ("debug:ast", pure (show obj))
         ]
-    expObjs :: [OrgObject] -> Expansion tag obj
+    expObjs :: [OrgObject] -> Expansion tag m obj
     expObjs o = const $ expandOrgObjects bk o
     call x = callExpansion x (pure nullObj)
 
 expandOrgElements ::
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
   [OrgElement] ->
-  Ondim tag [elm]
+  Ondim tag m [elm]
 expandOrgElements = foldMapM . expandOrgElement
 
 expandOrgElement ::
-  forall tag obj elm.
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
+  forall tag m obj elm.
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
   OrgElement ->
-  Ondim tag [elm]
+  Ondim tag m [elm]
 expandOrgElement bk@(ExportBackend {..}) el =
   withText debugExps $
     case el of
@@ -388,13 +342,13 @@ expandOrgElement bk@(ExportBackend {..}) el =
         expandOrgElements bk els
       (ExportBlock lang code) ->
         pure $ rawBlock lang code
-      (ExampleBlock aff i c) ->
-        srcOrExample bk "org:element:example-block" aff "" i c
+      (ExampleBlock aff switches c) ->
+        srcOrExample bk "org:element:example-block" aff "" c
           `bindingAff` aff
           `bindingText` do
             "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
-      (SrcBlock aff lang i _ c) ->
-        srcOrExample bk "org:element:src-block" aff lang i c
+      (SrcBlock aff lang switches _ c) ->
+        srcOrExample bk "org:element:src-block" aff lang c
           `bindingAff` aff
           `bindingText` do
             "language" ## pure lang
@@ -408,44 +362,30 @@ expandOrgElement bk@(ExportBackend {..}) el =
           `bindingAff` aff
       HorizontalRule ->
         call "org:element:horizontal-rule"
-      Keyword k (ValueKeyword _ v) ->
+      Keyword k v ->
         call "org:element:keyword"
           `bindingText` do
             "keyword:key" ## pure k
             "keyword:value" ## pure v
-          `binding` switchCases @elm "keyword:textual"
-      Keyword k (ParsedKeyword _ v) ->
-        call "org:element:keyword"
-          `bindingText` do
-            "keyword:key" ## pure k
-          `binding` switchCases @elm "keyword:parsed"
-          `binding` do
-            "keyword:value" ## const $ expandOrgObjects bk v
-      Keyword {} -> pure []
-      VerseBlock {} ->
-        error "TODO"
-      Clock {} ->
-        error "TODO"
+      FootnoteDef {} -> pure []
+      VerseBlock {} -> error "TODO"
+      Clock {} -> error "TODO"
   where
     debugExps =
       fromList
         [ ("debug:ast", pure (show el))
         ]
-    bindingAff x aff =
-      x
-        `binding` affiliatedAttrExpansions "html" aff
-        `binding` parsedKwExpansions bk aff "akw:"
-        `bindingText` textKwExpansions aff "akw:"
-    expEls :: [OrgElement] -> Expansion tag elm
+    bindingAff x aff = x `bindAffKwExpansions` (bk, aff)
+    expEls :: [OrgElement] -> Expansion tag m elm
     expEls o = const $ expandOrgElements bk o
     call x = callExpansion x (pure nullEl)
 
 expandOrgSections ::
-  forall tag obj elm.
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
+  forall tag m obj elm.
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
   [OrgSection] ->
-  Ondim tag [elm]
+  Ondim tag m [elm]
 expandOrgSections _ [] = pure []
 expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) = do
   let level = sectionLevel fstSection
@@ -494,39 +434,31 @@ expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) = do
         (NumericPriority n) -> show n
 
 liftDocument ::
-  forall tag obj elm doc.
+  forall tag m obj elm doc.
   OndimNode tag doc =>
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
   OrgDocument ->
   doc ->
-  Ondim tag doc
+  Ondim tag m doc
 liftDocument bk doc node =
   bindDocument bk "doc:" doc (liftSubstructures node)
 
 bindDocument ::
-  forall tag obj elm doc.
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
+  forall tag m obj elm doc.
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
   -- | Prefix for expansion names
   Text ->
   OrgDocument ->
-  Ondim tag doc ->
-  Ondim tag doc
+  Ondim tag m doc ->
+  Ondim tag m doc
 bindDocument bk pfx (OrgDocument {..}) node = do
-  modify (\s -> s {allFootnotes = documentFootnotes})
+  datum <- gets orgData
   node
-    `binding` do
-      parsedKwExpansions
-        bk
-        (keywordsFromList documentKeywords)
-        (pfx <> "kw:")
-    `bindingText` do
-      textKwExpansions
-        (keywordsFromList documentKeywords)
-        (pfx <> "kw:")
-      for_ (toPairs documentProperties) \(k, v) ->
-        (pfx <> "prop:") <> k ## pure v
+    `bindingText` prefixed pfx do
+      forM_ (toPairs (keywords datum)) \(name, t) -> "kw:" <> name ## pure t
+      forM_ (toPairs documentProperties) \(k, v) -> "prop:" <> k ## pure v
     `binding` prefixed pfx do
       "children" ## const $ expandOrgElements bk documentChildren
       "sections" ## const $ expandOrgSections bk documentSections
@@ -534,7 +466,7 @@ bindDocument bk pfx (OrgDocument {..}) node = do
         fns <-
           gets (toPairs . snd . footnoteCounter)
             <&> mapMaybe \(ref, num) ->
-              (,num) <$> lookup ref documentFootnotes
+              (,num) <$> lookup ref (footnotes datum)
         if not (null fns)
           then
             children node'
@@ -549,11 +481,11 @@ bindDocument bk pfx (OrgDocument {..}) node = do
           else pure []
 
 table ::
-  forall tag obj elm.
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
+  forall tag m obj elm.
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
   [TableRow] ->
-  Ondim tag [elm]
+  Ondim tag m [elm]
 table bk@(ExportBackend {..}) rows =
   callExpansion "org:element:table" (pure nullEl)
     `binding` do
@@ -578,14 +510,14 @@ table bk@(ExportBackend {..}) rows =
       [b] -> (Nothing, [b])
       h : b -> (Just h, b)
 
-    tableBodies :: Expansion tag elm
+    tableBodies :: Expansion tag m elm
     tableBodies inner =
       mergeLists $
         join <$> forM bodies \body ->
           children inner `binding` do
             "body:rows" ## tableRows body
 
-    tableRows :: [[TableCell]] -> Expansion tag obj
+    tableRows :: [[TableCell]] -> Expansion tag m obj
     tableRows rs inner =
       join <$> forM rs \cells ->
         children inner
@@ -608,12 +540,12 @@ table bk@(ExportBackend {..}) rows =
             props
 
 plainList ::
-  forall tag obj elm.
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
+  forall tag m obj elm.
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
   ListType ->
   [ListItem] ->
-  Ondim tag [elm]
+  Ondim tag m [elm]
 plainList bk@(ExportBackend {..}) kind items =
   callExpansion "org:element:plain-list" (pure nullEl)
     `binding` do
@@ -628,7 +560,7 @@ plainList bk@(ExportBackend {..}) kind items =
         "bullet" ## pure (one b)
       _ -> mempty
   where
-    listItems :: Expansion tag elm
+    listItems :: Expansion tag m elm
     listItems inner =
       mergeLists $
         join <$> forM items \(ListItem _ i cbox t c) ->
@@ -641,7 +573,7 @@ plainList bk@(ExportBackend {..}) kind items =
             `binding` do
               "list-item-content" ## const $ doPlainOrPara c
       where
-        doPlainOrPara :: [OrgElement] -> Ondim tag [elm]
+        doPlainOrPara :: [OrgElement] -> Ondim tag m [elm]
         doPlainOrPara [Paragraph _ objs] = plainObjsToEls <$> expandOrgObjects bk objs
         doPlainOrPara els = expandOrgElements bk els
 
@@ -659,32 +591,25 @@ plainList bk@(ExportBackend {..}) kind items =
         checkbox PartialBox = "partial"
 
 srcOrExample ::
-  forall tag obj elm.
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
+  forall tag m obj elm.
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
   Text ->
-  Affiliated ->
+  AffKeywords ->
   Text ->
-  Maybe Int ->
   [SrcLine] ->
-  Ondim tag [elm]
-srcOrExample (ExportBackend {..}) name aff lang stNumber lins =
+  Ondim tag m [elm]
+srcOrExample (ExportBackend {..}) name aff lang lins =
   callExpansion name (pure nullEl)
     `binding` ("src-lines" ## runLines)
     `bindingText` do
-      whenJust stNumber \num ->
-        "starting-number" ## pure $ show num
       "content" ## pure $ T.intercalate "\n" (srcLineContent <$> lins)
   where
-    runLines :: Expansion tag obj
+    runLines :: Expansion tag m obj
     runLines inner = do
-      cP <- liftO contentPretty
+      cP <- contentPretty
       intercalate (plain "\n")
-        <$> mapM (`lineExps` inner) (zip3 [0 ..] lins cP)
-
-    number offset =
-      whenJust ((offset +) <$> stNumber) \n ->
-        "number" ## pure $ show n
+        <$> mapM (`lineExps` inner) (zip lins cP)
 
     contentPretty =
       let code = T.intercalate "\n" (srcLineContent <$> lins)
@@ -692,27 +617,25 @@ srcOrExample (ExportBackend {..}) name aff lang stNumber lins =
 
     bPretty p = whenJust p \inls -> "content-pretty" ## const $ pure inls
 
-    lineExps (offset, SrcLine c, pretty) inner =
+    lineExps (SrcLine c, pretty) inner =
       switch "plain" inner
         `bindingText` do
-          number offset
           "content" ## pure c
         `binding` bPretty pretty
-    lineExps (offset, RefLine i ref c, pretty) inner =
+    lineExps (RefLine i ref c, pretty) inner =
       switch "ref" inner
         `bindingText` do
-          number offset
           "ref" ## pure ref
           "id" ## pure i
           "content" ## pure c
         `binding` bPretty pretty
 
 timestamp ::
-  forall tag obj elm.
-  BackendC tag obj elm =>
-  ExportBackend tag obj elm ->
+  forall tag m obj elm.
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
   TimestampData ->
-  Ondim tag [obj]
+  Ondim tag m [obj]
 timestamp (ExportBackend {..}) ts =
   callExpansion "org:object:timestamp" (pure nullObj)
     `binding` case ts of
@@ -738,7 +661,7 @@ timestamp (ExportBackend {..}) ts =
     active True = "active"
     active False = "inactive"
 
-    tsMark :: TimestampMark -> MapSyntax Text (Ondim tag Text)
+    tsMark :: TimestampMark -> MapSyntax Text (Ondim tag m Text)
     tsMark (_, v, c) = do
       "value" ## pure $ show v
       "unit" ## pure $ one c
@@ -746,16 +669,16 @@ timestamp (ExportBackend {..}) ts =
     dateToDay (y, m, d, _) = fromGregorian (toInteger y) m d
     toTime (h, m) = TimeOfDay h m 0
 
-    tsDate :: Day -> Expansion tag obj
+    tsDate :: Day -> Expansion tag m obj
     tsDate day input' = do
       input <- input'
-      locale <- getSetting timeLocale
       let format = toString $ stringify input
+          locale = defaultTimeLocale -- TODO
       pure . plain . toText $ formatTime locale format day
 
-    tsTime :: Maybe TimeOfDay -> Expansion tag obj
+    tsTime :: Maybe TimeOfDay -> Expansion tag m obj
     tsTime time input' = do
       input <- input'
-      locale <- getSetting timeLocale
       let format = toString $ stringify input
+          locale = defaultTimeLocale -- TODO
       maybe (pure []) (pure . plain . toText . formatTime locale format) time

@@ -42,6 +42,12 @@ library
   exposed-modules:   Org.Exporters.Common
                      Org.Exporters.HTML
                      Org.Exporters.Citeproc
+                     Org.Exporters.Processing
+                     Org.Exporters.Processing.OrgData
+                     Org.Exporters.Processing.InternalLinks
+                     Org.Exporters.Processing.Prune
+                     Org.Exporters.Processing.SpecialStrings
+                     Org.Exporters.Processing.GatherKeywords
   other-modules:     Paths_org_exporters
   autogen-modules:   Paths_org_exporters
   default-language:  Haskell2010
@@ -57,11 +63,13 @@ library
                    , map-syntax
                    , megaparsec
                    , monad-logger
+                   , multiwalk
                    , pandoc-types >= 1.22
                    , relude
                    , slugify
                    , text
                    , time
+                   , uri-encode
                    , xmlhtml
 
   if flag(pandoc)

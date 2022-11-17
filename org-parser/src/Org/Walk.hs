@@ -1,15 +1,53 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
 
-module Org.Walk where
+module Org.Walk
+  ( module Org.Walk,
+    MultiWalk,
+    (.>),
+    (?>)
+  )
+where
 
-import Control.HasSub
 import Control.MultiWalk
+import Control.MultiWalk.Contains
 import Org.Types
 
 data MWTag
+
+type Walk = Control.MultiWalk.Walk MWTag Identity
+
+type WalkM m = Control.MultiWalk.Walk MWTag m
+
+type Query m = Control.MultiWalk.Query MWTag m
+
+query :: (MultiWalk MWTag c, MultiWalk MWTag t, Monoid m) => (t -> m) -> c -> m
+query = Control.MultiWalk.query @MWTag
+
+walkM :: (MultiWalk MWTag c, MultiWalk MWTag t, Monad m) => (t -> m t) -> c -> m c
+walkM = Control.MultiWalk.walkM @MWTag
+
+walk :: (MultiWalk MWTag c, MultiWalk MWTag t) => (t -> t) -> c -> c
+walk = Control.MultiWalk.walk @MWTag
+
+buildMultiQ ::
+  (MultiWalk MWTag a, Monoid m) =>
+  (Org.Walk.Query m -> QList m (MultiTypes MWTag) -> QList m (MultiTypes MWTag)) ->
+  a ->
+  m
+buildMultiQ = Control.MultiWalk.buildMultiQ @MWTag
+
+buildMultiW ::
+  (MultiWalk MWTag a, Applicative m) =>
+  (Org.Walk.WalkM m -> FList m (MultiTypes MWTag) -> FList m (MultiTypes MWTag)) ->
+  a ->
+  m a
+buildMultiW = Control.MultiWalk.buildMultiW @MWTag
 
 instance MultiTag MWTag where
   type
@@ -24,58 +62,52 @@ instance MultiTag MWTag where
          Citation
        ]
 
-type DoubleList a = MatchWith [[a]] (Compose [] [])
+type List a = Trav [] a
+
+type DoubleList a = MatchWith [[a]] (Trav (Compose [] []) a)
 
 instance MultiWalk MWTag OrgDocument where
-  type SubTypes OrgDocument = '[OrgElement, OrgSection]
+  type SubTypes OrgDocument = ToSpecList '[List OrgElement, List OrgSection]
 
 instance MultiWalk MWTag OrgElement where
   type
     SubTypes OrgElement =
-      '[ OrgElement,
-         OrgObject,
-         OrgObject, -- Objects under affiliated keywords
-         OrgObject, -- Objects under regular keywords
-         [ListItem],
-         OrgObject, -- Objects under table rows
-         OrgObject -- Objects under verse blocks
-       ]
-  type
-    Containers OrgElement =
-      '[ [],
-         [],
-         Under (Map KeywordKey) KeywordValue [],
-         Under Identity KeywordValue [],
-         Identity,
-         Under [] TableRow (DoubleList OrgObject),
-         DoubleList OrgObject
-       ]
+      ToSpecList
+        '[ List OrgElement,
+           List OrgObject,
+           Trav (Map Text) (Under AffKeywordValue (List OrgObject)), -- Objects under affiliated keywords
+           [ListItem],
+           List (Under TableRow (DoubleList OrgObject)), -- Objects under table rows
+           DoubleList OrgObject -- Objects under verse blocks
+         ]
 
 instance MultiWalk MWTag [ListItem] where
-  type SubTypes [ListItem] = '[OrgObject, OrgElement]
   type
-    Containers [ListItem] =
-      '[ Under [] ListItem [],
-         Under [] ListItem []
-       ]
+    SubTypes [ListItem] =
+      ToSpecList
+        '[ List (Under ListItem (List OrgObject)),
+           List (Under ListItem (List OrgElement))
+         ]
 
 instance MultiWalk MWTag OrgSection where
-  type SubTypes OrgSection = '[OrgObject, OrgElement, OrgSection]
+  type
+    SubTypes OrgSection =
+      ToSpecList
+        '[List OrgObject, List OrgElement, List OrgSection]
 
 instance MultiWalk MWTag OrgObject where
   type
     SubTypes OrgObject =
-      '[ OrgObject,
-         OrgElement,
-         Citation
-       ]
-  type
-    Containers OrgObject =
-      '[ [],
-         Under Identity FootnoteRefData [],
-         Identity
-       ]
+      ToSpecList
+        '[ List OrgObject,
+           Under FootnoteRefData (List OrgElement),
+           Citation
+         ]
 
 instance MultiWalk MWTag Citation where
-  type SubTypes Citation = '[OrgObject, OrgObject]
-  type Containers Citation = '[[], Under [] CiteReference []]
+  type
+    SubTypes Citation =
+      ToSpecList
+        '[ List OrgObject,
+           List (Under CiteReference (List OrgObject))
+         ]

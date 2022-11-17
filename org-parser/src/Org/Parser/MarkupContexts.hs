@@ -17,7 +17,7 @@ skipManyTill' skip end = try $ do
   o0 <- getOffset
   s0 <- getInput
   (o1, final) <- skipManyTill skip (liftA2 (,) getOffset end)
-  pure $ (T.take (o1 - o0) s0, final)
+  pure (T.take (o1 - o0) s0, final)
 {-# INLINEABLE skipManyTill' #-}
 
 findSkipping ::
