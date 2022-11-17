@@ -19,9 +19,6 @@ orgDocument = do
   topLevel <- elements
   sections <- many (section 1)
   eof
-  -- At this point, the whole document was parsed.
-  -- This means an state with keywords is available.
-  finalState <- getState
   return $
     OrgDocument
       { documentProperties = properties,
@@ -36,6 +33,7 @@ section lvl = try $ do
   level <- headingStart
   guard (lvl <= level)
   todoKw <- optional todoKeyword
+  isComment <- option False $ try $ string "COMMENT" *> hspace1 $> True
   priority <- optional priorityCookie
   (title, tags, titleTxt) <- titleObjects
   planning <- option emptyPlanning planningInfo
@@ -48,6 +46,7 @@ section lvl = try $ do
       { sectionLevel = level,
         sectionProperties = properties,
         sectionTodo = todoKw,
+        sectionIsComment = isComment,
         sectionPriority = priority,
         sectionTitle = toList title,
         sectionRawTitle = titleTxt,
@@ -89,7 +88,7 @@ todoKeyword = try $ do
     kwParser :: TodoKeyword -> OrgParser TodoKeyword
     kwParser tdm =
       -- NOTE to self: space placement - "TO" is subset of "TODOKEY"
-      try (string (todoName tdm) *> space $> tdm)
+      try (string (todoName tdm) *> hspace1 $> tdm)
 
 -- | Parse a priority cookie like @[#A]@.
 priorityCookie :: OrgParser Priority

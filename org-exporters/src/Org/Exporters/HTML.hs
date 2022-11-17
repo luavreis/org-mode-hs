@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -8,17 +7,18 @@ module Org.Exporters.HTML where
 
 import Control.Exception (throw)
 import Data.ByteString.Builder (toLazyByteString)
-import Ondim
+import Data.Map qualified as Map
+import Data.Map.Syntax ((##))
+import Data.Text qualified as T
 import Ondim.Extra
 import Ondim.HTML
 import Org.Exporters.Common
+import Org.Exporters.Processing.OrgData (OrgData)
 import Org.Types
 import System.FilePath
 import Text.XmlHtml qualified as X
 
-type HTag m = HtmlTag (StateT ExporterState m)
-
-type HtmlBackend m = ExportBackend (HTag m) HtmlNode HtmlNode
+type HtmlBackend m = ExportBackend HtmlTag m HtmlNode HtmlNode
 
 defHtmlBackend :: Monad m => HtmlBackend m
 defHtmlBackend =
@@ -28,6 +28,15 @@ defHtmlBackend =
       exportSnippet "html" = one . rawNode
       exportSnippet _ = const []
       nullEl = TextNode ""
+      affiliatedEnv kws x =
+        x `binding` do
+          "affiliated" ## const $ pure affAttrs
+        where
+          affAttrs :: [(Text, Text)]
+          affAttrs = join $ mapMaybe getHtmlAttrs (Map.toList kws)
+          getHtmlAttrs (k, BackendKeyword v)
+            | "attr_html" `T.isPrefixOf` k = Just v
+          getHtmlAttrs _ = Nothing
       srcPretty _ _ _ = pure Nothing
       rawBlock "html" = one . rawNode
       rawBlock _ = const []
@@ -50,11 +59,11 @@ loadLayout dir = do
 
 render ::
   Monad m =>
-  ExporterSettings ->
-  OndimMS (HTag m) ->
-  Ondim (HTag m) X.Document ->
+  OrgData ->
+  OndimMS HtmlTag m ->
+  Ondim HtmlTag m X.Document ->
   m (Either OndimException LByteString)
-render exst st spl =
+render datum st spl =
   spl
     & bindDefaults
     & runOndimTWith st
@@ -62,15 +71,15 @@ render exst st spl =
     <&> fmap X.render
     <&> fmap toLazyByteString
   where
-    st' = defaultExporterState {exporterSettings = exst}
+    st' = initialExporterState {orgData = datum}
 
 renderFragment ::
   Monad m =>
-  ExporterSettings ->
-  OndimMS (HTag m) ->
-  Ondim (HTag m) [HtmlNode] ->
+  OrgData ->
+  OndimMS HtmlTag m ->
+  Ondim HtmlTag m [HtmlNode] ->
   m (Either OndimException LByteString)
-renderFragment exst st spl =
+renderFragment datum st spl =
   spl
     & bindDefaults
     & runOndimTWith st
@@ -79,17 +88,17 @@ renderFragment exst st spl =
     <&> fmap (X.renderHtmlFragment X.UTF8)
     <&> fmap toLazyByteString
   where
-    st' = defaultExporterState {exporterSettings = exst}
+    st' = initialExporterState {orgData = datum}
 
 renderDoc ::
   Monad m =>
   HtmlBackend m ->
-  ExporterSettings ->
-  OndimMS (HTag m) ->
+  OrgData ->
+  OndimMS HtmlTag m ->
   X.Document ->
   OrgDocument ->
   m (Either OndimException LByteString)
-renderDoc bk s st layout doc =
+renderDoc bk datum st layout doc =
   liftDocument bk doc layout
     & bindDefaults
     & runOndimTWith st
@@ -97,4 +106,4 @@ renderDoc bk s st layout doc =
     <&> fmap X.render
     <&> fmap toLazyByteString
   where
-    st' = defaultExporterState {exporterSettings = s}
+    st' = initialExporterState {orgData = datum}

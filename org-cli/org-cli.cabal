@@ -67,4 +67,4 @@ executable horg
                    , path
                    , pretty-simple >= 4.1
                    , optparse-applicative >= 0.17
-  ghc-options:      -threaded
+  ghc-options:      -threaded -fspecialise-aggressively

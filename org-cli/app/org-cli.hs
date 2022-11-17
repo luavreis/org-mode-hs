@@ -8,6 +8,9 @@ import Options.Applicative
 import Org.Exporters.Common (templateDir)
 import Org.Exporters.HTML qualified as H
 import Org.Exporters.Pandoc qualified as P
+import Org.Exporters.Processing (runPipeline, withCurrentData)
+import Org.Exporters.Processing.InternalLinks (resolveLinks)
+import Org.Exporters.Processing.Prune (pruneDoc)
 import Org.Parser
 import Path (parseAbsDir, parseRelDir)
 import Path.IO (copyDirRecur', doesDirExist)
@@ -15,6 +18,7 @@ import System.FilePath ((</>))
 import Text.Megaparsec (errorBundlePretty)
 import Text.Pandoc qualified as TP
 import Text.Pretty.Simple
+import Org.Exporters.Processing.GatherKeywords (gatherKeywords)
 
 main :: IO ()
 main = do
@@ -36,7 +40,7 @@ main = do
         O.StdInput -> (,"stdin") <$> T.getContents
         O.FileInput f -> (,f) . decodeUtf8 <$> readFileBS f
       parsed <-
-        case parseOrg (O.options opts) fp txt of
+        case parseOrg defaultOrgOptions fp txt of -- TODO org options
           Left e -> do
             putTextLn
               "There was an error parsing your Org file.\n\
@@ -44,10 +48,14 @@ main = do
             putStrLn $ errorBundlePretty e
             error "This should not happen."
           Right d -> pure d
+      let (processed, datum) = runPipeline do
+            gatherKeywords parsed
+            pruned <- withCurrentData $ pruneDoc parsed
+            getCompose $ resolveLinks pruned
       out <-
         case O.backend opts of
-          O.AST False -> pure $ show parsed
-          O.AST True -> pure $ encodeUtf8 $ pShowNoColor parsed
+          O.AST False -> pure $ show processed
+          O.AST True -> pure $ encodeUtf8 $ pShowNoColor processed
           O.HTML oo -> do
             let usrDir = O.templateDir oo
                 lclDir = (</> "html") <$> udir
@@ -57,7 +65,7 @@ main = do
               maybe empty H.loadLayout (usrDir <|> lclDir)
                 <|> H.loadLayout defDir
             either (error . show) toStrict
-              <$> H.renderDoc H.defHtmlBackend (O.settings oo) tpls layout parsed
+              <$> H.renderDoc H.defHtmlBackend datum tpls layout processed
           O.Pandoc fmt tplo oo -> do
             let usrDir = O.templateDir oo
                 lclDir = (</> "pandoc") <$> udir
@@ -66,9 +74,9 @@ main = do
             layout <-
               maybe empty P.loadPandocDoc (usrDir <|> lclDir)
                 <|> P.loadPandocDoc defDir
-            let doc =
-                  either (error . show) id $
-                    P.renderDoc P.defPandocBackend (O.settings oo) tpls layout parsed
+            doc <-
+              either (error . show) id
+                <$> P.renderDoc P.defPandocBackend datum tpls layout processed
             TP.runIOorExplode do
               (w, ext) <- TP.getWriter fmt
               tpl <- TP.compileDefaultTemplate fmt

@@ -69,21 +69,21 @@ instance IsString OrgObjects where
 
 -- * Element builders
 
-para :: Affiliated -> OrgObjects -> OrgElements
+para :: AffKeywords -> OrgObjects -> OrgElements
 para aff = one . Paragraph aff . toList
 
 export :: Text -> Text -> OrgElements
 export format = one . ExportBlock format
 
 example ::
-  Affiliated ->
+  AffKeywords ->
   Map Text Text ->
   [SrcLine] ->
   OrgElements
 example aff sw = one . ExampleBlock aff sw
 
 srcBlock ::
-  Affiliated ->
+  AffKeywords ->
   Text ->
   Map Text Text ->
   [(Text, Text)] ->
@@ -92,7 +92,7 @@ srcBlock ::
 srcBlock aff lang sw args = one . SrcBlock aff lang sw args
 
 greaterBlock ::
-  Affiliated ->
+  AffKeywords ->
   GreaterBlockType ->
   OrgElements ->
   OrgElements
@@ -105,21 +105,21 @@ drawer ::
 drawer name = one . Drawer name . toList
 
 latexEnvironment ::
-  Affiliated ->
+  AffKeywords ->
   Text ->
   Text ->
   OrgElements
 latexEnvironment aff name = one . LaTeXEnvironment aff name
 
 list ::
-  Affiliated ->
+  AffKeywords ->
   ListType ->
   [ListItem] ->
   OrgElements
 list aff kind = one . PlainList aff kind
 
 orderedList ::
-  Affiliated ->
+  AffKeywords ->
   OrderedStyle ->
   Char ->
   [OrgElements] ->
@@ -134,7 +134,7 @@ orderedList aff style separator =
       OrderedAlpha -> [Counter (one a) separator | a <- ['a' ..]]
 
 descriptiveList ::
-  Affiliated ->
+  AffKeywords ->
   [(OrgObjects, OrgElements)] ->
   OrgElements
 descriptiveList aff =
@@ -145,33 +145,27 @@ descriptiveList aff =
 parsedKeyword ::
   OrgObjects ->
   OrgObjects ->
-  KeywordValue
+  AffKeywordValue
 parsedKeyword i = ParsedKeyword (toList i) . toList
 
 parsedKeyword' ::
   OrgObjects ->
-  KeywordValue
+  AffKeywordValue
 parsedKeyword' = parsedKeyword mempty
 
 valueKeyword ::
   Text ->
-  Text ->
-  KeywordValue
+  AffKeywordValue
 valueKeyword = ValueKeyword
-
-valueKeyword' ::
-  Text ->
-  KeywordValue
-valueKeyword' = valueKeyword ""
 
 attrKeyword ::
   [(Text, Text)] ->
-  KeywordValue
+  AffKeywordValue
 attrKeyword = BackendKeyword
 
 keyword ::
-  KeywordKey ->
-  KeywordValue ->
+  Text ->
+  Text ->
   OrgElements
 keyword key = one . Keyword key
 
@@ -268,6 +262,9 @@ link tgt = one . Link tgt . toList
 uriLink :: Text -> Text -> OrgObjects -> OrgObjects
 uriLink protocol tgt = one . Link (URILink protocol tgt) . toList
 
+image :: LinkTarget -> OrgObjects
+image = one . Image
+
 target :: Id -> Text -> OrgObjects
 target a = one . Target a
 
@@ -286,7 +283,7 @@ statisticCookie = one . StatisticCookie
 horizontalRule :: OrgElements
 horizontalRule = one HorizontalRule
 
-table :: Affiliated -> [TableRow] -> OrgElements
+table :: AffKeywords -> [TableRow] -> OrgElements
 table aff = one . Table aff
 
 standardRow :: [OrgObjects] -> TableRow
