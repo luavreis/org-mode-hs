@@ -72,15 +72,13 @@ loadPandocDoc dir = do
 renderDoc ::
   Monad m =>
   PandocBackend m ->
-  OrgData ->
   OndimMS PandocTag m ->
   P.Pandoc ->
+  OrgData ->
   OrgDocument ->
   m (Either OndimException P.Pandoc)
-renderDoc bk datum st layout doc =
-  liftDocument bk doc layout
+renderDoc bk st layout datum doc =
+  liftDocument bk datum doc layout
     & bindDefaults
-    & runOndimTWith st
-    & flip evalStateT st'
-  where
-    st' = initialExporterState {orgData = datum}
+    & evalOndimTWith st
+    & flip evalStateT initialExporterState

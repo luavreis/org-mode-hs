@@ -73,29 +73,27 @@ loadLayout dir = do
 
 evalOndim ::
   Monad m =>
-  OrgData ->
   OndimMS HtmlTag m ->
+  ExporterState ->
   Ondim HtmlTag m a ->
   m (Either OndimException a)
-evalOndim datum st spl =
+evalOndim st eSt spl =
   spl
     & bindDefaults
-    & runOndimTWith st
-    & flip evalStateT st'
-  where
-    st' = initialExporterState {orgData = datum}
+    & evalOndimTWith st
+    & flip evalStateT eSt
 
 render' :: X.Document -> LByteString
 render' = toLazyByteString . X.render
 
 render ::
   Monad m =>
-  OrgData ->
   OndimMS HtmlTag m ->
+  ExporterState ->
   Ondim HtmlTag m X.Document ->
   m (Either OndimException LByteString)
-render datum st spl =
-  evalOndim datum st spl
+render st eSt spl =
+  evalOndim st eSt spl
     <&> fmap render'
 
 renderFragment' :: [HtmlNode] -> LByteString
@@ -103,21 +101,21 @@ renderFragment' = toLazyByteString . X.renderHtmlFragment X.UTF8 . toNodeList
 
 renderFragment ::
   Monad m =>
-  OrgData ->
   OndimMS HtmlTag m ->
+  ExporterState ->
   Ondim HtmlTag m [HtmlNode] ->
   m (Either OndimException LByteString)
-renderFragment datum st spl =
-  evalOndim datum st spl <&> fmap renderFragment'
+renderFragment st eSt spl =
+  evalOndim st eSt spl <&> fmap renderFragment'
 
 renderDoc ::
   Monad m =>
   HtmlBackend m ->
-  OrgData ->
   OndimMS HtmlTag m ->
   X.Document ->
+  OrgData ->
   OrgDocument ->
   m (Either OndimException LByteString)
-renderDoc bk datum st layout doc =
-  evalOndim datum st (liftDocument bk doc layout)
+renderDoc bk st layout datum doc =
+  evalOndim st initialExporterState (liftDocument bk datum doc layout)
     <&> fmap render'
