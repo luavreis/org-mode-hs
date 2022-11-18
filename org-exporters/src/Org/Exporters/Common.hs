@@ -43,6 +43,7 @@ data ExporterState = ExporterState
     linenumCounter :: Int,
     orgData :: OrgData
   }
+  deriving (Eq, Ord, Show, Generic, Typeable)
 
 data ExportBackend tag m obj elm = ExportBackend
   { nullObj :: obj,
@@ -310,7 +311,6 @@ expandOrgElement ::
   OrgElement ->
   Ondim tag m [elm]
 expandOrgElement bk@(ExportBackend {..}) el =
-  withText debugExps $
     case el of
       (Paragraph aff [Image tgt]) ->
         call "org:element:figure"
@@ -379,10 +379,6 @@ expandOrgElement bk@(ExportBackend {..}) el =
       VerseBlock {} -> error "TODO"
       Clock {} -> error "TODO"
   where
-    debugExps =
-      fromList
-        [ ("debug:ast", pure (show el))
-        ]
     bindingAff x aff = x `bindAffKwExpansions` (bk, aff)
     expEls :: [OrgElement] -> Expansion tag m elm
     expEls o = const $ expandOrgElements bk o
@@ -446,11 +442,12 @@ liftDocument ::
   OndimNode tag doc =>
   BackendC tag m obj elm =>
   ExportBackend tag m obj elm ->
+  OrgData ->
   OrgDocument ->
   doc ->
   Ondim tag m doc
-liftDocument bk doc node =
-  bindDocument bk "doc:" doc (liftSubstructures node)
+liftDocument bk datum doc node =
+  bindDocument bk "doc:" datum doc (liftSubstructures node)
 
 bindDocument ::
   forall tag m obj elm doc.
@@ -458,12 +455,12 @@ bindDocument ::
   ExportBackend tag m obj elm ->
   -- | Prefix for expansion names
   Text ->
+  OrgData ->
   OrgDocument ->
   Ondim tag m doc ->
   Ondim tag m doc
-bindDocument bk pfx (OrgDocument {..}) node = do
-  datum <- gets orgData
-  node
+bindDocument bk pfx datum (OrgDocument {..}) node = do
+  (modify (\s -> s { orgData = datum }) >> node)
     `bindingText` prefixed pfx do
       forM_ (toPairs (keywords datum)) \(name, t) -> "kw:" <> name ## pure t
       forM_ (toPairs documentProperties) \(k, v) -> "prop:" <> k ## pure v
