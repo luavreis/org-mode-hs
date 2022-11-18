@@ -26,6 +26,7 @@ import Org.Types
 import Paths_org_exporters (getDataDir)
 import Relude.Extra (insert, lookup, toPairs)
 import System.FilePath (isRelative, takeExtension, (-<.>), (</>))
+import qualified Data.List as L
 
 type ExporterMonad m = StateT ExporterState m
 
@@ -55,7 +56,9 @@ data ExportBackend tag m obj elm = ExportBackend
     mergeLists :: Filter tag m elm,
     hN :: Int -> Expansion tag m elm,
     plainObjsToEls :: [obj] -> [elm],
-    stringify :: obj -> Text
+    stringify :: obj -> Text,
+    srcExpansionType :: Text,
+    srcExpansion :: Text -> Ondim tag m [elm]
   }
 
 templateDir :: IO FilePath
@@ -347,6 +350,11 @@ expandOrgElement bk@(ExportBackend {..}) el =
           `bindingAff` aff
           `bindingText` do
             "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
+      (SrcBlock _ lang _ props c)
+        | lang == srcExpansionType,
+          Just "t" == L.lookup "expand" props ->
+            srcExpansion $
+              T.intercalate "\n" (srcLineContent <$> c)
       (SrcBlock aff lang switches _ c) ->
         srcOrExample bk "org:element:src-block" aff lang c
           `bindingAff` aff

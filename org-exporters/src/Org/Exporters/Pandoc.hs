@@ -43,6 +43,16 @@ defPandocBackend =
           go (P.DefinitionList x) (P.DefinitionList y : r) = P.DefinitionList (x ++ y) : r
           go x y = x : y
       plainObjsToEls = one . P.Plain
+      srcExpansionType = "md"
+      srcExpansion src = do
+        fromMaybe (pure []) do
+          P.Pandoc _ parsed <-
+            rightToMaybe $
+              runPure $
+                readMarkdown
+                  def {readerExtensions = pandocExtensions}
+                  src
+          pure $ liftNodes parsed
    in ExportBackend {stringify = Ondim.Pandoc.stringify, ..}
 
 pandocTemplateDir :: IO FilePath
