@@ -44,7 +44,21 @@ defHtmlBackend =
       hN level y = fmap one $ Element True ("h" <> show level) <$> attributes y <*> children y
       plainObjsToEls = id
       stringify = nodeText
+      srcExpansionType = "html"
+      srcExpansion src = do
+        fromMaybe (pure []) do
+          parsed <-
+            rightToMaybe $
+              X.parseHTML "" $ encodeUtf8 src
+          pure $ liftNodes $ fromNodeList $ X.docContent parsed
    in ExportBackend {..}
+
+-- srcExpansion src = do
+--   fromMaybe (pure []) do
+--     parsed <-
+--       rightToMaybe $
+--         X.parseHTML "" $ encodeUtf8 src
+--     pure $ liftNodes $ fromNodeList $ X.docContent parsed
 
 htmlTemplateDir :: IO FilePath
 htmlTemplateDir = (</> "html") <$> templateDir
