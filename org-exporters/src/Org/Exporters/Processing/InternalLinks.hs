@@ -67,6 +67,7 @@ resolveSection :: WalkM (Compose M F) -> OrgSection -> Compose M F OrgSection
 resolveSection r s@OrgSection {..} = Compose $ do
   title <- getCompose $ traverse r sectionTitle
   child <- getCompose $ traverse r sectionChildren
+  subse <- getCompose $ traverse r sectionSubsections
   anchor <- case Map.lookup "custom_id" sectionProperties of
     Just a -> do
       registerAnchorTarget ("#" <> a) a title
@@ -79,7 +80,14 @@ resolveSection r s@OrgSection {..} = Compose $ do
   return do
     title' <- title
     child' <- child
-    return s {sectionTitle = title', sectionChildren = child', sectionAnchor = anchor}
+    subse' <- subse
+    return
+      s
+        { sectionTitle = title',
+          sectionChildren = child',
+          sectionAnchor = anchor,
+          sectionSubsections = subse'
+        }
 
 -- | Adds context for list items
 resolveListItems :: WalkM (Compose M F) -> [ListItem] -> Compose M F [ListItem]
