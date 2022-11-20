@@ -178,6 +178,7 @@ resolveElements r f = \case
     Compose $ do
       stuff' <- getCompose $ traverse r stuff
       registerFootnote label stuff' $> pure fd
+  (PlainList aff t i) -> PlainList aff t <$> resolveListItems r i
   obj -> f obj
 
 resolveLinks :: WalkM (Compose M F)
@@ -186,4 +187,3 @@ resolveLinks = buildMultiW \f l ->
     .> resolveSection resolveLinks
     .> resolveObjects resolveLinks f
     .> resolveElements resolveLinks f
-    .> resolveListItems resolveLinks

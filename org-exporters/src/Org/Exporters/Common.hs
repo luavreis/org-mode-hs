@@ -465,6 +465,10 @@ bindDocument bk pfx datum (OrgDocument {..}) node = do
       forM_ (toPairs (keywords datum)) \(name, t) -> "kw:" <> name ## pure t
       forM_ (toPairs documentProperties) \(k, v) -> "prop:" <> k ## pure v
     `binding` prefixed pfx do
+      "title" ## const $ expandOrgObjects bk $ parsedTitle datum
+      "author" ## const $ expandOrgObjects bk $ parsedAuthor datum
+      "date" ## const $ expandOrgObjects bk $ parsedDate datum
+    `binding` prefixed pfx do
       "children" ## const $ expandOrgElements bk documentChildren
       "sections" ## const $ expandOrgSections bk documentSections
       "footnotes" ## \node' -> do

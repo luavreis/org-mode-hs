@@ -13,6 +13,9 @@ data OrgOptions = OrgOptions
     orgElementDualKeywords :: [Text],
     orgElementAffiliatedKeywords :: [Text]
   }
+  deriving (Eq, Ord, Show, Typeable, Generic)
+
+instance NFData OrgOptions
 
 defaultOrgOptions :: OrgOptions
 defaultOrgOptions =
