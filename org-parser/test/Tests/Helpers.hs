@@ -26,22 +26,13 @@ class Parsable m a where
   type Parsed m a
   parse' :: m a -> Text -> Either OrgParseError (Parsed m a)
 
-applyFuture :: (F a, OrgParserState) -> a
-applyFuture = uncurry (runReader . getAp)
-
-instance Parsable OrgParser (F a) where
-  type Parsed OrgParser (F a) = a
-  parse' p =
-    second applyFuture
-      . parse (runStateT p defaultState <* eof) ""
-
-instance Parsable (Marked OrgParser) (F a) where
-  type Parsed (Marked OrgParser) (F a) = a
-  parse' p = parse' (getParser p)
-
-instance Parsable OrgParser Properties where
-  type Parsed OrgParser Properties = Properties
+instance Parsable OrgParser a where
+  type Parsed OrgParser a = a
   parse' p = parse (evalStateT p defaultState <* eof) ""
+
+instance Parsable (Marked OrgParser) a where
+  type Parsed (Marked OrgParser) a = a
+  parse' p = parse' (getParser p)
 
 instance PrettyFormable Properties where
   type PrettyForm Properties = Properties
@@ -87,6 +78,7 @@ infix 4 =:
 infix 4 ~:
 
 (~:) ::
+  HasCallStack =>
   (Parsable m a, PrettyFormable (Parsed m a), Eq (Parsed m a), Show (Parsed m a)) =>
   TestName ->
   m a ->
@@ -94,7 +86,7 @@ infix 4 ~:
   TestTree
 (~:) name parser cases =
   testGroup name $
-    flip (`zipWith` [0 ..]) cases $ \(i :: Int) (txt, ref) ->
+    flip (`zipWith` [1 ..]) cases $ \(i :: Int) (txt, ref) ->
       testCase (name <> " " <> show i) $
         case parse' parser txt of
           Left e

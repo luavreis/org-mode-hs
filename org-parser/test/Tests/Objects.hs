@@ -38,7 +38,7 @@ testObjects =
                         }
         ],
       "Targets" ~: target $
-        [ "<<this is a target>>" =?> B.target "0",
+        [ "<<this is a target>>" =?> B.target "" "this is a target",
           "<< not a target>>" =!> (),
           "<<not a target >>" =!> (),
           "<<this < is not a target>>" =!> (),
@@ -75,24 +75,16 @@ testObjects =
           "also linebreak \\\\" =?> "also linebreak " <> B.linebreak
         ],
       "Image or links" ~: regularLinkOrImage $
-        [ "[[./name.jpg]]" =?> B.image (URILink "file" "name.jpg"),
-          "[[file:name.jpg]]" =?> B.image (URILink "file" "name.jpg"),
-          "[[FILE:name.JPG]]" =?> B.image (URILink "file" "name.JPG"),
-          "[[http://blablebli.com]]" =?> B.link (URILink "http" "//blablebli.com") "http://blablebli.com",
-          "[[http://blablebli.com][/uh/ duh! *foo*]]" =?> B.link (URILink "http" "//blablebli.com") (B.italic "uh" <> " duh! " <> B.bold "foo"),
-          "[[./name.jpg][a link]]" =?> B.link (URILink "file" "name.jpg") "a link",
-          "[[../name.jpg][a link]]" =?> B.link (URILink "file" "../name.jpg") "a link",
-          "[[/name.jpg][a link]]" =?> B.link (URILink "file" "//name.jpg") "a link",
-          "[[sunset.png][file:dusk.svg]]" =?> B.link (UnresolvedLink "sunset.png") (B.image (URILink "file" "dusk.svg")),
-          "[[./sunset.png][file:dusk.svg]]" =?> B.link (URILink "file" "sunset.png") (B.image (URILink "file" "dusk.svg"))
+        [ "[[http://blablebli.com]]" =?> B.link (UnresolvedLink "http://blablebli.com") mempty,
+          "[[http://blablebli.com][/uh/ duh! *foo*]]" =?> B.link (UnresolvedLink "http://blablebli.com") (B.italic "uh" <> " duh! " <> B.bold "foo")
         ],
       "Statistic Cookies" ~: statisticCookie $
         [ "[13/18]" =?> B.statisticCookie (Left (13, 18)),
           "[33%]" =?> B.statisticCookie (Right 33)
         ],
       "Footnote references" ~: footnoteReference $
-        [ "[fn::simple]" =?> B.footnoteRef "0",
+        [ "[fn::simple]" =?> B.footnoteInlDef Nothing "simple",
           "[fn::s[imple]" =!> (),
-          "[fn:mydef:s[imp]le]" =?> B.footnoteRef "mydef"
+          "[fn:mydef:s[imp]le]" =?> B.footnoteInlDef (Just "mydef") "s[imp]le"
         ]
     ]

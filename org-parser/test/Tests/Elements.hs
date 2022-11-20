@@ -137,7 +137,7 @@ testElements =
           "- [[foo][bar]] :: bar"
             =?> B.descriptiveList mempty [(B.link (UnresolvedLink "foo") "bar", B.para mempty "bar")],
           "- [[foo:prot.co][bar baz]] :: bla :: ble"
-            =?> B.descriptiveList mempty [(B.link (URILink "foo" "prot.co") "bar baz", B.para mempty "bla :: ble")]
+            =?> B.descriptiveList mempty [(B.link (UnresolvedLink "foo:prot.co") "bar baz", B.para mempty "bla :: ble")]
         ],
       "Greater Blocks" ~: greaterBlock $
         [ --
