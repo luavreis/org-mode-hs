@@ -165,15 +165,17 @@ jobs:
           echo "package org-exporters" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods" >> cabal.project
           cat >> cabal.project <<EOF
-          source-repository-package
-            type:     git
-            location: https://github.com/lucasvreis/ondim.git
-            tag:      7c67a8d9e026e845fa1f92663ef5a3d95941ee74
+          constraints: fsnotify >= 0.3 && < 0.4
 
           source-repository-package
             type:     git
-            location: https://github.com/lucasvreis/unionmount.git
-            tag:      15d5aa14482ced28e2b7959a08e37a06c59f684d
+            location: https://github.com/lucasvreis/multiwalk.git
+            tag:      0b7dcb62ef1795f251d52f0cf9d3a832e089f8b0
+
+          source-repository-package
+            type:     git
+            location: https://github.com/lucasvreis/ondim.git
+            tag:      2c6fa7748a96c0e2abbc5bda53d34f45a1da6911
           EOF
           $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: $_ installed\n" unless /^(org-cli|org-exporters|org-parser)$/; }' >> cabal.project.local
           cat cabal.project
