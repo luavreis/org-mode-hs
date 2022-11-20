@@ -5,6 +5,7 @@ where
 
 import Data.Aeson qualified as Aeson
 import Org.Types
+import Org.Parser.Definitions (OrgOptions, defaultOrgOptions)
 
 data ExporterSettings = ExporterSettings
   { -- | The last level which is still exported as a headline.
@@ -71,7 +72,7 @@ defaultExporterSettings =
       orgExportExcludeTags = ["noexport"],
       orgExportWithEntities = True,
       orgLinkAbbrevAlist = mempty,
-      headlineLevelShift = 0
+      headlineLevelShift = 1
     }
 
 -- | Metadata associated with the document
@@ -82,13 +83,14 @@ data OrgData = OrgData
     parsedDate :: [OrgObject],
     parsedAuthor :: [OrgObject],
     exporterSettings :: ExporterSettings,
+    parserOptions :: OrgOptions,
     internalTargets :: Map Text (Id, [OrgObject]),
     footnotes :: Map Text [OrgElement]
   }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
 initialOrgData :: OrgData
-initialOrgData = OrgData mempty [] [] [] [] defaultExporterSettings mempty mempty
+initialOrgData = OrgData mempty [] [] [] [] defaultExporterSettings defaultOrgOptions mempty mempty
 
 type F = Reader OrgData
 

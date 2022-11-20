@@ -56,7 +56,7 @@ instance MultiTag MWTag where
          OrgSection,
          -- Element stuff
          OrgElement,
-         [ListItem],
+         ListItem,
          -- Object stuff
          OrgObject,
          Citation
@@ -76,17 +76,17 @@ instance MultiWalk MWTag OrgElement where
         '[ List OrgElement,
            List OrgObject,
            Trav (Map Text) (Under AffKeywordValue (List OrgObject)), -- Objects under affiliated keywords
-           [ListItem],
+           List ListItem,
            List (Under TableRow (DoubleList OrgObject)), -- Objects under table rows
            DoubleList OrgObject -- Objects under verse blocks
          ]
 
-instance MultiWalk MWTag [ListItem] where
+instance MultiWalk MWTag ListItem where
   type
-    SubTypes [ListItem] =
+    SubTypes ListItem =
       ToSpecList
-        '[ List (Under ListItem (List OrgObject)),
-           List (Under ListItem (List OrgElement))
+        '[ List OrgObject,
+           List OrgElement
          ]
 
 instance MultiWalk MWTag OrgSection where

@@ -162,8 +162,9 @@ entityOrFragment = Marked "\\" $
     brackets :: MonadParser m => m Text
     brackets = try $ do
       open <- satisfy (\c -> c == '{' || c == '[')
-      str <- takeWhileP Nothing (\c -> c /= open && c /= '\n')
-      close <- char (if open == '{' then '}' else ']')
+      let close = if open == '{' then '}' else ']'
+      str <- takeWhileP Nothing (\c -> c /= close && c /= '\n')
+      _ <- char close
       pure $ open `T.cons` str `T.snoc` close
 
 mathFragment :: Marked OrgParser OrgObjects

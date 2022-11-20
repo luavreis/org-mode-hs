@@ -26,5 +26,4 @@ continuePipeline :: OrgData -> M (F t) -> (t, OrgData)
 continuePipeline data' x = (runReader resolved datum, datum)
   where
     (resolved, (_, fix . runReader -> datum)) =
-      -- magic
       runState x (initialResolveState, pure data')
