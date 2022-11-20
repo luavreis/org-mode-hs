@@ -5,12 +5,15 @@ packages: org-cli
 package *
   split-sections: True
 
--- source-repository-package
---   type: git
---   location: https://github.com/lucasvreis/ondim.git
---   tag: 7c67a8d9e026e845fa1f92663ef5a3d95941ee74
+source-repository-package
+  type: git
+  location: https://github.com/lucasvreis/multiwalk.git
+  tag: 0b7dcb62ef1795f251d52f0cf9d3a832e089f8b0
 
 source-repository-package
   type: git
-  location: https://github.com/lucasvreis/unionmount.git
-  tag: 15d5aa14482ced28e2b7959a08e37a06c59f684d
+  location: https://github.com/lucasvreis/ondim.git
+  tag: 2c6fa7748a96c0e2abbc5bda53d34f45a1da6911
+
+constraints:
+  fsnotify >= 0.3 && < 0.4
