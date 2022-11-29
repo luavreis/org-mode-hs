@@ -19,7 +19,14 @@ registerTitle title = do
     opts <- asks parserOptions
     let parser = plainMarkupContext standardSet
     return case evalOrgMaybe opts parser title of
-      Just title' -> s {parsedTitle = toList title'}
+      Just title' ->
+        let prev = parsedTitle s
+         in s
+              { parsedTitle =
+                  if null prev
+                    then toList title'
+                    else prev ++ toList (" " <> title')
+              }
       Nothing -> s
 
 registerKeyword :: Text -> Text -> M ()
