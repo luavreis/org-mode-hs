@@ -41,7 +41,6 @@ defHtmlBackend =
       rawBlock "html" = one . rawNode
       rawBlock _ = const []
       mergeLists = id
-      hN level y = fmap one $ Element True ("h" <> show level) <$> attributes y <*> children y
       plainObjsToEls = id
       stringify = nodeText
       srcExpansionType = "html"

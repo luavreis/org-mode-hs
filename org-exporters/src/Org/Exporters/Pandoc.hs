@@ -30,10 +30,6 @@ defPandocBackend =
       nullEl = P.Null
       affiliatedEnv _ = id
       rawBlock l = one . P.RawBlock (P.Format l)
-      hN level = fmap $ one . adjLevel level
-        where
-          adjLevel i (P.Header _ x z) = P.Header i x z
-          adjLevel _ x = x
       srcPretty _ _ _ = pure Nothing
       mergeLists = (foldr go [] <$>)
         where
