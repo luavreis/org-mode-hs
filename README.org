@@ -93,7 +93,7 @@ In the spec terms (see below the table for other features), the following compon
 | DiarySexp           | X                |       |
 | Planning            | X                | X     |
 | Comment             | X                | X     |
-| FixedWidth          | X (ExampleBlock) |       |
+| FixedWidth          | X (ExampleBlock) | X     |
 | HorizontalRule      | X                | X     |
 | Keyword             | X                | X     |
 | LaTeXEnvironment    | X                | X     |

@@ -30,7 +30,9 @@ testElements =
           |]
             =?> B.para
               mempty
-              ( "with " <> B.italic "wrapped\nmarkup" <> " and markup "
+              ( "with "
+                  <> B.italic "wrapped\nmarkup"
+                  <> " and markup "
                   <> B.bold "at end"
                   <> B.softbreak
                   <> B.verbatim "at start"
@@ -59,7 +61,7 @@ testElements =
             Hi
           |]
             =?> B.para mempty "Some para"
-              <> B.para mempty "Hi",
+            <> B.para mempty "Hi",
           [text|
             #+attr_html: :style color: red
               - foo
@@ -151,6 +153,21 @@ testElements =
               (Special "fun")
               mempty
         ],
+      "Fixed width" ~: fixedWidth $
+        [ --
+          [text|
+                :   fooblabla boo
+             :  foooo
+                  :       booo
+            |]
+            =?> B.example
+              mempty
+              mempty
+              [ SrcLine " fooblabla boo",
+                SrcLine "foooo",
+                SrcLine "     booo"
+              ]
+        ],
       "Horizontal Rules" ~: horizontalRule $
         [ "    ----------------   "
             =?> B.horizontalRule,
@@ -178,9 +195,9 @@ testElements =
               ]
         ],
       "Tricky whitespace" ~: elements $
-        [ "\n    " =?> mempty
-        , "" =?> mempty
-        , "\n" =?> mempty
-        , "\n\n a" =?> B.para mempty "a"
+        [ "\n    " =?> mempty,
+          "" =?> mempty,
+          "\n" =?> mempty,
+          "\n\n a" =?> B.para mempty "a"
         ]
     ]
