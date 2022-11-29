@@ -13,6 +13,7 @@ module Org.Exporters.Common
   )
 where
 
+import Data.List qualified as L
 import Data.Map.Syntax
 import Data.Text qualified as T
 import Data.Time (Day, TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
@@ -20,13 +21,16 @@ import Ondim hiding (Expansion, Filter, Ondim, OndimMS)
 import Ondim qualified
 import Ondim.Extra
 import Org.Data.Entities qualified as Data
+import Org.Exporters.Processing (resolveLinks, runPipeline)
 import Org.Exporters.Processing.OrgData
 import Org.Exporters.Processing.SpecialStrings (doSpecialStrings)
+import Org.Parser (evalOrgMaybe)
+import Org.Parser.Elements (elements)
+import Org.Parser.Objects (plainMarkupContext, standardSet)
 import Org.Types
 import Paths_org_exporters (getDataDir)
 import Relude.Extra (insert, lookup, toPairs)
 import System.FilePath (isRelative, takeExtension, (-<.>), (</>))
-import qualified Data.List as L
 
 type ExporterMonad m = StateT ExporterState m
 
@@ -55,7 +59,6 @@ data ExportBackend tag m obj elm = ExportBackend
     affiliatedEnv :: AffKeywords -> Ondim tag m [elm] -> Ondim tag m [elm],
     rawBlock :: Text -> Text -> [elm],
     mergeLists :: Filter tag m elm,
-    hN :: Int -> Expansion tag m elm,
     plainObjsToEls :: [obj] -> [elm],
     stringify :: obj -> Text,
     srcExpansionType :: Text,
@@ -93,7 +96,7 @@ justOrIgnore :: (OndimTag tag, Monad m) => Maybe a -> (a -> Expansion tag m b) -
 justOrIgnore = flip (maybe ignore)
 
 tags :: forall m tag t. (HasAttrChild tag t, Monad m) => Tag -> Expansion tag m t
-tags tag x = children x `bindingText` ("tag" ## pure tag)
+tags tag x = liftChildren x `bindingText` ("tag" ## pure tag)
 
 bindAffKwExpansions ::
   BackendC tag m obj elm =>
@@ -144,6 +147,40 @@ type BackendC tag m obj elm =
     HasAttrChild tag elm,
     Monad m
   )
+
+parseObjectsExp ::
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
+  Expansion tag m obj
+parseObjectsExp bk self = do
+  opts <- gets (parserOptions . orgData)
+  txt <- fromMaybe "" <$> lookupAttr "text" self
+  case evalOrgMaybe opts parser txt of
+    Just parsed ->
+      let (solved, _) =
+            runPipeline . getCompose $
+              traverse resolveLinks $
+                toList parsed
+       in expandOrgObjects bk solved
+    Nothing -> throwCustom $ "Could not parse " <> show txt
+  where
+    parser = plainMarkupContext standardSet
+
+parseElementsExp ::
+  BackendC tag m obj elm =>
+  ExportBackend tag m obj elm ->
+  Expansion tag m elm
+parseElementsExp bk self = do
+  opts <- gets (parserOptions . orgData)
+  txt <- fromMaybe "" <$> lookupAttr "text" self
+  case evalOrgMaybe opts elements txt of
+    Just parsed ->
+      let (solved, _) =
+            runPipeline . getCompose $
+              traverse resolveLinks $
+                toList parsed
+       in expandOrgElements bk solved
+    Nothing -> throwCustom $ "Could not parse " <> show txt
 
 expandOrgObjects ::
   BackendC tag m obj elm =>
@@ -295,7 +332,7 @@ expandOrgObject bk@(ExportBackend {..}) obj =
         ]
     expObjs :: [OrgObject] -> Expansion tag m obj
     expObjs o = const $ expandOrgObjects bk o
-    call x = callExpansion x (pure nullObj)
+    call x = callExpansion x nullObj
 
 expandOrgElements ::
   BackendC tag m obj elm =>
@@ -311,78 +348,78 @@ expandOrgElement ::
   OrgElement ->
   Ondim tag m [elm]
 expandOrgElement bk@(ExportBackend {..}) el =
-    case el of
-      (Paragraph aff [Image tgt]) ->
-        call "org:element:figure"
-          `bindingAff` aff
-          `bindingText` linkTarget tgt
-      (Paragraph aff c) ->
-        call "org:element:paragraph"
-          `bindingAff` aff
-          `binding` ("content" ## const $ expandOrgObjects bk c)
-      (GreaterBlock aff Quote c) ->
-        call "org:element:quote-block"
-          `bindingAff` aff
-          `binding` do
-            "content" ## expEls c
-      (GreaterBlock aff Center c) ->
-        call "org:element:center-block"
-          `bindingAff` aff
-          `binding` do
-            "content" ## expEls c
-      (GreaterBlock aff (Special cls) c) ->
-        call "org:element:special-block"
-          `bindingAff` aff
-          `bindingText` do "special-name" ## pure cls
-          `binding` do
-            "content" ## expEls c
-      (PlainList aff k i) ->
-        plainList bk k i
-          `bindingAff` aff
-      (DynamicBlock _ _ els) ->
-        expandOrgElements bk els
-      (Drawer _ els) ->
-        expandOrgElements bk els
-      (ExportBlock lang code) ->
-        pure $ rawBlock lang code
-      (ExampleBlock aff switches c) ->
-        srcOrExample bk "org:element:example-block" aff "" c
-          `bindingAff` aff
-          `bindingText` do
-            "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
-      (SrcBlock _ lang _ props c)
-        | lang == srcExpansionType,
-          Just "t" == L.lookup "expand" props ->
-            srcExpansion $
-              T.intercalate "\n" (srcLineContent <$> c)
-      (SrcBlock aff lang switches _ c) ->
-        srcOrExample bk "org:element:src-block" aff lang c
-          `bindingAff` aff
-          `bindingText` do
-            "language" ## pure lang
-            "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
-      (LaTeXEnvironment aff _ text) ->
-        call "org:element:latex-environment"
-          `bindingAff` aff
-          `bindingText` do "content" ## pure text
-      (Table aff rs) ->
-        table bk rs
-          `bindingAff` aff
-      HorizontalRule ->
-        call "org:element:horizontal-rule"
-      Keyword k v ->
-        call "org:element:keyword"
-          `bindingText` do
-            "keyword:key" ## pure k
-            "keyword:value" ## pure v
-      FootnoteDef {} -> pure []
-      VerseBlock {} -> error "TODO"
-      Clock {} -> error "TODO"
+  case el of
+    (Paragraph aff [Image tgt]) ->
+      call "org:element:figure"
+        `bindingAff` aff
+        `bindingText` linkTarget tgt
+    (Paragraph aff c) ->
+      call "org:element:paragraph"
+        `bindingAff` aff
+        `binding` ("content" ## const $ expandOrgObjects bk c)
+    (GreaterBlock aff Quote c) ->
+      call "org:element:quote-block"
+        `bindingAff` aff
+        `binding` do
+          "content" ## expEls c
+    (GreaterBlock aff Center c) ->
+      call "org:element:center-block"
+        `bindingAff` aff
+        `binding` do
+          "content" ## expEls c
+    (GreaterBlock aff (Special cls) c) ->
+      call "org:element:special-block"
+        `bindingAff` aff
+        `bindingText` do "special-name" ## pure cls
+        `binding` do
+          "content" ## expEls c
+    (PlainList aff k i) ->
+      plainList bk k i
+        `bindingAff` aff
+    (DynamicBlock _ _ els) ->
+      expandOrgElements bk els
+    (Drawer _ els) ->
+      expandOrgElements bk els
+    (ExportBlock lang code) ->
+      pure $ rawBlock lang code
+    (ExampleBlock aff switches c) ->
+      srcOrExample bk "org:element:example-block" aff "" c
+        `bindingAff` aff
+        `bindingText` do
+          "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
+    (SrcBlock _ lang _ props c)
+      | lang == srcExpansionType,
+        Just "t" == L.lookup "expand" props ->
+          srcExpansion $
+            T.intercalate "\n" (srcLineContent <$> c)
+    (SrcBlock aff lang switches _ c) ->
+      srcOrExample bk "org:element:src-block" aff lang c
+        `bindingAff` aff
+        `bindingText` do
+          "language" ## pure lang
+          "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
+    (LaTeXEnvironment aff _ text) ->
+      call "org:element:latex-environment"
+        `bindingAff` aff
+        `bindingText` do "content" ## pure text
+    (Table aff rs) ->
+      table bk rs
+        `bindingAff` aff
+    HorizontalRule ->
+      call "org:element:horizontal-rule"
+    Keyword k v ->
+      call "org:element:keyword"
+        `bindingText` do
+          "keyword:key" ## pure k
+          "keyword:value" ## pure v
+    FootnoteDef {} -> pure []
+    VerseBlock {} -> error "TODO"
+    Clock {} -> error "TODO"
   where
     bindingAff x aff = x `bindAffKwExpansions` (bk, aff)
     expEls :: [OrgElement] -> Expansion tag m elm
     expEls o = const $ expandOrgElements bk o
-    call x = callExpansion x (pure nullEl)
+    call x = callExpansion x nullEl
 
 expandOrgSections ::
   forall tag m obj elm.
@@ -395,7 +432,7 @@ expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) = do
   let level = sectionLevel fstSection
   hlevels <- getSetting orgExportHeadlineLevels
   shift <- getSetting headlineLevelShift
-  callExpansion "org:sections" (pure nullEl)
+  callExpansion "org:sections" nullEl
     `binding` do
       if level + shift > hlevels
         then switchCases @elm "over-level"
@@ -403,9 +440,9 @@ expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) = do
       "sections" ## \x ->
         mergeLists $
           join <$> forM sections \section@(OrgSection {..}) ->
-            children x
+            liftChildren x
               `binding` prefixed "section:" do
-                "headline"
+                "title"
                   ## const
                   $ toList <$> expandOrgObjects bk sectionTitle
                 "tags" ## \inner ->
@@ -417,13 +454,13 @@ expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) = do
                     withoutText "todo-state" $
                       withoutText "todo-name" $
                         expandOrgSections bk sectionSubsections
-                "h-n" ## hN (sectionLevel + shift)
               `bindingText` prefixed "section:" do
                 for_ sectionTodo todo
                 for_ sectionPriority priority
                 for_ (toPairs sectionProperties) \(k, v) ->
                   "prop:" <> k ## pure v
                 "anchor" ## pure $ sectionAnchor
+                "level" ## pure (show $ sectionLevel + shift)
                 -- Debug
                 "debug:ast" ## pure (show section)
   where
@@ -460,7 +497,7 @@ bindDocument ::
   Ondim tag m doc ->
   Ondim tag m doc
 bindDocument bk pfx datum (OrgDocument {..}) node = do
-  (modify (\s -> s { orgData = datum }) >> node)
+  (modify (\s -> s {orgData = datum}) >> node)
     `bindingText` prefixed pfx do
       forM_ (toPairs (keywords datum)) \(name, t) -> "kw:" <> name ## pure t
       forM_ (toPairs documentProperties) \(k, v) -> "prop:" <> k ## pure v
@@ -478,11 +515,11 @@ bindDocument bk pfx datum (OrgDocument {..}) node = do
               (,num) <$> lookup ref (footnotes datum)
         if not (null fns)
           then
-            children node'
+            liftChildren node'
               `binding` do
                 "footnote-defs" ## \inner ->
                   join <$> forM fns \(els, num) ->
-                    children @elm inner
+                    liftChildren @elm inner
                       `bindingText` do
                         "footnote-def:number" ## pure (show num)
                       `binding` do
@@ -496,13 +533,13 @@ table ::
   [TableRow] ->
   Ondim tag m [elm]
 table bk@(ExportBackend {..}) rows =
-  callExpansion "org:element:table" (pure nullEl)
+  callExpansion "org:element:table" nullEl
     `binding` do
       "table:head" ## \inner ->
         fromMaybe (pure []) do
           rs <- tableHead
           pure $
-            children inner `binding` do
+            liftChildren inner `binding` do
               "head:rows" ## tableRows rs
       "table:bodies" ## tableBodies
   where
@@ -523,17 +560,17 @@ table bk@(ExportBackend {..}) rows =
     tableBodies inner =
       mergeLists $
         join <$> forM bodies \body ->
-          children inner `binding` do
+          liftChildren inner `binding` do
             "body:rows" ## tableRows body
 
     tableRows :: [[TableCell]] -> Expansion tag m obj
     tableRows rs inner =
       join <$> forM rs \cells ->
-        children inner
+        liftChildren inner
           `binding` do
             "row:cells" ## \inner' ->
               join <$> forM (zip cells alignment) \(row, alig) ->
-                children @obj inner'
+                liftChildren @obj inner'
                   `binding` do
                     "cell:content" ## const $ expandOrgObjects bk row
                   `bindingText` for_ alig \a ->
@@ -556,7 +593,7 @@ plainList ::
   [ListItem] ->
   Ondim tag m [elm]
 plainList bk@(ExportBackend {..}) kind items =
-  callExpansion "org:element:plain-list" (pure nullEl)
+  callExpansion "org:element:plain-list" nullEl
     `binding` do
       "list-items" ## listItems
       case kind of
@@ -573,7 +610,7 @@ plainList bk@(ExportBackend {..}) kind items =
     listItems inner =
       mergeLists $
         join <$> forM items \(ListItem _ i cbox t c) ->
-          children inner
+          liftChildren inner
             `bindingText` do
               "counter-set" ## pure $ maybe "" show i
               "checkbox" ## pure $ maybe "" checkbox cbox
@@ -609,7 +646,7 @@ srcOrExample ::
   [SrcLine] ->
   Ondim tag m [elm]
 srcOrExample (ExportBackend {..}) name aff lang lins =
-  callExpansion name (pure nullEl)
+  callExpansion name nullEl
     `binding` ("src-lines" ## runLines)
     `bindingText` do
       "content" ## pure $ T.intercalate "\n" (srcLineContent <$> lins)
@@ -646,7 +683,7 @@ timestamp ::
   TimestampData ->
   Ondim tag m [obj]
 timestamp (ExportBackend {..}) ts =
-  callExpansion "org:object:timestamp" (pure nullObj)
+  callExpansion "org:object:timestamp" nullObj
     `binding` case ts of
       TimestampData a (dateToDay -> d, fmap toTime -> t, r, w) -> do
         dtExps d t r w
@@ -655,15 +692,15 @@ timestamp (ExportBackend {..}) ts =
         a
         (dateToDay -> d1, fmap toTime -> t1, r1, w1)
         (dateToDay -> d2, fmap toTime -> t2, r2, w2) -> do
-          "from" ## \x -> children x `binding` dtExps d1 t1 r1 w1
-          "to" ## \x -> children x `binding` dtExps d2 t2 r2 w2
+          "from" ## \x -> liftChildren x `binding` dtExps d1 t1 r1 w1
+          "to" ## \x -> liftChildren x `binding` dtExps d2 t2 r2 w2
           switchCases @obj (active a <> "-range")
   where
     dtExps d t r w = do
       "repeater"
-        ## justOrIgnore r \r' x -> children x `bindingText` tsMark r'
+        ## justOrIgnore r \r' x -> liftChildren x `bindingText` tsMark r'
       "warning-period"
-        ## justOrIgnore w \w' x -> children x `bindingText` tsMark w'
+        ## justOrIgnore w \w' x -> liftChildren x `bindingText` tsMark w'
       "ts-date" ## tsDate d
       "ts-time" ## tsTime t
 
@@ -679,15 +716,13 @@ timestamp (ExportBackend {..}) ts =
     toTime (h, m) = TimeOfDay h m 0
 
     tsDate :: Day -> Expansion tag m obj
-    tsDate day input' = do
-      input <- input'
+    tsDate day input = do
       let format = toString $ stringify input
           locale = defaultTimeLocale -- TODO
       pure . plain . toText $ formatTime locale format day
 
     tsTime :: Maybe TimeOfDay -> Expansion tag m obj
-    tsTime time input' = do
-      input <- input'
+    tsTime time input = do
       let format = toString $ stringify input
           locale = defaultTimeLocale -- TODO
       maybe (pure []) (pure . plain . toText . formatTime locale format) time
