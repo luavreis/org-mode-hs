@@ -62,6 +62,7 @@ elementIndentable =
         latexEnvironment,
         drawer,
         keyword,
+        fixedWidth,
         horizontalRule,
         table
       ]
@@ -200,24 +201,36 @@ indentedElements indent =
 exampleBlock :: OrgParser OrgElements
 exampleBlock = try do
   hspace
-  f <- withAffiliated B.example
   _ <- string'' "#+begin_example"
   switches <- blockSwitches
   _ <- anyLine
   contents <- rawBlockContents end switches
+  f <- withAffiliated B.example
   pure $ f switches contents
   where
     end = try $ hspace *> string'' "#+end_example" <* blankline'
 
+fixedWidth :: OrgParser OrgElements
+fixedWidth = try do
+  contents <- SrcLine <<$>> some (hspace *> string ": " *> anyLine')
+  tabWidth <- getsO orgSrcTabWidth
+  preserveIndent <- getsO orgSrcPreserveIndentation
+  let lines' =
+        if preserveIndent
+          then map (srcLineMap (tabsToSpaces tabWidth)) contents
+          else indentContents tabWidth contents
+  f <- withAffiliated B.example
+  pure $ f mempty lines'
+
 srcBlock :: OrgParser OrgElements
 srcBlock = try do
   hspace
-  f <- withAffiliated B.srcBlock
   _ <- string'' "#+begin_src"
   lang <- option "" $ hspace1 *> someNonSpace
   switches <- blockSwitches
   args <- headerArgs
   contents <- rawBlockContents end switches
+  f <- withAffiliated B.srcBlock
   pure $ f lang switches args contents
   where
     end = try $ hspace *> string'' "#+end_src" <* blankline'
@@ -358,10 +371,10 @@ blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
 
 greaterBlock :: OrgParser OrgElements
 greaterBlock = try do
-  f <- withAffiliated B.greaterBlock
   hspace
   _ <- string'' "#+begin_"
   bname <- someNonSpace <* anyLine
+  f <- withAffiliated B.greaterBlock
   els <- withContext anyLine (end bname) elements
   clearPendingAffiliated
   return $ f (blockType bname) els
@@ -503,9 +516,9 @@ horizontalRule = try do
 table :: OrgParser OrgElements
 table = try do
   hspace
-  f <- withAffiliated B.table
   _ <- lookAhead $ char '|'
   rows <- some tableRow
+  f <- withAffiliated B.table
   pure (f rows)
   where
     tableRow :: OrgParser TableRow
