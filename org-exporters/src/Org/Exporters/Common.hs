@@ -376,8 +376,6 @@ expandOrgElement bk@(ExportBackend {..}) el =
     (PlainList aff k i) ->
       plainList bk k i
         `bindingAff` aff
-    (DynamicBlock _ _ els) ->
-      expandOrgElements bk els
     (Drawer _ els) ->
       expandOrgElements bk els
     (ExportBlock lang code) ->
@@ -414,7 +412,6 @@ expandOrgElement bk@(ExportBackend {..}) el =
           "keyword:value" ## pure v
     FootnoteDef {} -> pure []
     VerseBlock {} -> error "TODO"
-    Clock {} -> error "TODO"
   where
     bindingAff x aff = x `bindAffKwExpansions` (bk, aff)
     expEls :: [OrgElement] -> Expansion tag m elm
@@ -624,12 +621,6 @@ plainList bk@(ExportBackend {..}) kind items =
         doPlainOrPara els = expandOrgElements bk els
 
         _start = join $ flip viaNonEmpty items \(ListItem _ i _ _ _ :| _) -> i
-
-        -- adjFstF :: Filter tag ElementNode tag
-        -- adjFstF = (map go <$>)
-        --   where
-        --     go (P.OrderedList (n, y, z) b) = P.OrderedList (fromMaybe n start, y, z) b
-        --     go b = b
 
         checkbox :: Checkbox -> Text
         checkbox (BoolBox True) = "true"

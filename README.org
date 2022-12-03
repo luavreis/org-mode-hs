@@ -75,22 +75,18 @@ In the spec terms (see below the table for other features), the following compon
 |---------------------+------------------+-------|
 | GreaterBlock        | X                | X     |
 | Drawer              | X                | X     |
-| DynamicBlock        | X                |       |
 | FootnoteDefinition  | X                | X     |
-| InlineTask          | X                |       |
 | Item                | X                | X     |
 | List                | X                | X     |
 | PropertyDrawer      | X                | X     |
 | Table               | X                | X     |
 |---------------------+------------------+-------|
-| BabelCall           | X                |       |
+| BabelCall           |                  |       |
 | Comment Block       | X                | X     |
 | Example Block       | X                | X     |
 | Export Block        | X                | X     |
 | Src Block           | X                | X     |
 | Verse Block         | X                |       |
-| Clock               | X                |       |
-| DiarySexp           | X                |       |
 | Planning            | X                | X     |
 | Comment             | X                | X     |
 | FixedWidth          | X (ExampleBlock) | X     |
@@ -106,7 +102,7 @@ In the spec terms (see below the table for other features), the following compon
 | LaTeXFragment       | X                | X     |
 | ExportSnippet       | X                | X     |
 | FootnoteReference   | X                | X     |
-| InlineBabelCall     | X                |       |
+| InlineBabelCall     | X                | X     |
 | InlineSrcBlock      | X                | X     |
 | RadioLink           | X (Link)         |       |
 | PlainLink           | X (Link)         |       |
