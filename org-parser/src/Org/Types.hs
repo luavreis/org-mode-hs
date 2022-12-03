@@ -127,15 +127,9 @@ data OrgElement
         -- | Drawer elements
         drawerElements :: [OrgElement]
       }
-  | -- | Dynamic block
-    DynamicBlock
-      { dynBlkName :: Text,
-        dynBlkArguments :: [(Text, Text)],
-        dynBlkElements :: [OrgElement]
-      }
   | -- | Plain list
     PlainList
-      { -- | AffKeywords keywords
+      { -- | Affiliated keywords
         affKws :: AffKeywords,
         -- | List types
         listType :: ListType,
@@ -151,14 +145,14 @@ data OrgElement
   | -- | Example block
     ExampleBlock
       AffKeywords
-      -- ^ AffKeywords keywords
+      -- ^ Affiliated keywords
       (Map Text Text)
       -- ^ Switches
       [SrcLine]
       -- ^ Contents
   | -- | Source blocks
     SrcBlock
-      { -- | AffKeywords keywords
+      { -- | Affiliated keywords
         affKws :: AffKeywords,
         -- | Language
         srcBlkLang :: Text,
@@ -170,7 +164,6 @@ data OrgElement
         srcBlkLines :: [SrcLine]
       }
   | VerseBlock AffKeywords [[OrgObject]]
-  | Clock ClockData
   | HorizontalRule
   | Keyword Text Text
   | LaTeXEnvironment
@@ -261,13 +254,6 @@ listItemType :: ListItem -> ListType
 listItemType (ListItem (Counter t _) _ _ _ _) = Ordered (orderedStyle t)
 listItemType (ListItem (Bullet _) _ _ (_ : _) _) = Descriptive
 listItemType (ListItem (Bullet c) _ _ _ _) = Unordered c
-
--- Clock
-
-data ClockData
-  = ClockSimple DateTime
-  | ClockRange DateTime DateTime Time
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
 -- Babel call
 
@@ -377,56 +363,30 @@ data CiteReference = CiteReference
   }
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
+{- ORMOLU_DISABLE -}
 instance NFData OrgDocument
-
 instance NFData AffKeywordValue
-
 instance NFData FootnoteRefData
-
 instance NFData OrgObject
-
 instance NFData QuoteType
-
-instance NFData TimestampData
-
-instance NFData FragmentType
-
-instance NFData Citation
-
-instance NFData CiteReference
-
 instance NFData BabelCall
-
+instance NFData TimestampData
+instance NFData FragmentType
+instance NFData Citation
+instance NFData CiteReference
 instance NFData LinkTarget
-
 instance NFData OrgElement
-
 instance NFData GreaterBlockType
-
 instance NFData ListType
-
 instance NFData OrderedStyle
-
 instance NFData ListItem
-
 instance NFData Bullet
-
 instance NFData Checkbox
-
 instance NFData SrcLine
-
-instance NFData ClockData
-
 instance NFData TableRow
-
 instance NFData ColumnAlignment
-
 instance NFData OrgSection
-
 instance NFData TodoKeyword
-
 instance NFData TodoState
-
 instance NFData Priority
-
 instance NFData PlanningInfo
