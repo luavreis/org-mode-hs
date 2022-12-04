@@ -459,9 +459,10 @@ suscript = Marked "_^" $ try do
   for_ lchar $ guard . not . isSpace
   start <- satisfy \c -> c == '_' || c == '^'
   contents <- asterisk <|> balanced <|> plain
-  pure $ if start == '_'
-    then B.subscript contents
-    else B.superscript contents
+  pure $
+    if start == '_'
+      then B.subscript contents
+      else B.superscript contents
   where
     asterisk = B.plain . one <$> char '*'
 
@@ -484,6 +485,20 @@ suscript = Marked "_^" $ try do
           <|> void (noneOf [',', '.', '\\'])
 
 -- * Macros
+
+macro :: Marked OrgParser OrgObjects
+macro = Marked "{" $ try do
+  _ <- string "{{{"
+  _ <- lookAhead $ satisfy isAsciiAlpha
+  key <- takeWhile1P Nothing allowedKeyChar
+  args <-
+    (string "}}}" $> []) <|> do
+      _ <- char '('
+      t <- fst <$> findSkipping (/= ')') (string ")}}}")
+      return $ T.split (== ',') t
+  return $ B.macro key args
+  where
+    allowedKeyChar c = isAsciiAlpha c || isDigit c || c == '-' || c == '_'
 
 -- * Footnote references
 

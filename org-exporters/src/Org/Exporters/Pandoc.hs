@@ -2,13 +2,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Org.Exporters.Pandoc where
 
 import Control.Exception (throw)
 import Ondim.Extra.Loading (TemplateLoadingError (..))
-import Ondim.Pandoc
+import Ondim.Pandoc hiding (stringify)
+import Ondim.Pandoc qualified
 import Org.Exporters.Common
 import Org.Types (OrgDocument)
 import System.FilePath
@@ -49,7 +49,10 @@ defPandocBackend =
                   def {readerExtensions = pandocExtensions}
                   src
           pure $ liftNodes parsed
-   in ExportBackend {stringify = Ondim.Pandoc.stringify, ..}
+      inlBabelCall _ = pure []
+      macro key _ = callExpansion key nullObj
+      stringify = Ondim.Pandoc.stringify
+   in ExportBackend {..}
 
 pandocTemplateDir :: IO FilePath
 pandocTemplateDir = (</> "pandoc") <$> templateDir

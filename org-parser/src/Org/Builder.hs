@@ -253,6 +253,9 @@ exportSnippet backend = one . ExportSnippet backend
 inlBabel :: Text -> Text -> Text -> Text -> OrgObjects
 inlBabel name h1 h2 args = one $ InlBabelCall (BabelCall name h1 h2 args)
 
+macro :: Text -> [Text] -> OrgObjects
+macro = (one .) . Macro
+
 inlSrc :: Text -> Text -> Text -> OrgObjects
 inlSrc name headers = one . Src name headers
 
