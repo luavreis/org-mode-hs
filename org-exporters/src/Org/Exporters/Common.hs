@@ -55,6 +55,8 @@ data ExportBackend tag m obj elm = ExportBackend
     softbreak :: [obj],
     exportSnippet :: Text -> Text -> [obj],
     nullEl :: elm,
+    macro :: Text -> [Text] -> Ondim tag m [obj],
+    inlBabelCall :: BabelCall -> Ondim tag m [obj],
     srcPretty :: AffKeywords -> Text -> Text -> Ondim tag m (Maybe [[obj]]),
     affiliatedEnv :: AffKeywords -> Ondim tag m [elm] -> Ondim tag m [elm],
     rawBlock :: Text -> Text -> [elm],
@@ -321,10 +323,8 @@ expandOrgObject bk@(ExportBackend {..}) obj =
                 `bindingText` do
                   "statistic-cookie:percentage" ## pure p
                   "statistic-cookie:value" ## pure $ p <> "%"
-      InlBabelCall {} ->
-        error "TODO"
-      Macro {} ->
-        error "TODO"
+      Macro key args -> macro key args
+      InlBabelCall args -> inlBabelCall args
   where
     debugExps =
       fromList

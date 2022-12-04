@@ -110,7 +110,7 @@ In the spec terms (see below the table for other features), the following compon
 | RegularLink         | X (Link)         | X     |
 | Image               | X                | X     |
 | LineBreak           | X                | X     |
-| Macro               | X                |       |
+| Macro               | X                | X     |
 | Citation            | X                | X     |
 | RadioTarget         |                  |       |
 | Target              | X                | X     |

@@ -86,5 +86,11 @@ testObjects =
         [ "[fn::simple]" =?> B.footnoteInlDef Nothing "simple",
           "[fn::s[imple]" =!> (),
           "[fn:mydef:s[imp]le]" =?> B.footnoteInlDef (Just "mydef") "s[imp]le"
+        ],
+      "Macros" ~: macro $
+        [ "{{{fooo()}}}" =?> B.macro "fooo" [""],
+          "{{{função()}}}" =!> (),
+          "{{{2fun()}}}" =!> (),
+          "{{{fun-2_3(bar,(bar,baz){a})}}}" =?> B.macro "fun-2_3" ["bar", "(bar", "baz){a}"]
         ]
     ]
