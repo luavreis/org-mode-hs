@@ -1,7 +1,9 @@
 #+title: horg
 
-  This repository provides a parser and exporters for Org Mode documents. The Org document is parsed into an AST similar to =org-element='s, and the exporters are highly configurable using HTML or Markdown templates.
+This repository provides a parser and exporters for Org Mode documents. The Org document is parsed into an AST similar to =org-element='s, and the exporters are highly configurable using HTML or Markdown templates.
 
+IMPORTANT: recently, I've been changing the code that runs the templates without updating the templates themselves. So, while everything compiles, most likely the exporters won't work. Please wait while things get more stable (or keep up with the template updates yourself).
+  
 * Table of contents :TOC:
 - [[#org-cli-horg][org-cli (horg)]]
   - [[#installation][Installation]]
