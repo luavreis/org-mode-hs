@@ -51,7 +51,7 @@ defHtmlBackend =
               X.parseHTML "" $ encodeUtf8 src
           pure $ liftNodes $ fromNodeList $ X.docContent parsed
       inlBabelCall _ = pure []
-      macro key _ = callExpansion key nullObj
+      macro _ _ = pure []
    in ExportBackend {..}
 
 -- srcExpansion src = do
