@@ -50,7 +50,7 @@ defPandocBackend =
                   src
           pure $ liftNodes parsed
       inlBabelCall _ = pure []
-      macro key _ = callExpansion key nullObj
+      macro _ _ = pure []
       stringify = Ondim.Pandoc.stringify
    in ExportBackend {..}
 
