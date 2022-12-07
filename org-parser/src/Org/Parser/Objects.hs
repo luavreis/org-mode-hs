@@ -26,7 +26,8 @@ minimalSet =
       singleQuoted,
       doubleQuoted,
       suscript,
-      statisticCookie
+      statisticCookie,
+      macro
     ]
 
 -- minimalSetChars :: Set Char
