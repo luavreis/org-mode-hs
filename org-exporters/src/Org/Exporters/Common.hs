@@ -14,6 +14,7 @@ module Org.Exporters.Common
 where
 
 import Data.List qualified as L
+import Data.Map qualified as Map
 import Data.Map.Syntax
 import Data.Text qualified as T
 import Data.Time (Day, TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
@@ -29,7 +30,6 @@ import Org.Parser.Elements (elements)
 import Org.Parser.Objects (plainMarkupContext, standardSet)
 import Org.Types
 import Paths_org_exporters (getDataDir)
-import Relude.Extra (insert, lookup, toPairs)
 import System.FilePath (isRelative, takeExtension, (-<.>), (</>))
 
 type ExporterMonad m = StateT ExporterState m
@@ -42,10 +42,8 @@ type Expansion tag m a = Ondim.Expansion tag (ExporterMonad m) a
 
 type Filter tag m a = Ondim.Filter tag (ExporterMonad m) a
 
-data ExporterState = ExporterState
-  { footnoteCounter :: (Int, Map Text Int),
-    linenumCounter :: Int,
-    orgData :: OrgData
+newtype ExporterState = ExporterState
+  { orgData :: OrgData
   }
   deriving (Eq, Ord, Show, Generic, Typeable)
 
@@ -73,26 +71,11 @@ templateDir = (</> "templates") <$> getDataDir
 initialExporterState :: ExporterState
 initialExporterState =
   ExporterState
-    { footnoteCounter = (1, mempty),
-      linenumCounter = 1,
-      orgData = initialOrgData
+    { orgData = initialOrgData
     }
 
 getSetting :: Monad m => (ExporterSettings -> b) -> Ondim tag m b
 getSetting f = f <$> gets (exporterSettings . orgData)
-
-getFootnoteRef :: Monad m => Text -> Ondim tag m (Maybe (Text, [OrgElement]))
-getFootnoteRef label =
-  gets (lookup label . footnotes . orgData) >>= \case
-    Just els -> do
-      (i, m) <- gets footnoteCounter
-      case lookup label m of
-        Just num ->
-          pure $ Just (show num, els)
-        Nothing -> do
-          modify \s -> s {footnoteCounter = (i + 1, insert label i m)}
-          pure $ Just (show i, els)
-    Nothing -> pure Nothing
 
 justOrIgnore :: (OndimTag tag, Monad m) => Maybe a -> (a -> Expansion tag m b) -> Expansion tag m b
 justOrIgnore = flip (maybe ignore)
@@ -115,11 +98,11 @@ bindAffKwExpansions x (bk, kws) =
     parsedKws =
       mapMaybe
         (\case (n, ParsedKeyword _ t) -> Just (n, t); _ -> Nothing) -- TODO: first slot
-        (toPairs kws)
+        (Map.toList kws)
     textKws =
       mapMaybe
         (\case (n, ValueKeyword t) -> Just (n, t); _ -> Nothing)
-        (toPairs kws)
+        (Map.toList kws)
 
 -- | Text expansion for link target.
 linkTarget :: (OndimTag t, Monad m) => LinkTarget -> MapSyntax Text (Ondim t m Text)
@@ -213,7 +196,7 @@ expandOrgObject bk@(ExportBackend {..}) obj =
           `bindingText` do "content" ## pure txt
       (Entity name) -> do
         withEntities <- getSetting orgExportWithEntities
-        case lookup name Data.defaultEntitiesMap of
+        case Map.lookup name Data.defaultEntitiesMap of
           Just (Data.Entity _ latex mathP html ascii latin utf8)
             | withEntities ->
                 call "org:object:entity"
@@ -295,15 +278,13 @@ expandOrgObject bk@(ExportBackend {..}) obj =
       (Timestamp ts) ->
         timestamp bk ts
       (FootnoteRef (FootnoteRefLabel name)) -> do
-        ref <- getFootnoteRef name
+        def <- gets ((Map.!? name) . footnotes . orgData)
         call "org:object:footnote-ref"
           `binding` do
-            whenJust ref \ ~(_, els) ->
+            whenJust def \els ->
               "footnote-ref:content" ## const $ expandOrgElements bk els
           `bindingText` do
             "footnote-ref:key" ## pure name
-            whenJust ref \ ~(num, _) ->
-              "footnote-ref:number" ## pure num
       (FootnoteRef _) -> pure []
       (Cite _) ->
         pure $ plain "(unresolved citation)" -- TODO
@@ -454,7 +435,7 @@ expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) = do
               `bindingText` prefixed "section:" do
                 for_ sectionTodo todo
                 for_ sectionPriority priority
-                for_ (toPairs sectionProperties) \(k, v) ->
+                for_ (Map.toList sectionProperties) \(k, v) ->
                   "prop:" <> k ## pure v
                 "anchor" ## pure $ sectionAnchor
                 "level" ## pure (show $ sectionLevel + shift)
@@ -496,8 +477,8 @@ bindDocument ::
 bindDocument bk pfx datum (OrgDocument {..}) node = do
   (modify (\s -> s {orgData = datum}) >> node)
     `bindingText` prefixed pfx do
-      forM_ (toPairs (keywords datum)) \(name, t) -> "kw:" <> name ## pure t
-      forM_ (toPairs documentProperties) \(k, v) -> "prop:" <> k ## pure v
+      forM_ (Map.toList (keywords datum)) \(name, t) -> "kw:" <> name ## pure t
+      forM_ (Map.toList documentProperties) \(k, v) -> "prop:" <> k ## pure v
     `binding` prefixed pfx do
       "title" ## const $ expandOrgObjects bk $ parsedTitle datum
       "author" ## const $ expandOrgObjects bk $ parsedAuthor datum
@@ -505,23 +486,17 @@ bindDocument bk pfx datum (OrgDocument {..}) node = do
     `binding` prefixed pfx do
       "children" ## const $ expandOrgElements bk documentChildren
       "sections" ## const $ expandOrgSections bk documentSections
-      "footnotes" ## \node' -> do
-        fns <-
-          gets (toPairs . snd . footnoteCounter)
-            <&> mapMaybe \(ref, num) ->
-              (,num) <$> lookup ref (footnotes datum)
-        if not (null fns)
-          then
-            liftChildren node'
+      "footnotes" ## \node' ->
+        let fns = Map.toList (footnotes datum)
+         in ifElse (not (null fns)) node'
               `binding` do
                 "footnote-defs" ## \inner ->
-                  join <$> forM fns \(els, num) ->
+                  join <$> forM fns \(key, els) ->
                     liftChildren @elm inner
                       `bindingText` do
-                        "footnote-def:number" ## pure (show num)
+                        "footnote-def:key" ## pure key
                       `binding` do
                         "footnote-def:content" ## const $ expandOrgElements bk els
-          else pure []
 
 table ::
   forall tag m obj elm.
