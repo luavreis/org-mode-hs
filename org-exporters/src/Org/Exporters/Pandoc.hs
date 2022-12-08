@@ -52,6 +52,7 @@ defPandocBackend =
       inlBabelCall _ = pure []
       macro _ _ = pure []
       stringify = Ondim.Pandoc.stringify
+      customTarget = pure
    in ExportBackend {..}
 
 pandocTemplateDir :: IO FilePath
