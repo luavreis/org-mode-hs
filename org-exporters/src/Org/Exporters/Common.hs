@@ -55,6 +55,7 @@ data ExportBackend tag m obj elm = ExportBackend
     nullEl :: elm,
     macro :: Text -> [Text] -> Ondim tag m [obj],
     inlBabelCall :: BabelCall -> Ondim tag m [obj],
+    customTarget :: LinkTarget -> Ondim tag m LinkTarget,
     srcPretty :: AffKeywords -> Text -> Text -> Ondim tag m (Maybe [[obj]]),
     affiliatedEnv :: AffKeywords -> Ondim tag m [elm] -> Ondim tag m [elm],
     rawBlock :: Text -> Text -> [elm],
@@ -105,15 +106,21 @@ bindAffKwExpansions x (bk, kws) =
         (Map.toList kws)
 
 -- | Text expansion for link target.
-linkTarget :: (OndimTag t, Monad m) => LinkTarget -> MapSyntax Text (Ondim t m Text)
-linkTarget tgt = prefixed "link:" do
-  "target" ## pure case tgt of
-    URILink "file" (changeExtension -> file)
-      | isRelative file -> toText file
-      | otherwise -> "file:///" <> T.dropWhile (== '/') (toText file)
-    URILink scheme uri -> scheme <> ":" <> uri
-    InternalLink anchor -> "#" <> anchor
-    UnresolvedLink tgt' -> tgt'
+linkTarget ::
+  (OndimTag t, Monad m) =>
+  ExportBackend t m elm obj ->
+  LinkTarget ->
+  MapSyntax Text (Ondim t m Text)
+linkTarget bk tgt = prefixed "link:" do
+  "target" ## do
+    tgt' <- customTarget bk tgt
+    pure case tgt' of
+      URILink "file" (changeExtension -> file)
+        | isRelative file -> toText file
+        | otherwise -> "file:///" <> T.dropWhile (== '/') (toText file)
+      URILink scheme uri -> scheme <> ":" <> uri
+      InternalLink anchor -> "#" <> anchor
+      UnresolvedLink other -> other
   case tgt of
     URILink scheme uri -> do
       "scheme" ## pure scheme
@@ -269,12 +276,12 @@ expandOrgObject bk@(ExportBackend {..}) obj =
       (Link tgt objs) ->
         call "org:object:link"
           `bindingText` do
-            linkTarget tgt
+            linkTarget bk tgt
           `binding` do
             "content" ## expObjs objs
-      (Image tgt) ->
+      (Image tgt) -> do
         call "org:object:image"
-          `bindingText` linkTarget tgt
+          `bindingText` linkTarget bk tgt
       (Timestamp ts) ->
         timestamp bk ts
       (FootnoteRef (FootnoteRefLabel name)) -> do
@@ -333,7 +340,7 @@ expandOrgElement bk@(ExportBackend {..}) el =
     (Paragraph aff [Image tgt]) ->
       call "org:element:figure"
         `bindingAff` aff
-        `bindingText` linkTarget tgt
+        `bindingText` linkTarget bk tgt
     (Paragraph aff c) ->
       call "org:element:paragraph"
         `bindingAff` aff

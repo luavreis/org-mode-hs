@@ -52,6 +52,7 @@ defHtmlBackend =
           pure $ liftNodes $ fromNodeList $ X.docContent parsed
       inlBabelCall _ = pure []
       macro _ _ = pure []
+      customTarget = pure
    in ExportBackend {..}
 
 -- srcExpansion src = do
