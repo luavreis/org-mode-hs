@@ -7,8 +7,8 @@ module Org.Exporters.Pandoc where
 
 import Control.Exception (throw)
 import Ondim.Extra.Loading (TemplateLoadingError (..))
-import Ondim.Pandoc hiding (stringify)
-import Ondim.Pandoc qualified
+import Ondim.Targets.Pandoc hiding (stringify)
+import Ondim.Targets.Pandoc qualified as OPandoc
 import Org.Exporters.Common
 import Org.Types (OrgDocument)
 import System.FilePath
@@ -51,7 +51,7 @@ defPandocBackend =
           pure $ liftNodes parsed
       inlBabelCall _ = pure []
       macro _ _ = pure []
-      stringify = Ondim.Pandoc.stringify
+      stringify = OPandoc.stringify
       customTarget = pure
    in ExportBackend {..}
 

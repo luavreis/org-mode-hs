@@ -1,7 +1,7 @@
 module Org.Exporters.Highlighting.EngraveFaces where
 
 import Data.Text qualified as T
-import Ondim.HTML
+import Ondim.Targets.HTML
 import Org.Types (AffKeywords)
 import System.Process
 import Text.XmlHtml (docContent, parseHTML)
@@ -61,8 +61,8 @@ engraveFacesHtml _ (toString -> lang) code = do
           let els = map (X.Element x y) (go c)
            in append els (go ns)
         go (n : ns) = insert n (go ns)
-        insert x (y : ys) = ((x : y) : ys)
+        insert x (y : ys) = (x : y) : ys
         insert x [] = [[x]]
         append [] ys = ys
-        append [x] (y : ys) = ((x : y) : ys)
+        append [x] (y : ys) = (x : y) : ys
         append (x : xs) ys = [x] : append xs ys

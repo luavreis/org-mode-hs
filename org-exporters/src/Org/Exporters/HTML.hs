@@ -11,7 +11,7 @@ import Data.Map qualified as Map
 import Data.Map.Syntax ((##))
 import Data.Text qualified as T
 import Ondim.Extra
-import Ondim.HTML
+import Ondim.Targets.HTML
 import Org.Exporters.Common
 import Org.Exporters.Processing.OrgData (OrgData)
 import Org.Types
