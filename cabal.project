@@ -13,7 +13,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/lucasvreis/ondim.git
-  tag: 2c6fa7748a96c0e2abbc5bda53d34f45a1da6911
+  tag: a4479a2d4016dc9c16473c47809db1e89610779d
 
 constraints:
   fsnotify >= 0.3 && < 0.4

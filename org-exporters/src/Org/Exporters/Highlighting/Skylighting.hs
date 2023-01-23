@@ -1,6 +1,6 @@
 module Org.Exporters.Highlighting.Skylighting where
 
-import Ondim.HTML (HtmlNode, fromNodeList)
+import Ondim.Targets.HTML (HtmlNode, fromNodeList)
 import Org.Types (AffKeywords)
 import Skylighting
 import Text.Blaze.Renderer.XmlHtml qualified as X
