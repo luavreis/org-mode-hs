@@ -199,6 +199,9 @@ srcLineContent :: SrcLine -> Text
 srcLineContent (SrcLine c) = c
 srcLineContent (RefLine _ _ c) = c
 
+srcLinesToText :: [SrcLine] -> Text
+srcLinesToText = T.unlines . map srcLineContent
+
 srcLineMap :: (Text -> Text) -> SrcLine -> SrcLine
 srcLineMap f (SrcLine c) = SrcLine (f c)
 srcLineMap f (RefLine i t c) = RefLine i t (f c)

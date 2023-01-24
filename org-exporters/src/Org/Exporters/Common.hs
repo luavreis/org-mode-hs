@@ -622,7 +622,7 @@ srcOrExample (ExportBackend {..}) name aff lang lins =
   callExpansion name nullEl
     `binding` ("src-lines" ## runLines)
     `bindingText` do
-      "content" ## pure $ T.intercalate "\n" (srcLineContent <$> lins)
+      "content" ## pure $ srcLinesToText lins
   where
     runLines :: Expansion tag m obj
     runLines inner = do
@@ -631,8 +631,7 @@ srcOrExample (ExportBackend {..}) name aff lang lins =
         <$> mapM (`lineExps` inner) (zip lins cP)
 
     contentPretty =
-      let code = T.intercalate "\n" (srcLineContent <$> lins)
-       in (++ repeat Nothing) . sequence <$> srcPretty aff lang code
+      (++ repeat Nothing) . sequence <$> srcPretty aff lang (srcLinesToText lins)
 
     bPretty p = whenJust p \inls -> "content-pretty" ## const $ pure inls
 
