@@ -13,7 +13,6 @@ module Org.Exporters.Common
   )
 where
 
-import Data.List qualified as L
 import Data.Map qualified as Map
 import Data.Map.Syntax
 import Data.Text qualified as T
@@ -49,21 +48,21 @@ newtype ExporterState = ExporterState
 
 data ExportBackend tag m obj elm = ExportBackend
   { nullObj :: obj,
+    nullEl :: elm,
     plain :: Text -> [obj],
     softbreak :: [obj],
     exportSnippet :: Text -> Text -> [obj],
-    nullEl :: elm,
     macro :: Text -> [Text] -> Ondim tag m [obj],
     inlBabelCall :: BabelCall -> Ondim tag m [obj],
-    customTarget :: LinkTarget -> Ondim tag m LinkTarget,
     srcPretty :: AffKeywords -> Text -> Text -> Ondim tag m (Maybe [[obj]]),
     affiliatedEnv :: AffKeywords -> Ondim tag m [elm] -> Ondim tag m [elm],
     rawBlock :: Text -> Text -> [elm],
     mergeLists :: Filter tag m elm,
     plainObjsToEls :: [obj] -> [elm],
     stringify :: obj -> Text,
-    srcExpansionType :: Text,
-    srcExpansion :: Text -> Ondim tag m [elm]
+    customTarget :: LinkTarget -> Maybe (Ondim tag m Text),
+    customElement :: OrgElement -> Maybe (Ondim tag m [elm]),
+    customObject :: OrgObject -> Maybe (Ondim tag m [obj])
   }
 
 templateDir :: IO FilePath
@@ -112,9 +111,9 @@ linkTarget ::
   LinkTarget ->
   MapSyntax Text (Ondim t m Text)
 linkTarget bk tgt = prefixed "link:" do
-  "target" ## do
-    tgt' <- customTarget bk tgt
-    pure case tgt' of
+  "target"
+    ## (`fromMaybe` customTarget bk tgt)
+    $ pure case tgt of
       URILink "file" (changeExtension -> file)
         | isRelative file -> toText file
         | otherwise -> "file:///" <> T.dropWhile (== '/') (toText file)
@@ -189,130 +188,131 @@ expandOrgObject ::
   Ondim tag m [obj]
 expandOrgObject bk@(ExportBackend {..}) obj =
   withText debugExps $
-    case obj of
-      (Plain txt) -> do
-        specialStrings <- getSetting orgExportWithSpecialStrings
-        pure $
-          plain (if specialStrings then doSpecialStrings txt else txt)
-      SoftBreak ->
-        pure softbreak
-      LineBreak ->
-        call "org:object:linebreak"
-      (Code txt) ->
-        call "org:object:code"
-          `bindingText` do "content" ## pure txt
-      (Entity name) -> do
-        withEntities <- getSetting orgExportWithEntities
-        case Map.lookup name Data.defaultEntitiesMap of
-          Just (Data.Entity _ latex mathP html ascii latin utf8)
-            | withEntities ->
-                call "org:object:entity"
-                  `binding` do
-                    "entity:if-math" ## ifElse @obj mathP
+    (`fromMaybe` customObject obj)
+      case obj of
+        (Plain txt) -> do
+          specialStrings <- getSetting orgExportWithSpecialStrings
+          pure $
+            plain (if specialStrings then doSpecialStrings txt else txt)
+        SoftBreak ->
+          pure softbreak
+        LineBreak ->
+          call "org:object:linebreak"
+        (Code txt) ->
+          call "org:object:code"
+            `bindingText` do "content" ## pure txt
+        (Entity name) -> do
+          withEntities <- getSetting orgExportWithEntities
+          case Map.lookup name Data.defaultEntitiesMap of
+            Just (Data.Entity _ latex mathP html ascii latin utf8)
+              | withEntities ->
+                  call "org:object:entity"
+                    `binding` do
+                      "entity:if-math" ## ifElse @obj mathP
+                    `bindingText` do
+                      "entity:latex" ## pure latex
+                      "entity:ascii" ## pure ascii
+                      "entity:html" ## pure html
+                      "entity:latin" ## pure latin
+                      "entity:utf8" ## pure utf8
+            _ -> pure $ plain ("\\" <> name)
+        (LaTeXFragment ftype txt) ->
+          call "org:object:latex-fragment"
+            `bindingText` do
+              "content" ## pure txt
+            `binding` do
+              switchCases @obj $
+                case ftype of
+                  InlMathFragment -> "inline"
+                  DispMathFragment -> "display"
+                  RawFragment -> "raw"
+        (ExportSnippet backend code) ->
+          pure $ exportSnippet backend code
+        (Src lang _params txt) ->
+          call "org:object:src"
+            `bindingText` do
+              "language" ## pure lang
+              "content" ## pure txt
+        (Target anchor name) ->
+          call "org:object:target"
+            `bindingText` do
+              "anchor" ## pure anchor
+        (Italic objs) ->
+          call "org:object:italic"
+            `binding` do
+              "content" ## expObjs objs
+        (Underline objs) ->
+          call "org:object:underline"
+            `binding` do
+              "content" ## expObjs objs
+        (Bold objs) ->
+          call "org:object:bold"
+            `binding` do
+              "content" ## expObjs objs
+        (Strikethrough objs) ->
+          call "org:object:strikethrough"
+            `binding` do
+              "content" ## expObjs objs
+        (Superscript objs) ->
+          call "org:object:superscript"
+            `binding` do
+              "content" ## expObjs objs
+        (Subscript objs) ->
+          call "org:object:subscript"
+            `binding` do
+              "content" ## expObjs objs
+        (Quoted qtype objs) ->
+          call "org:object:quoted"
+            `binding` do
+              "content" ## expObjs objs
+              switchCases
+                case qtype of
+                  SingleQuote -> "single"
+                  DoubleQuote -> "double"
+        (Verbatim txt) ->
+          call "org:object:verbatim"
+            `bindingText` do
+              "content" ## pure txt
+        (Link tgt objs) ->
+          call "org:object:link"
+            `bindingText` do
+              linkTarget bk tgt
+            `binding` do
+              "content" ## expObjs objs
+        (Image tgt) -> do
+          call "org:object:image"
+            `bindingText` linkTarget bk tgt
+        (Timestamp ts) ->
+          timestamp bk ts
+        (FootnoteRef (FootnoteRefLabel name)) -> do
+          def <- gets ((Map.!? name) . footnotes . orgData)
+          call "org:object:footnote-ref"
+            `binding` do
+              whenJust def \els ->
+                "footnote-ref:content" ## const $ expandOrgElements bk els
+            `bindingText` do
+              "footnote-ref:key" ## pure name
+        (FootnoteRef _) -> pure []
+        (Cite _) ->
+          pure $ plain "(unresolved citation)" -- TODO
+        (StatisticCookie c) ->
+          call "org:object:statistic-cookie"
+            & \x -> case c of
+              Left (show -> n, show -> d) ->
+                x
+                  `binding` switchCases @obj "fraction"
                   `bindingText` do
-                    "entity:latex" ## pure latex
-                    "entity:ascii" ## pure ascii
-                    "entity:html" ## pure html
-                    "entity:latin" ## pure latin
-                    "entity:utf8" ## pure utf8
-          _ -> pure $ plain ("\\" <> name)
-      (LaTeXFragment ftype txt) ->
-        call "org:object:latex-fragment"
-          `bindingText` do
-            "content" ## pure txt
-          `binding` do
-            switchCases @obj $
-              case ftype of
-                InlMathFragment -> "inline"
-                DispMathFragment -> "display"
-                RawFragment -> "raw"
-      (ExportSnippet backend code) ->
-        pure $ exportSnippet backend code
-      (Src lang _params txt) ->
-        call "org:object:src"
-          `bindingText` do
-            "language" ## pure lang
-            "content" ## pure txt
-      (Target anchor name) ->
-        call "org:object:target"
-          `bindingText` do
-            "anchor" ## pure anchor
-      (Italic objs) ->
-        call "org:object:italic"
-          `binding` do
-            "content" ## expObjs objs
-      (Underline objs) ->
-        call "org:object:underline"
-          `binding` do
-            "content" ## expObjs objs
-      (Bold objs) ->
-        call "org:object:bold"
-          `binding` do
-            "content" ## expObjs objs
-      (Strikethrough objs) ->
-        call "org:object:strikethrough"
-          `binding` do
-            "content" ## expObjs objs
-      (Superscript objs) ->
-        call "org:object:superscript"
-          `binding` do
-            "content" ## expObjs objs
-      (Subscript objs) ->
-        call "org:object:subscript"
-          `binding` do
-            "content" ## expObjs objs
-      (Quoted qtype objs) ->
-        call "org:object:quoted"
-          `binding` do
-            "content" ## expObjs objs
-            switchCases
-              case qtype of
-                SingleQuote -> "single"
-                DoubleQuote -> "double"
-      (Verbatim txt) ->
-        call "org:object:verbatim"
-          `bindingText` do
-            "content" ## pure txt
-      (Link tgt objs) ->
-        call "org:object:link"
-          `bindingText` do
-            linkTarget bk tgt
-          `binding` do
-            "content" ## expObjs objs
-      (Image tgt) -> do
-        call "org:object:image"
-          `bindingText` linkTarget bk tgt
-      (Timestamp ts) ->
-        timestamp bk ts
-      (FootnoteRef (FootnoteRefLabel name)) -> do
-        def <- gets ((Map.!? name) . footnotes . orgData)
-        call "org:object:footnote-ref"
-          `binding` do
-            whenJust def \els ->
-              "footnote-ref:content" ## const $ expandOrgElements bk els
-          `bindingText` do
-            "footnote-ref:key" ## pure name
-      (FootnoteRef _) -> pure []
-      (Cite _) ->
-        pure $ plain "(unresolved citation)" -- TODO
-      (StatisticCookie c) ->
-        call "org:object:statistic-cookie"
-          & \x -> case c of
-            Left (show -> n, show -> d) ->
-              x
-                `binding` switchCases @obj "fraction"
-                `bindingText` do
-                  "statistic-cookie:numerator" ## pure n
-                  "statistic-cookie:denominator" ## pure d
-                  "statistic-cookie:value" ## pure $ n <> "/" <> d
-            Right (show -> p) ->
-              x
-                `binding` switchCases @obj "percentage"
-                `bindingText` do
-                  "statistic-cookie:percentage" ## pure p
-                  "statistic-cookie:value" ## pure $ p <> "%"
-      Macro key args -> macro key args
-      InlBabelCall args -> inlBabelCall args
+                    "statistic-cookie:numerator" ## pure n
+                    "statistic-cookie:denominator" ## pure d
+                    "statistic-cookie:value" ## pure $ n <> "/" <> d
+              Right (show -> p) ->
+                x
+                  `binding` switchCases @obj "percentage"
+                  `bindingText` do
+                    "statistic-cookie:percentage" ## pure p
+                    "statistic-cookie:value" ## pure $ p <> "%"
+        Macro key args -> macro key args
+        InlBabelCall args -> inlBabelCall args
   where
     debugExps =
       fromList
@@ -336,70 +336,66 @@ expandOrgElement ::
   OrgElement ->
   Ondim tag m [elm]
 expandOrgElement bk@(ExportBackend {..}) el =
-  case el of
-    (Paragraph aff [Image tgt]) ->
-      call "org:element:figure"
-        `bindingAff` aff
-        `bindingText` linkTarget bk tgt
-    (Paragraph aff c) ->
-      call "org:element:paragraph"
-        `bindingAff` aff
-        `binding` ("content" ## const $ expandOrgObjects bk c)
-    (GreaterBlock aff Quote c) ->
-      call "org:element:quote-block"
-        `bindingAff` aff
-        `binding` do
-          "content" ## expEls c
-    (GreaterBlock aff Center c) ->
-      call "org:element:center-block"
-        `bindingAff` aff
-        `binding` do
-          "content" ## expEls c
-    (GreaterBlock aff (Special cls) c) ->
-      call "org:element:special-block"
-        `bindingAff` aff
-        `bindingText` do "special-name" ## pure cls
-        `binding` do
-          "content" ## expEls c
-    (PlainList aff k i) ->
-      plainList bk k i
-        `bindingAff` aff
-    (Drawer _ els) ->
-      expandOrgElements bk els
-    (ExportBlock lang code) ->
-      pure $ rawBlock lang code
-    (ExampleBlock aff switches c) ->
-      srcOrExample bk "org:element:example-block" aff "" c
-        `bindingAff` aff
-        `bindingText` do
-          "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
-    (SrcBlock _ lang _ props c)
-      | lang == srcExpansionType,
-        Just "t" == L.lookup "expand" props ->
-          srcExpansion $
-            T.intercalate "\n" (srcLineContent <$> c)
-    (SrcBlock aff lang switches _ c) ->
-      srcOrExample bk "org:element:src-block" aff lang c
-        `bindingAff` aff
-        `bindingText` do
-          "language" ## pure lang
-          "content" ## pure $ T.intercalate "\n" (srcLineContent <$> c)
-    (LaTeXEnvironment aff _ text) ->
-      call "org:element:latex-environment"
-        `bindingAff` aff
-        `bindingText` do "content" ## pure text
-    (Table aff rs) ->
-      table bk rs
-        `bindingAff` aff
-    HorizontalRule ->
-      call "org:element:horizontal-rule"
-    Keyword k v ->
-      call "org:element:keyword"
-        `bindingText` do
-          "keyword:key" ## pure k
-          "keyword:value" ## pure v
-    FootnoteDef {} -> pure []
-    VerseBlock {} -> error "TODO"
+  (`fromMaybe` customElement el)
+    case el of
+      (Paragraph aff [Image tgt]) ->
+        call "org:element:figure"
+          `bindingAff` aff
+          `bindingText` linkTarget bk tgt
+      (Paragraph aff c) ->
+        call "org:element:paragraph"
+          `bindingAff` aff
+          `binding` ("content" ## const $ expandOrgObjects bk c)
+      (GreaterBlock aff Quote c) ->
+        call "org:element:quote-block"
+          `bindingAff` aff
+          `binding` do
+            "content" ## expEls c
+      (GreaterBlock aff Center c) ->
+        call "org:element:center-block"
+          `bindingAff` aff
+          `binding` do
+            "content" ## expEls c
+      (GreaterBlock aff (Special cls) c) ->
+        call "org:element:special-block"
+          `bindingAff` aff
+          `bindingText` do "special-name" ## pure cls
+          `binding` do
+            "content" ## expEls c
+      (PlainList aff k i) ->
+        plainList bk k i
+          `bindingAff` aff
+      (Drawer _ els) ->
+        expandOrgElements bk els
+      (ExportBlock lang code) ->
+        pure $ rawBlock lang code
+      (ExampleBlock aff switches c) ->
+        srcOrExample bk "org:element:example-block" aff "" c
+          `bindingAff` aff
+          `bindingText` do
+            "content" ## pure $ srcLinesToText c
+      (SrcBlock aff lang switches _ c) ->
+        srcOrExample bk "org:element:src-block" aff lang c
+          `bindingAff` aff
+          `bindingText` do
+            "language" ## pure lang
+            "content" ## pure $ srcLinesToText c
+      (LaTeXEnvironment aff _ text) ->
+        call "org:element:latex-environment"
+          `bindingAff` aff
+          `bindingText` do "content" ## pure text
+      (Table aff rs) ->
+        table bk rs
+          `bindingAff` aff
+      HorizontalRule ->
+        call "org:element:horizontal-rule"
+      Keyword k v ->
+        call "org:element:keyword"
+          `bindingText` do
+            "keyword:key" ## pure k
+            "keyword:value" ## pure v
+      FootnoteDef {} -> pure []
+      VerseBlock {} -> error "TODO"
   where
     bindingAff x aff = x `bindAffKwExpansions` (bk, aff)
     expEls :: [OrgElement] -> Expansion tag m elm

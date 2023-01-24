@@ -43,24 +43,12 @@ defHtmlBackend =
       mergeLists = id
       plainObjsToEls = id
       stringify = nodeText
-      srcExpansionType = "html"
-      srcExpansion src = do
-        fromMaybe (pure []) do
-          parsed <-
-            rightToMaybe $
-              X.parseHTML "" $ encodeUtf8 src
-          pure $ liftNodes $ fromNodeList $ X.docContent parsed
       inlBabelCall _ = pure []
       macro _ _ = pure []
-      customTarget = pure
+      customTarget _ = Nothing
+      customElement _ = Nothing
+      customObject _ = Nothing
    in ExportBackend {..}
-
--- srcExpansion src = do
---   fromMaybe (pure []) do
---     parsed <-
---       rightToMaybe $
---         X.parseHTML "" $ encodeUtf8 src
---     pure $ liftNodes $ fromNodeList $ X.docContent parsed
 
 htmlTemplateDir :: IO FilePath
 htmlTemplateDir = (</> "html") <$> templateDir
