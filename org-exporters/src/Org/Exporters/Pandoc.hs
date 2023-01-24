@@ -39,20 +39,12 @@ defPandocBackend =
           go (P.DefinitionList x) (P.DefinitionList y : r) = P.DefinitionList (x ++ y) : r
           go x y = x : y
       plainObjsToEls = one . P.Plain
-      srcExpansionType = "md"
-      srcExpansion src = do
-        fromMaybe (pure []) do
-          P.Pandoc _ parsed <-
-            rightToMaybe $
-              runPure $
-                readMarkdown
-                  def {readerExtensions = pandocExtensions}
-                  src
-          pure $ liftNodes parsed
       inlBabelCall _ = pure []
       macro _ _ = pure []
       stringify = OPandoc.stringify
-      customTarget = pure
+      customTarget _ = Nothing
+      customElement _ = Nothing
+      customObject _ = Nothing
    in ExportBackend {..}
 
 pandocTemplateDir :: IO FilePath
