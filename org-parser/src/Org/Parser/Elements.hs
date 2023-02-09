@@ -51,7 +51,7 @@ elementNonEmpty =
 
 elementIndentable :: OrgParser OrgElements
 elementIndentable =
-  affKeyword
+  keyword
     <|> choice
       [ commentLine,
         exampleBlock,
@@ -61,7 +61,6 @@ elementIndentable =
         plainList,
         latexEnvironment,
         drawer,
-        keyword,
         fixedWidth,
         horizontalRule,
         table
@@ -420,46 +419,6 @@ latexEnvironment = try do
 
 -- * Keywords and affiliated keywords
 
-affKeyword :: OrgParser OrgElements
-affKeyword = try do
-  hspace
-  _ <- string "#+"
-  try do
-    (T.toLower -> name) <-
-      liftA2
-        (<>)
-        (string'' "attr_")
-        (takeWhile1P Nothing (\c -> not (isSpace c || c == ':')))
-    _ <- char ':'
-    args <- headerArgs
-    registerAffiliated (name, B.attrKeyword args)
-    pure mempty
-    <|> try do
-      affkws <- getsO orgElementAffiliatedKeywords
-      name <- choice (fmap (\s -> string'' s $> s) affkws)
-      isdualkw <- (name `elem`) <$> getsO orgElementDualKeywords
-      isparsedkw <- (name `elem`) <$> getsO orgElementParsedKeywords
-      value <-
-        if isparsedkw
-          then do
-            optArg <- option mempty $ guard isdualkw *> optionalArgP
-            _ <- char ':'
-            hspace
-            st <- getFullState
-            line <- anyLine'
-            value <- parseFromText st line (plainMarkupContext standardSet)
-            pure $ B.parsedKeyword optArg value
-          else do
-            _ <- char ':'
-            hspace
-            B.valueKeyword . T.stripEnd <$> anyLine'
-      registerAffiliated (name, value)
-      pure mempty
-  where
-    optionalArgP =
-      withBalancedContext '[' ']' (\c -> c /= '\n' && c /= ':') $
-        plainMarkupContext standardSet
-
 keyword :: OrgParser OrgElements
 keyword = try do
   hspace
@@ -477,7 +436,25 @@ keyword = try do
       guard ended <?> "keyword end"
       pure res
   hspace
-  value <- T.stripEnd <$> anyLine'
+  value <-
+    case T.stripPrefix "attr_" name of
+      Just backendName -> do
+        args <- B.attrKeyword <$> headerArgs
+        registerAffiliated (backendName, args)
+        return args
+      Nothing -> do
+        text <- T.stripEnd <$> anyLine'
+        affkws <- getsO orgElementAffiliatedKeywords
+        parsedKws <- getsO orgElementParsedKeywords
+        value <-
+          if name `elem` parsedKws
+            then do
+              st <- getFullState
+              ParsedKeyword . toList
+                <$> parseFromText st text (plainMarkupContext standardSet)
+            else return $ ValueKeyword text
+        when (name `elem` affkws) $ registerAffiliated (name, value)
+        return value
   return $ B.keyword name value
 
 -- * Footnote definitions

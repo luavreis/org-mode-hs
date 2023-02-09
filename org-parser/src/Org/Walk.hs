@@ -75,7 +75,8 @@ instance MultiWalk MWTag OrgElement where
       ToSpecList
         '[ List OrgElement,
            List OrgObject,
-           Trav (Map Text) (Under AffKeywordValue (List OrgObject)), -- Objects under affiliated keywords
+           Trav (Map Text) (Under KeywordValue (List OrgObject)), -- Objects under affiliated keywords
+           Under KeywordValue (List OrgObject), -- Objects under keywords
            List ListItem,
            List (Under TableRow (DoubleList OrgObject)), -- Objects under table rows
            DoubleList OrgObject -- Objects under verse blocks

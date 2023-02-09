@@ -53,7 +53,8 @@ testElements =
                           ("foo", "bar:joined space"),
                           ("liz", "buuz")
                         ]
-                 in B.para (fromList [("attr_html", kw)]) "Hi",
+                 in B.keyword "attr_html" kw
+                      <> B.para (fromList [("html", kw)]) "Hi",
           [text|
             Some para
             #+caption: hi /guys/
@@ -61,23 +62,26 @@ testElements =
             Hi
           |]
             =?> B.para mempty "Some para"
+            <> B.keyword "caption" (B.parsedKeyword $ "hi " <> B.italic "guys")
             <> B.para mempty "Hi",
           [text|
             #+attr_html: :style color: red
               - foo
           |]
             =?> let kw = BackendKeyword [("style", "color: red")]
-                 in B.list
-                      (fromList [("attr_html", kw)])
-                      (Unordered '-')
-                      [ListItem (Bullet '-') Nothing Nothing [] [Paragraph mempty [Plain "foo"]]],
+                 in B.keyword "attr_html" kw
+                      <> B.list
+                        (fromList [("html", kw)])
+                        (Unordered '-')
+                        [ListItem (Bullet '-') Nothing Nothing [] [Paragraph mempty [Plain "foo"]]],
           [text|
             Some para
             #+caption: hi /guys/
             Hi
           |]
-            =?> let kw = ParsedKeyword [] (toList $ "hi " <> B.italic "guys")
+            =?> let kw = B.parsedKeyword ("hi " <> B.italic "guys")
                  in B.para mempty "Some para"
+                      <> B.keyword "caption" kw
                       <> B.para (fromList [("caption", kw)]) "Hi",
           [text|
             #+attr_org: :foo bar
@@ -87,11 +91,16 @@ testElements =
             #+end_center
             I don't have a caption
           |]
-            =?> B.greaterBlock
-              (fromList [("attr_org", BackendKeyword [("foo", "bar")])])
-              Center
-              (B.para mempty "Some para")
-            <> B.para mempty "I don't have a caption"
+            =?> let kw1 = BackendKeyword [("foo", "bar")]
+                    kw2 = B.parsedKeyword ("hi " <> B.italic "guys")
+                 in B.keyword "attr_org" kw1
+                      <> B.greaterBlock
+                        (fromList [("org", kw1)])
+                        Center
+                        ( B.para mempty "Some para"
+                            <> B.keyword "caption" kw2
+                        )
+                      <> B.para mempty "I don't have a caption"
         ],
       -- Add case for affiliated keywords with:
       -- Add case showing preservation of state of end parser

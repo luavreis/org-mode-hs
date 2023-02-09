@@ -54,8 +54,8 @@ data ExportBackend tag m obj elm = ExportBackend
     exportSnippet :: Text -> Text -> [obj],
     macro :: Text -> [Text] -> Ondim tag m [obj],
     inlBabelCall :: BabelCall -> Ondim tag m [obj],
-    srcPretty :: AffKeywords -> Text -> Text -> Ondim tag m (Maybe [[obj]]),
-    affiliatedEnv :: AffKeywords -> Ondim tag m [elm] -> Ondim tag m [elm],
+    srcPretty :: Keywords -> Text -> Text -> Ondim tag m (Maybe [[obj]]),
+    affiliatedEnv :: Keywords -> Ondim tag m [elm] -> Ondim tag m [elm],
     rawBlock :: Text -> Text -> [elm],
     mergeLists :: Filter tag m elm,
     plainObjsToEls :: [obj] -> [elm],
@@ -82,21 +82,23 @@ justOrIgnore = flip (maybe ignore)
 tags :: forall m tag t. (HasAttrChild tag t, Monad m) => Tag -> Expansion tag m t
 tags tag x = liftChildren x `bindingText` ("tag" ## pure tag)
 
-bindAffKwExpansions ::
+bindKeywords ::
   BackendC tag m obj elm =>
-  Ondim tag m [elm] ->
-  (ExportBackend tag m obj elm, AffKeywords) ->
-  Ondim tag m [elm]
-bindAffKwExpansions x (bk, kws) =
-  affiliatedEnv bk kws x
+  ExportBackend tag m obj elm ->
+  Text ->
+  Keywords ->
+  Ondim tag m a ->
+  Ondim tag m a
+bindKeywords bk prefix kws x =
+  x
     `binding` do
-      prefixed "akw:" $ forM_ parsedKws \(name, t) -> name ## const $ expandOrgObjects bk t
+      prefixed prefix $ forM_ parsedKws \(name, t) -> name ## const $ expandOrgObjects bk t
     `bindingText` do
-      prefixed "akw:" $ forM_ textKws \(name, t) -> name ## pure t
+      prefixed prefix $ forM_ textKws \(name, t) -> name ## pure t
   where
     parsedKws =
       mapMaybe
-        (\case (n, ParsedKeyword _ t) -> Just (n, t); _ -> Nothing) -- TODO: first slot
+        (\case (n, ParsedKeyword t) -> Just (n, t); _ -> Nothing) -- TODO: first slot
         (Map.toList kws)
     textKws =
       mapMaybe
@@ -394,11 +396,18 @@ expandOrgElement bk@(ExportBackend {..}) el = do
         call "org:element:keyword"
           `bindingText` do
             "keyword:key" ## pure k
-            "keyword:value" ## pure v
+            case v of
+              ValueKeyword v' -> do
+                "keyword:value" ## pure v'
+              _ -> pure ()
+          `binding` case v of
+            ParsedKeyword v' -> do
+              "keyword:value" ## const $ expandOrgObjects bk v'
+            _ -> pure ()
       FootnoteDef {} -> pure []
       VerseBlock {} -> error "TODO"
   where
-    bindingAff x aff = x `bindAffKwExpansions` (bk, aff)
+    bindingAff x aff = affiliatedEnv aff $ bindKeywords bk "akw:" aff x
     expEls :: [OrgElement] -> Expansion tag m elm
     expEls o = const $ expandOrgElements bk o
     call x = callExpansion x nullEl
@@ -501,6 +510,8 @@ bindDocument bk pfx datum (OrgDocument {..}) node = do
                         "footnote-def:key" ## pure key
                       `binding` do
                         "footnote-def:content" ## const $ expandOrgElements bk els
+  where
+    bindingKws x () = bindKeywords bk "doc:kw:" (keywords datum) x
 
 table ::
   forall tag m obj elm.
@@ -611,7 +622,7 @@ srcOrExample ::
   BackendC tag m obj elm =>
   ExportBackend tag m obj elm ->
   Text ->
-  AffKeywords ->
+  Keywords ->
   Text ->
   [SrcLine] ->
   Ondim tag m [elm]

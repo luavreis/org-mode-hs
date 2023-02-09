@@ -2,14 +2,14 @@ module Org.Exporters.Highlighting.EngraveFaces where
 
 import Data.Text qualified as T
 import Ondim.Targets.HTML
-import Org.Types (AffKeywords)
+import Org.Types (Keywords)
 import System.Process
 import Text.XmlHtml (docContent, parseHTML)
 import Text.XmlHtml qualified as X
 
 engraveFacesHtml ::
   MonadIO m =>
-  AffKeywords ->
+  Keywords ->
   Text ->
   Text ->
   m (Maybe [[HtmlNode]])
