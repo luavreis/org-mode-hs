@@ -31,7 +31,7 @@ defPandocBackend =
       affiliatedEnv _ = id
       rawBlock l = one . P.RawBlock (P.Format l)
       srcPretty _ _ _ = pure Nothing
-      mergeLists = (foldr go [] <$>)
+      mergeLists = foldr go []
         where
           go :: P.Block -> [P.Block] -> [P.Block]
           go (P.BulletList x) (P.BulletList y : r) = P.BulletList (x ++ y) : r
