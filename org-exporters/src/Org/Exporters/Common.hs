@@ -383,10 +383,12 @@ expandOrgElement bk@(ExportBackend {..}) el = do
           `bindingText` do
             "language" ## pure lang
             "content" ## pure $ srcLinesToText c
-      (LaTeXEnvironment aff _ text) ->
+      (LaTeXEnvironment aff env text) ->
         call "org:element:latex-environment"
           `bindingAff` aff
-          `bindingText` do "content" ## pure text
+          `bindingText` do
+            "latex-environment:name" ## pure env
+            "latex-environment:content" ## pure text
       (Table aff rs) ->
         table bk rs
           `bindingAff` aff
