@@ -265,9 +265,6 @@ link tgt = one . Link tgt . toList
 uriLink :: Text -> Text -> OrgObjects -> OrgObjects
 uriLink protocol tgt = one . Link (URILink protocol tgt) . toList
 
-image :: LinkTarget -> OrgObjects
-image = one . Image
-
 target :: Id -> Text -> OrgObjects
 target a = one . Target a
 

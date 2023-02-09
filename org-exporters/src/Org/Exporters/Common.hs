@@ -60,7 +60,6 @@ data ExportBackend tag m obj elm = ExportBackend
     mergeLists :: Filter tag m elm,
     plainObjsToEls :: [obj] -> [elm],
     stringify :: obj -> Text,
-    customTarget :: LinkTarget -> Maybe (Ondim tag m Text),
     customElement :: OrgElement -> Maybe (Ondim tag m [elm]),
     customObject :: OrgObject -> Maybe (Ondim tag m [obj])
   }
@@ -107,19 +106,16 @@ bindAffKwExpansions x (bk, kws) =
 -- | Text expansion for link target.
 linkTarget ::
   (OndimTag t, Monad m) =>
-  ExportBackend t m elm obj ->
   LinkTarget ->
   MapSyntax Text (Ondim t m Text)
-linkTarget bk tgt = prefixed "link:" do
-  "target"
-    ## (`fromMaybe` customTarget bk tgt)
-    $ pure case tgt of
-      URILink "file" (changeExtension -> file)
-        | isRelative file -> toText file
-        | otherwise -> "file:///" <> T.dropWhile (== '/') (toText file)
-      URILink scheme uri -> scheme <> ":" <> uri
-      InternalLink anchor -> "#" <> anchor
-      UnresolvedLink other -> other
+linkTarget tgt = prefixed "link:" do
+  "target" ## pure case tgt of
+    URILink "file" (changeExtension -> file)
+      | isRelative file -> toText file
+      | otherwise -> "file:///" <> T.dropWhile (== '/') (toText file)
+    URILink scheme uri -> scheme <> ":" <> uri
+    InternalLink anchor -> "#" <> anchor
+    UnresolvedLink other -> other
   case tgt of
     URILink scheme uri -> do
       "scheme" ## pure scheme
@@ -186,7 +182,8 @@ expandOrgObject ::
   ExportBackend tag m obj elm ->
   OrgObject ->
   Ondim tag m [obj]
-expandOrgObject bk@(ExportBackend {..}) obj =
+expandOrgObject bk@(ExportBackend {..}) obj = do
+  s <- getSetting orgInlineImageRules
   withText debugExps $
     (`fromMaybe` customObject obj)
       case obj of
@@ -273,15 +270,17 @@ expandOrgObject bk@(ExportBackend {..}) obj =
           call "org:object:verbatim"
             `bindingText` do
               "content" ## pure txt
+        (Link tgt [])
+          | isImgTarget s tgt -> do
+              call "org:object:image"
+                `bindingText` linkTarget tgt
+          | otherwise -> expandOrgObject bk (Link tgt [Plain $ linkTargetToText tgt])
         (Link tgt objs) ->
           call "org:object:link"
             `bindingText` do
-              linkTarget bk tgt
+              linkTarget tgt
             `binding` do
               "content" ## expObjs objs
-        (Image tgt) -> do
-          call "org:object:image"
-            `bindingText` linkTarget bk tgt
         (Timestamp ts) ->
           timestamp bk ts
         (FootnoteRef (FootnoteRefLabel name)) -> do
@@ -335,13 +334,15 @@ expandOrgElement ::
   ExportBackend tag m obj elm ->
   OrgElement ->
   Ondim tag m [elm]
-expandOrgElement bk@(ExportBackend {..}) el =
+expandOrgElement bk@(ExportBackend {..}) el = do
+  s <- getSetting orgInlineImageRules
   (`fromMaybe` customElement el)
     case el of
-      (Paragraph aff [Image tgt]) ->
-        call "org:element:figure"
-          `bindingAff` aff
-          `bindingText` linkTarget bk tgt
+      (Paragraph aff [Link tgt []])
+        | isImgTarget s tgt ->
+            call "org:element:figure"
+              `bindingAff` aff
+              `bindingText` linkTarget tgt
       (Paragraph aff c) ->
         call "org:element:paragraph"
           `bindingAff` aff

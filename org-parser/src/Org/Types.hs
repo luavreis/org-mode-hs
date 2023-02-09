@@ -310,7 +310,6 @@ data OrgObject
   | InlBabelCall BabelCall
   | Src Text Text Text
   | Link LinkTarget [OrgObject]
-  | Image LinkTarget
   | -- | Inline target (e.g. @<<<foo>>>@)
     Target
       Id
@@ -343,6 +342,12 @@ data LinkTarget
   | InternalLink Id
   | UnresolvedLink Text
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
+
+linkTargetToText :: LinkTarget -> Text
+linkTargetToText = \case
+  URILink prot l -> prot <> ":" <> l
+  InternalLink l -> l
+  UnresolvedLink l -> l
 
 data FragmentType
   = RawFragment
