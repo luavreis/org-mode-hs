@@ -61,17 +61,18 @@ instance MultiTag MWTag where
          OrgObject,
          Citation
        ]
+  type SubTag MWTag = MWTag
 
 type List a = Trav [] a
 
 type DoubleList a = MatchWith [[a]] (Trav (Compose [] []) a)
 
-instance MultiWalk MWTag OrgDocument where
-  type SubTypes OrgDocument = ToSpecList '[List OrgElement, List OrgSection]
+instance MultiSub MWTag OrgDocument where
+  type SubTypes MWTag OrgDocument = ToSpecList '[List OrgElement, List OrgSection]
 
-instance MultiWalk MWTag OrgElement where
+instance MultiSub MWTag OrgElement where
   type
-    SubTypes OrgElement =
+    SubTypes MWTag OrgElement =
       ToSpecList
         '[ List OrgElement,
            List OrgObject,
@@ -82,32 +83,32 @@ instance MultiWalk MWTag OrgElement where
            DoubleList OrgObject -- Objects under verse blocks
          ]
 
-instance MultiWalk MWTag ListItem where
+instance MultiSub MWTag ListItem where
   type
-    SubTypes ListItem =
+    SubTypes MWTag ListItem =
       ToSpecList
         '[ List OrgObject,
            List OrgElement
          ]
 
-instance MultiWalk MWTag OrgSection where
+instance MultiSub MWTag OrgSection where
   type
-    SubTypes OrgSection =
+    SubTypes MWTag OrgSection =
       ToSpecList
         '[List OrgObject, List OrgElement, List OrgSection]
 
-instance MultiWalk MWTag OrgObject where
+instance MultiSub MWTag OrgObject where
   type
-    SubTypes OrgObject =
+    SubTypes MWTag OrgObject =
       ToSpecList
         '[ List OrgObject,
            Under FootnoteRefData (List OrgElement),
            Citation
          ]
 
-instance MultiWalk MWTag Citation where
+instance MultiSub MWTag Citation where
   type
-    SubTypes Citation =
+    SubTypes MWTag Citation =
       ToSpecList
         '[ List OrgObject,
            List (Under CiteReference (List OrgObject))
