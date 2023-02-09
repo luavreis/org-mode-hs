@@ -419,13 +419,13 @@ expandOrgSections ::
   BackendC tag m obj elm =>
   ExportBackend tag m obj elm ->
   [OrgSection] ->
-  Ondim tag m [elm]
-expandOrgSections _ [] = pure []
-expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) = do
+  Expansion tag m elm
+expandOrgSections _ [] _ = pure []
+expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) inner = do
   let level = sectionLevel fstSection
   hlevels <- getSetting orgExportHeadlineLevels
   shift <- getSetting headlineLevelShift
-  callExpansion "org:sections" nullEl
+  callExpansion "org:sections" inner
     `binding` do
       if level + shift > hlevels
         then switchCases @elm "over-level"
@@ -477,30 +477,29 @@ liftDocument ::
   doc ->
   Ondim tag m doc
 liftDocument bk datum doc node =
-  bindDocument bk "doc:" datum doc (liftSubstructures node)
+  bindDocument bk datum doc (liftSubstructures node)
 
 bindDocument ::
   forall tag m obj elm doc.
   BackendC tag m obj elm =>
   ExportBackend tag m obj elm ->
   -- | Prefix for expansion names
-  Text ->
   OrgData ->
   OrgDocument ->
   Ondim tag m doc ->
   Ondim tag m doc
-bindDocument bk pfx datum (OrgDocument {..}) node = do
+bindDocument bk datum (OrgDocument {..}) node = do
   (modify (\s -> s {orgData = datum}) >> node)
-    `bindingText` prefixed pfx do
-      forM_ (Map.toList (keywords datum)) \(name, t) -> "kw:" <> name ## pure t
+    `bindingText` prefixed "doc:" do
       forM_ (Map.toList documentProperties) \(k, v) -> "prop:" <> k ## pure v
-    `binding` prefixed pfx do
+    `bindingKws` ()
+    `binding` prefixed "doc:" do
       "title" ## const $ expandOrgObjects bk $ parsedTitle datum
       "author" ## const $ expandOrgObjects bk $ parsedAuthor datum
       "date" ## const $ expandOrgObjects bk $ parsedDate datum
-    `binding` prefixed pfx do
+    `binding` prefixed "doc:" do
       "children" ## const $ expandOrgElements bk documentChildren
-      "sections" ## const $ expandOrgSections bk documentSections
+      "sections" ## expandOrgSections bk documentSections
       "footnotes" ## \node' ->
         let fns = Map.toList (footnotes datum)
          in ifElse (not (null fns)) node'
