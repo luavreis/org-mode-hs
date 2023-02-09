@@ -47,7 +47,7 @@ library
                      Org.Exporters.Processing.InternalLinks
                      Org.Exporters.Processing.Prune
                      Org.Exporters.Processing.SpecialStrings
-                     Org.Exporters.Processing.GatherKeywords
+                     Org.Exporters.Processing.GatherSettings
   other-modules:     Paths_org_exporters
   autogen-modules:   Paths_org_exporters
   default-language:  Haskell2010
