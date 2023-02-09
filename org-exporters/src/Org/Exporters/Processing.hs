@@ -4,11 +4,11 @@ module Org.Exporters.Processing
     module Org.Exporters.Processing.InternalLinks,
     module Org.Exporters.Processing.Prune,
     module Org.Exporters.Processing.SpecialStrings,
-    module Org.Exporters.Processing.GatherKeywords,
+    module Org.Exporters.Processing.GatherSettings,
   )
 where
 
-import Org.Exporters.Processing.GatherKeywords
+import Org.Exporters.Processing.GatherSettings
 import Org.Exporters.Processing.InternalLinks
 import Org.Exporters.Processing.OrgData
 import Org.Exporters.Processing.Prune
