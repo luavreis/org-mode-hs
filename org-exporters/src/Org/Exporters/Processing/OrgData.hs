@@ -115,6 +115,22 @@ data OrgData = OrgData
   }
   deriving (Eq, Ord, Show, Typeable, Generic)
 
+data OrgDataWalk
+
+instance MultiTag OrgDataWalk where
+  type MultiTypes OrgDataWalk = OrgData ': MultiTypes MWTag
+  type SubTag OrgDataWalk = MWTag
+
+instance MultiSub MWTag OrgData where
+  type
+    SubTypes MWTag OrgData =
+      ToSpecList
+        '[ Trav (Map Text) (Under KeywordValue (List OrgObject)), -- Objects under keywords
+           Trav (Map Text) (Trav ((,) Id) (List OrgObject)), -- Elements under targets
+           Trav (Map Text) (List OrgElement), -- Elements under footnotes
+           List OrgObject
+         ]
+
 initialOrgData :: OrgData
 initialOrgData = OrgData mempty [] [] [] [] defaultExporterSettings defaultOrgOptions mempty mempty
 
