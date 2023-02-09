@@ -114,7 +114,7 @@ data OrgElement
   = -- | Greater block
     GreaterBlock
       { -- | Affiliated keywords
-        affKws :: AffKeywords,
+        affKws :: Keywords,
         -- | Greater block type
         blkType :: GreaterBlockType,
         -- | Greater block elements
@@ -130,7 +130,7 @@ data OrgElement
   | -- | Plain list
     PlainList
       { -- | Affiliated keywords
-        affKws :: AffKeywords,
+        affKws :: Keywords,
         -- | List types
         listType :: ListType,
         -- | List items
@@ -144,7 +144,7 @@ data OrgElement
       -- ^ Contents
   | -- | Example block
     ExampleBlock
-      AffKeywords
+      Keywords
       -- ^ Affiliated keywords
       (Map Text Text)
       -- ^ Switches
@@ -153,7 +153,7 @@ data OrgElement
   | -- | Source blocks
     SrcBlock
       { -- | Affiliated keywords
-        affKws :: AffKeywords,
+        affKws :: Keywords,
         -- | Language
         srcBlkLang :: Text,
         -- | Switches
@@ -163,17 +163,20 @@ data OrgElement
         -- | Contents
         srcBlkLines :: [SrcLine]
       }
-  | VerseBlock AffKeywords [[OrgObject]]
+  | VerseBlock Keywords [[OrgObject]]
   | HorizontalRule
-  | Keyword Text Text
+  | Keyword
+      { keywordKey :: Text,
+        keywordValue :: KeywordValue
+      }
   | LaTeXEnvironment
-      AffKeywords
+      Keywords
       Text
       -- ^ Environment name
       Text
       -- ^ Environment contents
-  | Paragraph AffKeywords [OrgObject]
-  | Table AffKeywords [TableRow]
+  | Paragraph Keywords [OrgObject]
+  | Table Keywords [TableRow]
   | FootnoteDef
       Text
       -- ^ Footnote name
@@ -206,23 +209,23 @@ srcLineMap :: (Text -> Text) -> SrcLine -> SrcLine
 srcLineMap f (SrcLine c) = SrcLine (f c)
 srcLineMap f (RefLine i t c) = RefLine i t (f c)
 
--- Keywords and AffKeywords keywords
+-- Keywords
 
-data AffKeywordValue
+data KeywordValue
   = ValueKeyword Text
-  | ParsedKeyword [OrgObject] [OrgObject]
+  | ParsedKeyword [OrgObject]
   | BackendKeyword [(Text, Text)]
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
-instance Semigroup AffKeywordValue where
+instance Semigroup KeywordValue where
   (ValueKeyword t1) <> (ValueKeyword t2) = ValueKeyword (t1 <> "\n" <> t2)
-  (ParsedKeyword o1 t1) <> (ParsedKeyword o2 t2) = ParsedKeyword (o1 <> o2) (t1 <> t2)
+  (ParsedKeyword t1) <> (ParsedKeyword t2) = ParsedKeyword (t1 <> t2)
   (BackendKeyword b1) <> (BackendKeyword b2) = BackendKeyword (b1 <> b2)
   _ <> x = x
 
-type AffKeywords = Map Text AffKeywordValue
+type Keywords = Map Text KeywordValue
 
-keywordsFromList :: [(Text, AffKeywordValue)] -> AffKeywords
+keywordsFromList :: [(Text, KeywordValue)] -> Keywords
 keywordsFromList = M.fromListWith (flip (<>))
 
 -- Greater Blocks
@@ -373,7 +376,7 @@ data CiteReference = CiteReference
 
 {- ORMOLU_DISABLE -}
 instance NFData OrgDocument
-instance NFData AffKeywordValue
+instance NFData KeywordValue
 instance NFData FootnoteRefData
 instance NFData OrgObject
 instance NFData QuoteType

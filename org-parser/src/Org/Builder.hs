@@ -69,21 +69,21 @@ instance IsString OrgObjects where
 
 -- * Element builders
 
-para :: AffKeywords -> OrgObjects -> OrgElements
+para :: Keywords -> OrgObjects -> OrgElements
 para aff = one . Paragraph aff . toList
 
 export :: Text -> Text -> OrgElements
 export format = one . ExportBlock format
 
 example ::
-  AffKeywords ->
+  Keywords ->
   Map Text Text ->
   [SrcLine] ->
   OrgElements
 example aff sw = one . ExampleBlock aff sw
 
 srcBlock ::
-  AffKeywords ->
+  Keywords ->
   Text ->
   Map Text Text ->
   [(Text, Text)] ->
@@ -92,7 +92,7 @@ srcBlock ::
 srcBlock aff lang sw args = one . SrcBlock aff lang sw args
 
 greaterBlock ::
-  AffKeywords ->
+  Keywords ->
   GreaterBlockType ->
   OrgElements ->
   OrgElements
@@ -105,21 +105,21 @@ drawer ::
 drawer name = one . Drawer name . toList
 
 latexEnvironment ::
-  AffKeywords ->
+  Keywords ->
   Text ->
   Text ->
   OrgElements
 latexEnvironment aff name = one . LaTeXEnvironment aff name
 
 list ::
-  AffKeywords ->
+  Keywords ->
   ListType ->
   [ListItem] ->
   OrgElements
 list aff kind = one . PlainList aff kind
 
 orderedList ::
-  AffKeywords ->
+  Keywords ->
   OrderedStyle ->
   Char ->
   [OrgElements] ->
@@ -134,7 +134,7 @@ orderedList aff style separator =
       OrderedAlpha -> [Counter (one a) separator | a <- ['a' ..]]
 
 descriptiveList ::
-  AffKeywords ->
+  Keywords ->
   [(OrgObjects, OrgElements)] ->
   OrgElements
 descriptiveList aff =
@@ -144,28 +144,22 @@ descriptiveList aff =
 
 parsedKeyword ::
   OrgObjects ->
-  OrgObjects ->
-  AffKeywordValue
-parsedKeyword i = ParsedKeyword (toList i) . toList
-
-parsedKeyword' ::
-  OrgObjects ->
-  AffKeywordValue
-parsedKeyword' = parsedKeyword mempty
+  KeywordValue
+parsedKeyword = ParsedKeyword . toList
 
 valueKeyword ::
   Text ->
-  AffKeywordValue
+  KeywordValue
 valueKeyword = ValueKeyword
 
 attrKeyword ::
   [(Text, Text)] ->
-  AffKeywordValue
+  KeywordValue
 attrKeyword = BackendKeyword
 
 keyword ::
   Text ->
-  Text ->
+  KeywordValue ->
   OrgElements
 keyword key = one . Keyword key
 
@@ -283,7 +277,7 @@ statisticCookie = one . StatisticCookie
 horizontalRule :: OrgElements
 horizontalRule = one HorizontalRule
 
-table :: AffKeywords -> [TableRow] -> OrgElements
+table :: Keywords -> [TableRow] -> OrgElements
 table aff = one . Table aff
 
 standardRow :: [OrgObjects] -> TableRow

@@ -8,8 +8,6 @@ module Org.Exporters.HTML where
 import Control.Exception (throw)
 import Data.ByteString.Builder (toLazyByteString)
 import Data.Map qualified as Map
-import Data.Map.Syntax ((##))
-import Data.Text qualified as T
 import Ondim.Extra
 import Ondim.Targets.HTML
 import Org.Exporters.Common
@@ -34,8 +32,8 @@ defHtmlBackend =
         where
           affAttrs :: [(Text, Text)]
           affAttrs = join $ mapMaybe getHtmlAttrs (Map.toList kws)
-          getHtmlAttrs (k, BackendKeyword v)
-            | "attr_html" `T.isPrefixOf` k = Just v
+          getHtmlAttrs ("html", BackendKeyword v) = Just v
+          getHtmlAttrs ("name", ValueKeyword v) = Just [("id", v)]
           getHtmlAttrs _ = Nothing
       srcPretty _ _ _ = pure Nothing
       rawBlock "html" = one . rawNode
@@ -45,7 +43,6 @@ defHtmlBackend =
       stringify = nodeText
       inlBabelCall _ = pure []
       macro _ _ = pure []
-      customTarget _ = Nothing
       customElement _ = Nothing
       customObject _ = Nothing
    in ExportBackend {..}

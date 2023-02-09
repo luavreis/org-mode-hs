@@ -30,7 +30,7 @@ defaultOrgOptions =
 
 -- | Org-mode parser state
 data OrgParserState = OrgParserState
-  { orgStatePendingAffiliated :: [(Text, AffKeywordValue)],
+  { orgStatePendingAffiliated :: [(Text, KeywordValue)],
     orgStateOptions :: OrgOptions,
     orgStateLastChar :: Maybe Char
   }
