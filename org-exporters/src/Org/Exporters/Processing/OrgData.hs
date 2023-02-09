@@ -1,11 +1,22 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Org.Exporters.Processing.OrgData
   ( module Org.Exporters.Processing.OrgData,
   )
 where
 
+import Control.MultiWalk (MultiSub (..), MultiTag (..))
+import Control.MultiWalk.Contains (ToSpecList, Under, Trav)
 import Data.Aeson qualified as Aeson
-import Org.Types
 import Org.Parser.Definitions (OrgOptions, defaultOrgOptions)
+import Org.Types
+import Org.Walk (MWTag, List)
+import System.FilePath (isExtensionOf)
 
 data ExporterSettings = ExporterSettings
   { -- | The last level which is still exported as a headline.
@@ -43,6 +54,11 @@ data ExporterSettings = ExporterSettings
     -- This option can also be set with the OPTIONS keyword,
     -- e.g. "e:nil".
     orgExportWithEntities :: Bool,
+    -- | See Org Mode's `org-html-inline-image-rules` and friends.
+    --
+    -- This is a list of link extensions that should be inlined as images.
+    -- Basically, it just affects figures.
+    orgInlineImageRules :: [String],
     -- | See <https://orgmode.org/manual/Link-Abbreviations.html>
     orgLinkAbbrevAlist :: Map Text Text,
     -- | Global shift of headline levels.
@@ -71,13 +87,23 @@ defaultExporterSettings =
       orgExportSelectTags = ["export"],
       orgExportExcludeTags = ["noexport"],
       orgExportWithEntities = True,
+      orgInlineImageRules = ["png", "jpeg", "svg", "webp", "gif", "jpg"],
       orgLinkAbbrevAlist = mempty,
       headlineLevelShift = 1
     }
 
+-- | FIXME This is not exactly how org figures out if a link is an image.
+isImgTarget :: [FilePath] -> LinkTarget -> Bool
+isImgTarget exts = \case
+  (URILink _ x) -> hasImgExtension x
+  (UnresolvedLink x) -> hasImgExtension x
+  _ -> False
+  where
+    hasImgExtension x = any (`isExtensionOf` toString x) exts
+
 -- | Metadata associated with the document
 data OrgData = OrgData
-  { keywords :: Map Text Text,
+  { keywords :: Keywords,
     filetags :: [Text],
     parsedTitle :: [OrgObject],
     parsedDate :: [OrgObject],

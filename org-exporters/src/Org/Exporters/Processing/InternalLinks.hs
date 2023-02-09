@@ -9,9 +9,9 @@ import Data.Set qualified as Set
 import Data.Text qualified as T
 import Network.URI.Encode (encodeText)
 import Org.Exporters.Processing.OrgData
+import Org.Parser.Objects (linkToTarget)
 import Org.Types
 import Org.Walk
-import System.FilePath (normalise)
 import Text.Slugify (slugify)
 
 popUniqueId :: M Text
@@ -55,6 +55,20 @@ registerAnchorTarget name anchor alias = do
   modify2 \s -> do
     alias' <- alias
     pure $ s {internalTargets = Map.insert name (anchor, alias') (internalTargets s)}
+
+registerTitle :: F KeywordValue -> M ()
+registerTitle def =
+  modify2 \s ->
+    def >>= \case
+      ParsedKeyword title ->
+        return s {parsedTitle = title}
+      _ -> pure s
+
+registerKeyword :: Text -> F KeywordValue -> M ()
+registerKeyword name def =
+  modify2 \s -> do
+    def' <- def
+    return s {keywords = Map.insertWith (<>) name def' (keywords s)}
 
 withTargetDescription :: [OrgObject] -> M a -> M a
 withTargetDescription descr x = do
@@ -117,36 +131,24 @@ resolveFootnoteRefs r = \case
     return $ pure $ FootnoteRefLabel label'
   x -> pure x
 
-linkToTarget :: Text -> F (LinkTarget, [OrgObject])
-linkToTarget link
-  | any (`T.isPrefixOf` link) ["/", "./", "../"],
-    let link' = toText (normalise (toString link)) =
-      return (URILink "file" link', [Plain link])
-  | (prot, rest) <- T.break (== ':') link,
-    Just (_, uri) <- T.uncons rest = do
-      formatters <- asks (orgLinkAbbrevAlist . exporterSettings)
-      case Map.lookup (T.toLower prot) formatters of
-        Just repl ->
-          let f x =
-                if "%s" `T.isInfixOf` repl || "%h" `T.isInfixOf` repl
-                  then T.replace "%s" x $ T.replace "%h" (encodeText x) repl
-                  else repl <> x
-           in linkToTarget (f uri)
-        Nothing -> pure (URILink prot uri, [Plain link])
-  | otherwise = do
-      targets <- asks internalTargets
-      case Map.lookup link targets of
-        Just (newLink, alias) -> pure (InternalLink newLink, alias)
-        Nothing -> pure (UnresolvedLink link, [Plain link])
-
--- | FIXME This is not exactly how org figures out if a link is an image.
-isImgTarget :: LinkTarget -> Bool
-isImgTarget (URILink protocol rest) = hasImgExtension && (protocol `elem` imgProtocols)
-  where
-    hasImgExtension = any (`T.isSuffixOf` T.toLower rest) imgExtensions
-    imgExtensions = [".jpeg", ".jpg", ".png", ".gif", ".svg"]
-    imgProtocols = ["file", "http", "https", "attachment"]
-isImgTarget _ = False
+resolveTarget :: LinkTarget -> F (LinkTarget, [OrgObject])
+resolveTarget = \case
+  URILink prot uri -> do
+    formatters <- asks (orgLinkAbbrevAlist . exporterSettings)
+    case Map.lookup (T.toLower prot) formatters of
+      Just repl ->
+        let f x =
+              if "%s" `T.isInfixOf` repl || "%h" `T.isInfixOf` repl
+                then T.replace "%s" x $ T.replace "%h" (encodeText x) repl
+                else repl <> x
+         in resolveTarget $ linkToTarget (f uri)
+      Nothing -> pure (URILink prot uri, [])
+  UnresolvedLink link -> do
+    targets <- asks internalTargets
+    case Map.lookup link targets of
+      Just (newLink, alias) -> pure (InternalLink newLink, alias)
+      Nothing -> pure (UnresolvedLink link, [])
+  x -> pure (x, [])
 
 resolveObjects ::
   WalkM (Compose M F) ->
@@ -155,17 +157,13 @@ resolveObjects ::
   Compose M F OrgObject
 resolveObjects r f = \case
   FootnoteRef fdata -> FootnoteRef <$> resolveFootnoteRefs r fdata
-  Link (UnresolvedLink link) descr ->
+  Link target descr ->
     Compose $ do
       descr' <- getCompose $ traverse r descr
       return $ do
-        (target, descr'') <- linkToTarget link
-        descr''' <- descr'
-        return $
-          if isImgTarget target
-            then Image target
-            else Link target (if null descr then descr'' else descr''')
-  Link target descr -> Link target <$> traverse r descr
+        (target', targetDescr) <- resolveTarget target
+        descr'' <- descr'
+        return $ Link target' (if null descr'' then targetDescr else descr'')
   obj -> f obj
 
 resolveElements ::
@@ -179,6 +177,15 @@ resolveElements r f = \case
       stuff' <- getCompose $ traverse r stuff
       registerFootnote label stuff' $> pure fd
   (PlainList aff t i) -> PlainList aff t <$> resolveListItems r i
+  kw@(Keyword k _) -> do
+    Compose $ do
+      kw' <- getCompose $ f kw
+      let val = keywordValue <$> kw'
+      case k of
+        "title" -> registerTitle val
+        _ -> pure ()
+      registerKeyword k val
+      return kw'
   obj -> f obj
 
 resolveLinks :: WalkM (Compose M F)

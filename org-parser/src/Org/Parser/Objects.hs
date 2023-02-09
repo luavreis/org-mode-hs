@@ -6,6 +6,7 @@ import Org.Data.Entities (defaultEntitiesNames)
 import Org.Parser.Common
 import Org.Parser.Definitions
 import Org.Parser.MarkupContexts
+import System.FilePath (normalise)
 import Prelude hiding (many, some)
 
 -- * Sets of objects
@@ -423,7 +424,7 @@ regularLinkOrImage =
       str <- linkTarget
       descr <- linkDescr <|> char ']' $> mempty
       setLastChar (Just ']')
-      return $ B.link (UnresolvedLink str) descr
+      return $ B.link (linkToTarget str) descr
   where
     linkTarget :: MonadParser m => m Text
     linkTarget = fix $ \rest -> do
@@ -440,6 +441,16 @@ regularLinkOrImage =
       _ <- char '['
       -- FIXME this is not the right set but... whatever
       withMContext (/= ']') (string "]]") (plainMarkupContext standardSet)
+
+linkToTarget :: Text -> LinkTarget
+linkToTarget link
+  | any (`T.isPrefixOf` link) ["/", "./", "../"] =
+      let link' = toText (normalise (toString link))
+       in URILink "file" link'
+  | (prot, rest) <- T.break (== ':') link,
+    Just (_, uri) <- T.uncons rest =
+      URILink prot uri
+  | otherwise = UnresolvedLink link
 
 -- * Targets and radio targets
 

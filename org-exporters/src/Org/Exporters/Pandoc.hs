@@ -42,7 +42,6 @@ defPandocBackend =
       inlBabelCall _ = pure []
       macro _ _ = pure []
       stringify = OPandoc.stringify
-      customTarget _ = Nothing
       customElement _ = Nothing
       customObject _ = Nothing
    in ExportBackend {..}
