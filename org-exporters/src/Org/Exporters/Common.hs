@@ -57,7 +57,7 @@ data ExportBackend tag m obj elm = ExportBackend
     srcPretty :: Keywords -> Text -> Text -> Ondim tag m (Maybe [[obj]]),
     affiliatedEnv :: Keywords -> Ondim tag m [elm] -> Ondim tag m [elm],
     rawBlock :: Text -> Text -> [elm],
-    mergeLists :: Filter tag m elm,
+    mergeLists :: [elm] -> [elm],
     plainObjsToEls :: [obj] -> [elm],
     stringify :: obj -> Text,
     customElement :: OrgElement -> Maybe (Ondim tag m [elm]),
@@ -431,31 +431,23 @@ expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) inner = do
         then switchCases @elm "over-level"
         else switchCases @elm "normal"
       "sections" ## \x ->
-        mergeLists $
-          join <$> forM sections \section@(OrgSection {..}) ->
-            liftChildren x
-              `binding` prefixed "section:" do
-                "title"
-                  ## const
-                  $ toList <$> expandOrgObjects bk sectionTitle
-                "tags" ## \inner ->
-                  join <$> forM sectionTags (`tags` inner)
-              `binding` prefixed "section:" do
-                "children" ## const $ toList <$> expandOrgElements bk sectionChildren
-                "subsections" ## const $
-                  withoutText "priority" $
-                    withoutText "todo-state" $
-                      withoutText "todo-name" $
-                        expandOrgSections bk sectionSubsections
-              `bindingText` prefixed "section:" do
-                for_ sectionTodo todo
-                for_ sectionPriority priority
-                for_ (Map.toList sectionProperties) \(k, v) ->
-                  "prop:" <> k ## pure v
-                "anchor" ## pure $ sectionAnchor
-                "level" ## pure (show $ sectionLevel + shift)
-                -- Debug
-                "debug:ast" ## pure (show section)
+        mergeLists . join <$> forM sections \section@(OrgSection {..}) ->
+          liftChildren x
+            `binding` prefixed "section:" do
+              "title" ## const $ toList <$> expandOrgObjects bk sectionTitle
+              "tags" ## \inner' -> join <$> forM sectionTags (`tags` inner')
+            `binding` prefixed "section:" do
+              "children" ## const $ toList <$> expandOrgElements bk sectionChildren
+              "subsections" ## expandOrgSections bk sectionSubsections
+            `bindingText` prefixed "section:" do
+              for_ sectionTodo todo
+              for_ sectionPriority priority
+              for_ (Map.toList sectionProperties) \(k, v) -> "prop:" <> k ## pure v
+              "anchor" ## pure $ sectionAnchor
+              "level" ## pure (show $ sectionLevel + shift)
+              -- Debug
+              "debug:ast" ## pure (show section)
+            `unbindingText` map ("section:" <>) ["todo-state", "todo-name", "priority"]
   where
     todo (TodoKeyword st nm) = do
       "todo-state" ## pure (todost st)
@@ -546,10 +538,9 @@ table bk@(ExportBackend {..}) rows =
 
     tableBodies :: Expansion tag m elm
     tableBodies inner =
-      mergeLists $
-        join <$> forM bodies \body ->
-          liftChildren inner `binding` do
-            "body:rows" ## tableRows body
+      mergeLists . join <$> forM bodies \body ->
+        liftChildren inner `binding` do
+          "body:rows" ## tableRows body
 
     tableRows :: [[TableCell]] -> Expansion tag m obj
     tableRows rs inner =
@@ -596,16 +587,15 @@ plainList bk@(ExportBackend {..}) kind items =
   where
     listItems :: Expansion tag m elm
     listItems inner =
-      mergeLists $
-        join <$> forM items \(ListItem _ i cbox t c) ->
-          liftChildren inner
-            `bindingText` do
-              "counter-set" ## pure $ maybe "" show i
-              "checkbox" ## pure $ maybe "" checkbox cbox
-            `binding` do
-              "descriptive-tag" ## const $ expandOrgObjects bk t
-            `binding` do
-              "list-item-content" ## const $ doPlainOrPara c
+      mergeLists . join <$> forM items \(ListItem _ i cbox t c) ->
+        liftChildren inner
+          `bindingText` do
+            "counter-set" ## pure $ maybe "" show i
+            "checkbox" ## pure $ maybe "" checkbox cbox
+          `binding` do
+            "descriptive-tag" ## const $ expandOrgObjects bk t
+          `binding` do
+            "list-item-content" ## const $ doPlainOrPara c
       where
         doPlainOrPara :: [OrgElement] -> Ondim tag m [elm]
         doPlainOrPara [Paragraph _ objs] = plainObjsToEls <$> expandOrgObjects bk objs
