@@ -235,7 +235,8 @@ expandOrgObject bk@(ExportBackend {..}) obj = do
         (Target anchor name) ->
           call "org:object:target"
             `bindingText` do
-              "anchor" ## pure anchor
+              "target:anchor" ## pure anchor
+              "target:name" ## pure name
         (Italic objs) ->
           call "org:object:italic"
             `binding` do
