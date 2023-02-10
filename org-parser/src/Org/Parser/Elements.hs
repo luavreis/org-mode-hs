@@ -393,11 +393,12 @@ drawer = try do
   _ <- char ':'
   dname <- takeWhile1P (Just "drawer name") (\c -> c /= ':' && c /= '\n')
   char ':' >> blankline
-  els <- withContext blankline end elements
+  els <- withContext anyLine end elements
+  clearPendingAffiliated
   return $ B.drawer dname els
   where
     end :: OrgParser ()
-    end = try $ newline *> hspace <* string'' ":end:"
+    end = try $ hspace <* string'' ":end:" <* blankline'
 
 -- * LaTeX Environments
 
