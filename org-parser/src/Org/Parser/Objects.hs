@@ -73,7 +73,7 @@ emphasisPost e = try $ do
   lchar <- gets orgStateLastChar
   for_ lchar $ guard . not . isSpace
   _ <- char e
-  setLastChar (Just e)
+  putLastChar e
   lookAhead
     (eof <|> void (satisfy (`elem` emphasisPostChars)))
 
@@ -82,7 +82,7 @@ emphasisPre s = try $ do
   lchar <- gets orgStateLastChar
   for_ lchar $ guard . (`elem` emphasisPreChars)
   _ <- char s
-  putLastChar Nothing
+  clearLastChar
   notFollowedBy spaceChar
 
 markup ::
@@ -101,12 +101,7 @@ rawMarkup ::
 rawMarkup f d = Marked [d] $
   try $ do
     emphasisPre d
-    str <-
-      withMContext
-        (/= d)
-        (emphasisPost d)
-        getInput
-    return $ f str
+    f <$> withMContext (/= d) (emphasisPost d) getInput
 
 code :: Marked OrgParser OrgObjects
 code = rawMarkup B.code '~'
@@ -398,7 +393,7 @@ inlSrc = Marked "s" . try $ do
 linebreak :: Marked OrgParser OrgObjects
 linebreak =
   Marked "\\" . try $
-    B.linebreak <$ string "\\\\" <* hspace <* newlineAndClear' <* hspace
+    B.linebreak <$ string "\\\\" <* blankline' <* clearLastChar
 
 -- * Links
 
@@ -423,7 +418,7 @@ regularLinkOrImage =
       _ <- string "[["
       str <- linkTarget
       descr <- linkDescr <|> char ']' $> mempty
-      setLastChar (Just ']')
+      putLastChar ']'
       return $ B.link (linkToTarget str) descr
   where
     linkTarget :: MonadParser m => m Text
