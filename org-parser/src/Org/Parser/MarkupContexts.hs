@@ -116,7 +116,7 @@ withBalancedContext lchar rchar allowed p = try do
       end = try do
         guard . (== 0) =<< get
         _ <- char rchar
-        lift $ setLastChar (Just rchar)
+        lift $ putLastChar rchar
   st <- getFullState
   (str, _) <- evalStateT (skipManyTill' skip end) 1
   parseFromText st str p
@@ -140,9 +140,7 @@ markupContext f elems = go
       setLastChar (T.last <$> str)
       (self <>) <$> (finishSelf <|> anotherEl <|> nextChar)
       where
-        finishSelf = try $ do
-          eof
-          pure mempty
+        finishSelf = eof $> mempty
         anotherEl = try $ do
           el <- getParser elems
           rest <- go
@@ -150,6 +148,6 @@ markupContext f elems = go
         nextChar = try $ do
           c <- anySingle
           -- traceM $ "parsed char: " ++ show c
-          setLastChar (Just c)
+          putLastChar c
           rest <- go
           pure $ f (one c) <> rest

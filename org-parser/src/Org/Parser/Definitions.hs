@@ -56,8 +56,8 @@ setLastChar lchar =
 clearLastChar :: OrgParser ()
 clearLastChar = modify (\c -> c {orgStateLastChar = Nothing})
 
-putLastChar :: Maybe Char -> OrgParser ()
-putLastChar lchar = modify (\c -> c {orgStateLastChar = lchar})
+putLastChar :: Char -> OrgParser ()
+putLastChar lchar = modify (\c -> c {orgStateLastChar = Just lchar})
 
 -- * State and Future convenience functions
 
