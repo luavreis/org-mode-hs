@@ -436,6 +436,7 @@ expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) inner = do
             `binding` prefixed "section:" do
               "title" ## const $ toList <$> expandOrgObjects bk sectionTitle
               "tags" ## \inner' -> join <$> forM sectionTags (`tags` inner')
+              planning sectionPlanning
             `binding` prefixed "section:" do
               "children" ## const $ toList <$> expandOrgElements bk sectionChildren
               "subsections" ## expandOrgSections bk sectionSubsections
@@ -458,6 +459,10 @@ expandOrgSections bk@(ExportBackend {..}) sections@(fstSection : _) inner = do
       "priority" ## pure case p of
         (LetterPriority c) -> T.singleton c
         (NumericPriority n) -> show n
+    planning (PlanningInfo {..}) = prefixed "planning:" do
+      for_ planningClosed \ts -> "closed" ## const $ timestamp bk ts
+      for_ planningDeadline \ts -> "deadline" ## const $ timestamp bk ts
+      for_ planningScheduled \ts -> "scheduled" ## const $ timestamp bk ts
 
 liftDocument ::
   forall tag m obj elm doc.
