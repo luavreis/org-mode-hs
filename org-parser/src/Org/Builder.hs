@@ -46,7 +46,7 @@ instance Semigroup OrgObjects where
             case (x, y) of
               (Plain t1, Plain t2) -> xs' |> Plain (t1 <> t2)
               (Plain t1, LineBreak) -> xs' |> Plain (T.stripEnd t1) |> LineBreak
-              (LineBreak, Plain t2) -> xs' |> LineBreak |> Plain (T.stripEnd t2)
+              (LineBreak, Plain t2) -> xs' |> LineBreak |> Plain (T.stripStart t2)
               (Italic i1, Italic i2) -> xs' |> Italic (i1 <> i2)
               (Underline i1, Underline i2) -> xs' |> Underline (i1 <> i2)
               (Bold i1, Bold i2) -> xs' |> Bold (i1 <> i2)
