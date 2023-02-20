@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Org.Exporters.Processing.OrgData
   ( module Org.Exporters.Processing.OrgData,
@@ -64,7 +65,7 @@ data ExporterSettings = ExporterSettings
     -- | Global shift of headline levels.
     headlineLevelShift :: Int
   }
-  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic, NFData)
 
 instance Aeson.ToJSON ExporterSettings where
   toJSON = Aeson.genericToJSON aesonOptions
@@ -113,7 +114,7 @@ data OrgData = OrgData
     internalTargets :: Map Text (Id, [OrgObject]),
     footnotes :: Map Text [OrgElement]
   }
-  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic, NFData)
 
 data OrgDataWalk
 
