@@ -21,6 +21,7 @@ Source-repository    head
 common common-options
   default-language:  Haskell2010
   build-depends:     base >= 4.14 && < 5
+                   , aeson
                    , bytestring
                    , containers
                    , directory
