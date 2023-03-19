@@ -100,9 +100,6 @@ isImgTarget exts = \case
 data OrgData = OrgData
   { keywords :: Keywords,
     filetags :: [Text],
-    parsedTitle :: [OrgObject],
-    parsedDate :: [OrgObject],
-    parsedAuthor :: [OrgObject],
     exporterSettings :: ExporterSettings,
     parserOptions :: OrgOptions,
     internalTargets :: Map Text (Id, [OrgObject]),
@@ -127,7 +124,7 @@ instance MultiSub MWTag OrgData where
          ]
 
 initialOrgData :: OrgData
-initialOrgData = OrgData mempty [] [] [] [] defaultExporterSettings defaultOrgOptions mempty mempty
+initialOrgData = OrgData mempty [] defaultExporterSettings defaultOrgOptions mempty mempty
 
 type F = Reader OrgData
 

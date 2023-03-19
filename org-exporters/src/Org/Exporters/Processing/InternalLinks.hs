@@ -56,14 +56,6 @@ registerAnchorTarget name anchor alias = do
     alias' <- alias
     pure $ s {internalTargets = Map.insert name (anchor, alias') (internalTargets s)}
 
-registerTitle :: F KeywordValue -> M ()
-registerTitle def =
-  modify2 \s ->
-    def >>= \case
-      ParsedKeyword title ->
-        return s {parsedTitle = title}
-      _ -> pure s
-
 registerKeyword :: Text -> F KeywordValue -> M ()
 registerKeyword name def =
   modify2 \s -> do
@@ -181,9 +173,6 @@ resolveElements r f = \case
     Compose $ do
       kw' <- getCompose $ f kw
       let val = keywordValue <$> kw'
-      case k of
-        "title" -> registerTitle val
-        _ -> pure ()
       registerKeyword k val
       return kw'
   obj -> f obj
