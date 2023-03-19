@@ -492,10 +492,6 @@ bindDocument bk datum (OrgDocument {..}) node = do
       forM_ (Map.toList documentProperties) \(k, v) -> "prop:" <> k ## pure v
     `bindingKws` ()
     `binding` prefixed "doc:" do
-      "title" ## const $ expandOrgObjects bk $ parsedTitle datum
-      "author" ## const $ expandOrgObjects bk $ parsedAuthor datum
-      "date" ## const $ expandOrgObjects bk $ parsedDate datum
-    `binding` prefixed "doc:" do
       "children" ## const $ expandOrgElements bk documentChildren
       "sections" ## expandOrgSections bk documentSections
       "footnotes" ## \node' ->
