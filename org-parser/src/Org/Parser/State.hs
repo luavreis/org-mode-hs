@@ -1,6 +1,7 @@
 module Org.Parser.State where
 
 import Org.Types
+import qualified Data.Aeson as Aeson
 
 -- | Collection of todo markers in the order in which items should progress
 type TodoSequence = [TodoKeyword]
@@ -14,6 +15,13 @@ data OrgOptions = OrgOptions
     orgElementAffiliatedKeywords :: [Text]
   }
   deriving (Eq, Ord, Show, Typeable, Generic)
+
+instance Aeson.ToJSON OrgOptions where
+  toJSON = Aeson.genericToJSON aesonOptions
+  toEncoding = Aeson.genericToEncoding aesonOptions
+
+instance Aeson.FromJSON OrgOptions where
+  parseJSON = Aeson.genericParseJSON aesonOptions
 
 instance NFData OrgOptions
 

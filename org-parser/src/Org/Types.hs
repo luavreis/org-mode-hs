@@ -4,9 +4,12 @@
 
 module Org.Types where
 
-import Data.Char (isDigit)
+import Data.Aeson
+import Data.Aeson.Encoding (text)
+import Data.Char (isDigit, toLower)
 import Data.Map qualified as M
 import Data.Text qualified as T
+import qualified Data.Aeson as Aeson
 
 -- * Document, Sections and Headings
 
@@ -71,12 +74,33 @@ type Tags = [Tag]
 data TodoState = Todo | Done
   deriving (Eq, Ord, Show, Read, Generic)
 
+instance ToJSON TodoState where
+  toJSON Todo = "todo"
+  toJSON Done = "done"
+  toEncoding Todo = text "todo"
+  toEncoding Done = text "done"
+
+instance FromJSON TodoState where
+  parseJSON =
+    genericParseJSON
+      defaultOptions
+        { constructorTagModifier = map toLower
+        }
+
 -- | A to-do keyword like @TODO@ or @DONE@.
 data TodoKeyword = TodoKeyword
   { todoState :: TodoState,
     todoName :: Text
   }
   deriving (Show, Eq, Ord, Read, Generic)
+
+instance ToJSON TodoKeyword where
+  toJSON (TodoKeyword s n) = object ["state" .= s, "name" .= n]
+  toEncoding (TodoKeyword s n) = pairs ("state" .= s <> "name" .= n)
+
+instance FromJSON TodoKeyword where
+  parseJSON = withObject "Todo Keyword" $ \v ->
+    TodoKeyword <$> v .: "state" <*> v .: "name"
 
 data Priority
   = LetterPriority Char
@@ -373,6 +397,12 @@ data CiteReference = CiteReference
     refSuffix :: [OrgObject]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
+
+aesonOptions :: Aeson.Options
+aesonOptions =
+  Aeson.defaultOptions
+    { Aeson.fieldLabelModifier = Aeson.camelTo2 '-'
+    }
 
 {- ORMOLU_DISABLE -}
 instance NFData OrgDocument

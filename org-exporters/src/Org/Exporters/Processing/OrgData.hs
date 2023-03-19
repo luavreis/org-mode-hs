@@ -74,12 +74,6 @@ instance Aeson.ToJSON ExporterSettings where
 instance Aeson.FromJSON ExporterSettings where
   parseJSON = Aeson.genericParseJSON aesonOptions
 
-aesonOptions :: Aeson.Options
-aesonOptions =
-  Aeson.defaultOptions
-    { Aeson.fieldLabelModifier = Aeson.camelTo2 '-'
-    }
-
 defaultExporterSettings :: ExporterSettings
 defaultExporterSettings =
   ExporterSettings
