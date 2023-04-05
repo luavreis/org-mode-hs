@@ -58,6 +58,7 @@ library
                      Org.Builder
                      Org.Walk
                      Org.Parser
+                     Org.Compare
                      Org.Parser.Definitions
                      Org.Parser.Document
                      Org.Parser.Elements
