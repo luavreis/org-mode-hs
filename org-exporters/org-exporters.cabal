@@ -1,85 +1,93 @@
-cabal-version:       2.4
-Name:                org-exporters
-version:             0.1
-license:             GPL-3.0-only
-Synopsis:            Customizable exporter for Org Mode documents.
-Description:
+cabal-version: 2.4
+name:          org-exporters
+version:       0.1
+license:       GPL-3.0-only
+synopsis:      Customizable exporter for Org Mode documents.
+description:
   org-parser provides a parser and an HTML exporter for Org Mode documents.
   The Org document is parsed into an AST similar to org-element's, and the
   HTML exporter is highly configurable using HTML templates.
 
-Maintainer:          @lucasvreis
-Bug-Reports:         https://github.com/lucasvreis/org-parser/issues
-Copyright:           (c) 2022 lucasvreis
-Category:            Text
-Build-type:          Simple
-Tested-With:         GHC == 8.10.7 || == 9.0.2 || == 9.2.2
-data-dir:            data
-data-files:          **/*.tpl
-                     **/*.md
-Source-repository    head
-  type:              git
-  location:          git://github.com/lucasvreis/orge.git
+maintainer:    @lucasvreis
+bug-reports:   https://github.com/lucasvreis/org-parser/issues
+copyright:     (c) 2022 lucasvreis
+category:      Text
+build-type:    Simple
+tested-with:   GHC ==8.10.7 || ==9.0.2 || ==9.2.2
+data-dir:      data
+data-files:
+  **/*.md
+  **/*.tpl
+
+source-repository head
+  type:     git
+  location: git://github.com/lucasvreis/orge.git
 
 flag pandoc
   description: Build with the Pandoc exporter module and its dependencies.
-  default: True
+  default:     True
 
 flag skylighting
   description: Build with the skylighting syntax highlighting backend.
-  default: True
+  default:     True
 
 flag engrave-faces
-  description: Build with the experimental engrave-faces syntax highlighting backend.
-  default: False
+  description:
+    Build with the experimental engrave-faces syntax highlighting backend.
+
+  default:     False
 
 flag syntect
-  description: Build with the experimental syntect syntax highlighting backend (requires a library).
-  default: False
+  description:
+    Build with the experimental syntect syntax highlighting backend (requires a library).
+
+  default:     False
 
 library
-  hs-source-dirs:    src
-  exposed-modules:   Org.Exporters.Common
-                     Org.Exporters.HTML
-                     Org.Exporters.Citeproc
-                     Org.Exporters.Processing
-                     Org.Exporters.Processing.OrgData
-                     Org.Exporters.Processing.InternalLinks
-                     Org.Exporters.Processing.Prune
-                     Org.Exporters.Processing.SpecialStrings
-                     Org.Exporters.Processing.GatherSettings
-  other-modules:     Paths_org_exporters
-  autogen-modules:   Paths_org_exporters
-  default-language:  Haskell2010
-  build-depends:     base >= 4.14 && < 5
-                   , aeson >= 1.4
-                   , bytestring
-                   , citeproc >= 0.7
-                   , containers
-                   , directory
-                   , filepath
-                   , ondim
-                   , org-parser
-                   , map-syntax
-                   , megaparsec
-                   , monad-logger
-                   , multiwalk
-                   , pandoc-types >= 1.22
-                   , relude
-                   , slugify
-                   , text
-                   , time
-                   , uri-encode
-                   , xmlhtml
+  hs-source-dirs:     src
+  exposed-modules:
+    Org.Exporters.Citeproc
+    Org.Exporters.Common
+    Org.Exporters.HTML
+    Org.Exporters.Processing
+    Org.Exporters.Processing.GatherSettings
+    Org.Exporters.Processing.InternalLinks
+    Org.Exporters.Processing.OrgData
+    Org.Exporters.Processing.Prune
+    Org.Exporters.Processing.SpecialStrings
+
+  other-modules:      Paths_org_exporters
+  autogen-modules:    Paths_org_exporters
+  default-language:   Haskell2010
+  build-depends:
+    , aeson         >=2.1.2  && <2.2
+    , base          >=4.16.4 && <4.19
+    , bytestring    >=0.11.4 && <0.12
+    , citeproc      >=0.7
+    , containers    >=0.6.5  && <0.7
+    , filepath
+    , megaparsec
+    , multiwalk
+    , ondim
+    , org-parser
+    , pandoc-types  >=1.22
+    , relude
+    , slugify
+    , text
+    , time
+    , uri-encode
+    , xmlhtml
 
   if flag(pandoc)
     build-depends:   pandoc
     exposed-modules: Org.Exporters.Pandoc
 
   if flag(skylighting)
-    build-depends:   skylighting
-                   , skylighting-core
-                   , skylighting-format-blaze-html
+    build-depends:
+      , skylighting
+      , skylighting-core
+      , skylighting-format-blaze-html
+
     exposed-modules: Org.Exporters.Highlighting.Skylighting
 
   if flag(engrave-faces)
@@ -89,21 +97,23 @@ library
   if flag(syntect)
     exposed-modules: Org.Exporters.Highlighting.Syntect
     extra-libraries: syntectffi
-    extra-lib-dirs: /home/lucas/.local/lib/syntectffi/release
+    extra-lib-dirs:  /home/lucas/.local/lib/syntectffi/release
 
-  mixins:            base hiding (Prelude)
-                   , relude (Relude as Prelude)
-                   , relude
-  ghc-options:      -Wall
+  mixins:
+    base hiding (Prelude),
+    relude (Relude as Prelude),
+    relude
+
+  ghc-options:        -Wall
   default-extensions:
-    TupleSections
-    OverloadedStrings
-    ViewPatterns
-    ImportQualifiedPost
-    MultiWayIf
-    LambdaCase
-    ScopedTypeVariables
-    DeriveGeneric
-    FlexibleContexts
     BlockArguments
     ConstraintKinds
+    DeriveGeneric
+    FlexibleContexts
+    ImportQualifiedPost
+    LambdaCase
+    MultiWayIf
+    OverloadedStrings
+    ScopedTypeVariables
+    TupleSections
+    ViewPatterns

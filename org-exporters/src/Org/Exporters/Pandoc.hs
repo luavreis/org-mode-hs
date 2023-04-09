@@ -19,7 +19,7 @@ import Text.Pandoc.Extensions (pandocExtensions)
 import Text.Pandoc.Readers.Markdown (readMarkdown)
 import Org.Exporters.Processing.OrgData
 
-type PandocBackend m = ExportBackend PandocTag m P.Inline P.Block
+type PandocBackend m = ExportBackend m P.Inline P.Block
 
 defPandocBackend :: Monad m => PandocBackend m
 defPandocBackend =
@@ -28,7 +28,7 @@ defPandocBackend =
       softbreak = [P.SoftBreak]
       exportSnippet l = one . P.RawInline (P.Format l)
       nullEl = P.Plain []
-      affiliatedEnv _ = id
+      affiliatedMap _ = pure ()
       rawBlock l = one . P.RawBlock (P.Format l)
       srcPretty _ _ _ = pure Nothing
       mergeLists = foldr go []
@@ -63,7 +63,7 @@ loadPandocDoc dir = do
 renderDoc ::
   Monad m =>
   PandocBackend m ->
-  OndimMS PandocTag m ->
+  OndimState m ->
   P.Pandoc ->
   OrgData ->
   OrgDocument ->
@@ -72,4 +72,4 @@ renderDoc bk st layout datum doc =
   liftDocument bk datum doc layout
     & bindDefaults
     & evalOndimTWith st
-    & flip evalStateT initialExporterState
+    & flip runReaderT initialOrgData
