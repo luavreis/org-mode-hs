@@ -249,6 +249,21 @@ instance Semigroup KeywordValue where
 
 type Keywords = Map Text KeywordValue
 
+lookupValueKeyword :: Text -> Keywords -> Text
+lookupValueKeyword key kws = fromMaybe mempty do
+  ValueKeyword x <- M.lookup key kws
+  return x
+
+lookupParsedKeyword :: Text -> Keywords -> [OrgObject]
+lookupParsedKeyword key kws = fromMaybe mempty do
+  ParsedKeyword x <- M.lookup key kws
+  return x
+
+lookupBackendKeyword :: Text -> Keywords -> [(Text, Text)]
+lookupBackendKeyword key kws = fromMaybe mempty do
+  BackendKeyword x <- M.lookup key kws
+  return x
+
 keywordsFromList :: [(Text, KeywordValue)] -> Keywords
 keywordsFromList = M.fromListWith (flip (<>))
 
