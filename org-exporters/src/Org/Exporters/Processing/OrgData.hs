@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
@@ -11,12 +10,9 @@ module Org.Exporters.Processing.OrgData
   )
 where
 
-import Control.MultiWalk (MultiSub (..), MultiTag (..))
-import Control.MultiWalk.Contains (ToSpecList, Under, Trav)
 import Data.Aeson qualified as Aeson
 import Org.Parser.Definitions (OrgOptions, defaultOrgOptions)
 import Org.Types
-import Org.Walk (MWTag, List)
 import System.FilePath (isExtensionOf)
 
 data ExporterSettings = ExporterSettings
@@ -106,22 +102,6 @@ data OrgData = OrgData
     footnotes :: Map Text [OrgElement]
   }
   deriving (Eq, Ord, Show, Typeable, Generic, NFData)
-
-data OrgDataWalk
-
-instance MultiTag OrgDataWalk where
-  type MultiTypes OrgDataWalk = OrgData ': MultiTypes MWTag
-  type SubTag OrgDataWalk = MWTag
-
-instance MultiSub MWTag OrgData where
-  type
-    SubTypes MWTag OrgData =
-      ToSpecList
-        '[ Trav (Map Text) (Under KeywordValue (List OrgObject)), -- Objects under keywords
-           Trav (Map Text) (Trav ((,) Id) (List OrgObject)), -- Elements under targets
-           Trav (Map Text) (List OrgElement), -- Elements under footnotes
-           List OrgObject
-         ]
 
 initialOrgData :: OrgData
 initialOrgData = OrgData mempty [] defaultExporterSettings defaultOrgOptions mempty mempty

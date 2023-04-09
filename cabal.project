@@ -8,7 +8,7 @@ package *
 source-repository-package
   type: git
   location: https://github.com/lucasvreis/multiwalk.git
-  tag: 0b7dcb62ef1795f251d52f0cf9d3a832e089f8b0
+  tag: v0.1.0.0
 
 source-repository-package
   type: git

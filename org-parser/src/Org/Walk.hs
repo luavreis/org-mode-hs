@@ -7,15 +7,14 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Org.Walk
-  ( module Org.Walk,
-    MultiWalk,
-    (.>),
-    (?>)
+  ( module Org.Walk
+  , MultiWalk
+  , (.>)
+  , (?>)
   )
 where
 
 import Control.MultiWalk
-import Control.MultiWalk.Contains
 import Org.Types
 
 data MWTag
@@ -52,64 +51,61 @@ buildMultiW = Control.MultiWalk.buildMultiW @MWTag
 instance MultiTag MWTag where
   type
     MultiTypes MWTag =
-      '[ OrgDocument,
-         OrgSection,
-         -- Element stuff
-         OrgElement,
-         ListItem,
-         -- Object stuff
-         OrgObject,
-         Citation
+      '[ OrgDocument
+       , OrgSection
+       , -- Element stuff
+         OrgElement
+       , ListItem
+       , -- Object stuff
+         OrgObject
+       , Citation
        ]
-  type SubTag MWTag = MWTag
 
 type List a = Trav [] a
 
 type DoubleList a = MatchWith [[a]] (Trav (Compose [] []) a)
 
 instance MultiSub MWTag OrgDocument where
-  type SubTypes MWTag OrgDocument = ToSpecList '[List OrgElement, List OrgSection]
+  type SubTypes MWTag OrgDocument = '[ToSpec (List OrgElement), ToSpec (List OrgSection)]
 
 instance MultiSub MWTag OrgElement where
   type
     SubTypes MWTag OrgElement =
-      ToSpecList
-        '[ List OrgElement,
-           List OrgObject,
-           Trav (Map Text) (Under KeywordValue (List OrgObject)), -- Objects under affiliated keywords
-           Under KeywordValue (List OrgObject), -- Objects under keywords
-           List ListItem,
-           List (Under TableRow (DoubleList OrgObject)), -- Objects under table rows
-           DoubleList OrgObject -- Objects under verse blocks
-         ]
+      '[ ToSpec (List OrgElement)
+       , ToSpec (List OrgObject)
+       , ToSpec (Trav (Map Text) (Under KeywordValue 'NoSel (List OrgObject))) -- Objects under affiliated keywords
+       , ToSpec (Under KeywordValue 'NoSel (List OrgObject)) -- Objects under keywords
+       , ToSpec (List ListItem)
+       , ToSpec (List (Under TableRow 'NoSel (DoubleList OrgObject))) -- Objects under table rows
+       , ToSpec (DoubleList OrgObject) -- Objects under verse blocks
+       ]
 
 instance MultiSub MWTag ListItem where
   type
     SubTypes MWTag ListItem =
-      ToSpecList
-        '[ List OrgObject,
-           List OrgElement
-         ]
+      '[ ToSpec (List OrgObject)
+       , ToSpec (List OrgElement)
+       ]
 
 instance MultiSub MWTag OrgSection where
   type
     SubTypes MWTag OrgSection =
-      ToSpecList
-        '[List OrgObject, List OrgElement, List OrgSection]
+      '[ ToSpec (List OrgObject)
+       , ToSpec (List OrgElement)
+       , ToSpec (List OrgSection)
+       ]
 
 instance MultiSub MWTag OrgObject where
   type
     SubTypes MWTag OrgObject =
-      ToSpecList
-        '[ List OrgObject,
-           Under FootnoteRefData (List OrgElement),
-           Citation
-         ]
+      '[ ToSpec (List OrgObject)
+       , ToSpec (Under FootnoteRefData 'NoSel (List OrgElement))
+       , ToSpec Citation
+       ]
 
 instance MultiSub MWTag Citation where
   type
     SubTypes MWTag Citation =
-      ToSpecList
-        '[ List OrgObject,
-           List (Under CiteReference (List OrgObject))
-         ]
+      '[ ToSpec (List OrgObject)
+       , ToSpec (List (Under CiteReference 'NoSel (List OrgObject)))
+       ]

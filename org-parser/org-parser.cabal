@@ -28,7 +28,7 @@ common common-options
                    , filepath
                    , megaparsec
                    , mtl
-                   , multiwalk
+                   , multiwalk >= 0.1.0 && < 0.2
                    , relude
                    , replace-megaparsec
                    , slugify
