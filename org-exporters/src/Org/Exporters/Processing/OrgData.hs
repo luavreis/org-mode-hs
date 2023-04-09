@@ -80,7 +80,7 @@ defaultExporterSettings =
       orgExportWithEntities = True,
       orgInlineImageRules = ["png", "jpeg", "svg", "webp", "gif", "jpg"],
       orgLinkAbbrevAlist = mempty,
-      headlineLevelShift = 1
+      headlineLevelShift = 0
     }
 
 -- | FIXME This is not exactly how org figures out if a link is an image.
