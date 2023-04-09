@@ -6,7 +6,6 @@ import Org.Data.Entities (defaultEntitiesNames)
 import Org.Parser.Common
 import Org.Parser.Definitions
 import Org.Parser.MarkupContexts
-import System.FilePath (normalise)
 import Prelude hiding (many, some)
 
 -- * Sets of objects
@@ -440,7 +439,7 @@ regularLinkOrImage =
 linkToTarget :: Text -> LinkTarget
 linkToTarget link
   | any (`T.isPrefixOf` link) ["/", "./", "../"] =
-      let link' = toText (normalise (toString link))
+      let link' = toText (toString link)
        in URILink "file" link'
   | (prot, rest) <- T.break (== ':') link,
     Just (_, uri) <- T.uncons rest =
