@@ -11,6 +11,7 @@ doSpecialStrings txt =
     & T.replace "--" "–"
     & T.replace "..." "…"
     & T.replace "\\-" "\173"
+    & T.replace "'" "’"
 
 processSpecialStrings :: MultiWalk MWTag a => a -> a
 processSpecialStrings = walk process

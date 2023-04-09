@@ -80,7 +80,7 @@ resolveSection r s@OrgSection {..} = Compose $ do
       registerAnchorTarget ("*" <> sectionRawTitle) a title
       pure a
     Nothing -> do
-      a <- makeAnchorUnique $ slugify sectionRawTitle
+      a <- makeAnchorUnique $ "h-" <> slugify sectionRawTitle
       registerAnchorTarget ("*" <> sectionRawTitle) a title
       pure a
   return do
