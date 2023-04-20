@@ -1,14 +1,16 @@
 module Main where
 
 import Data.Text.IO qualified as T
-import Ondim.Extra.Loading.HTML qualified as H
-import Ondim.Extra.Loading.Pandoc qualified as P
+import Ondim.Targets.HTML.Load qualified as H
+import Ondim.Targets.LaTeX.Load qualified as L
+import Ondim.Targets.Pandoc.Load qualified as P
 import Options qualified as O
 import Options.Applicative
 import Org.Exporters.Common (templateDir)
 import Org.Exporters.HTML qualified as H
+import Org.Exporters.LaTeX qualified as L
 import Org.Exporters.Pandoc qualified as P
-import Org.Exporters.Processing (runPipeline, withCurrentData)
+import Org.Exporters.Processing (gatherSettings, runPipeline, withCurrentData)
 import Org.Exporters.Processing.InternalLinks (resolveLinks)
 import Org.Exporters.Processing.Prune (pruneDoc)
 import Org.Parser
@@ -17,8 +19,8 @@ import Path.IO (copyDirRecur', doesDirExist)
 import System.FilePath ((</>))
 import Text.Megaparsec (errorBundlePretty)
 import Text.Pandoc qualified as TP
+import Text.Pandoc.Format qualified as TP
 import Text.Pretty.Simple
-import Org.Exporters.Processing.GatherKeywords (gatherKeywords)
 
 main :: IO ()
 main = do
@@ -49,7 +51,7 @@ main = do
             error "This should not happen."
           Right d -> pure d
       let (processed, datum) = runPipeline do
-            gatherKeywords parsed
+            gatherSettings parsed
             pruned <- withCurrentData $ pruneDoc parsed
             getCompose $ resolveLinks pruned
       out <-
@@ -66,6 +68,16 @@ main = do
                 <|> H.loadLayout defDir
             either (error . show) toStrict
               <$> H.renderDoc H.defHtmlBackend tpls layout datum processed
+          O.LaTeX oo -> do
+            let usrDir = O.templateDir oo
+                lclDir = (</> "latex") <$> udir
+            defDir <- L.laTeXTemplateDir
+            tpls <- L.loadTemplates $ catMaybes [usrDir, lclDir, Just defDir]
+            layout <-
+              maybe empty L.loadLayout (usrDir <|> lclDir)
+                <|> L.loadLayout defDir
+            either (error . show) toStrict
+              <$> L.renderDoc L.defLaTeXBackend tpls layout datum processed
           O.Pandoc fmt tplo oo -> do
             let usrDir = O.templateDir oo
                 lclDir = (</> "pandoc") <$> udir
@@ -78,7 +90,8 @@ main = do
               either (error . show) id
                 <$> P.renderDoc P.defPandocBackend tpls layout datum processed
             TP.runIOorExplode do
-              (w, ext) <- TP.getWriter fmt
+              fmt' <- TP.parseFlavoredFormat fmt
+              (w, ext) <- TP.getWriter fmt'
               tpl <- TP.compileDefaultTemplate fmt
               utpl <- case tplo of
                 Nothing -> pure Nothing
