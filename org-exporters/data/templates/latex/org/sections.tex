@@ -1,0 +1,36 @@
+\o:bind{headline}{
+  \expIf{section:todo}{{\bfseries\sffamily \oExp{section:todo}}}{}
+  \expIf{section:priority}{\framebox{\#\oExp{section:priority}}}{}
+  \expNamed{section:headline}
+  \expIf{section:tags}{
+    \hfill{}
+    \textsc{\expIntercalate{:}{\expForEach{section:tags}{tag}{\expTag}}}
+  }{}
+}
+
+\expCase{normal}{
+  \expSections{
+    \expSwitch{section:level}{
+      \expCase{1}{\section{\expNamed{headline}}}
+      \expCase{2}{\subsection{\expNamed{headline}}}
+      \expCase{3}{\subsubsection{\expNamed{headline}}}
+      \expCase{4}{\paragraph{\expNamed{headline}}}
+      \expCase{5}{\subparagraph{\expNamed{headline}}}
+      \expCase{6}{\subsubparagraph{\expNamed{headline}}}
+    }
+    \label{sec:\expNamed{section:anchor}}
+    \expNamed{section:children}
+    \expNamed{section:subsections}
+  }
+}
+
+\expCase{over-level}{
+  \begin{enumerate}
+    \expSections{
+      \item \expNamed{section:headline}
+            \label{sec:\expNamed{section:anchor}}
+            \expNamed{section:children}
+            \expNamed{section:subsections}
+    }
+  \end{enumerate}
+}

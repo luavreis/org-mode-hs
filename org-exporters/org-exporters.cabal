@@ -23,6 +23,10 @@ source-repository head
   type:     git
   location: git://github.com/lucasvreis/orge.git
 
+flag latex
+  description: Build with the LaTeX exporter module and its dependencies.
+  default:     True
+
 flag pandoc
   description: Build with the Pandoc exporter module and its dependencies.
   default:     True
@@ -77,6 +81,10 @@ library
     , time
     , uri-encode
     , xmlhtml
+
+  if flag(latex)
+    build-depends:   HaTeX
+    exposed-modules: Org.Exporters.LaTeX
 
   if flag(pandoc)
     build-depends:   pandoc

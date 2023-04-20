@@ -18,6 +18,7 @@ data AppOptions = AppOptions
 data BackendOptions
   = AST {pretty :: Bool}
   | HTML {ondimOptions :: OndimOptions}
+  | LaTeX {ondimOptions :: OndimOptions}
   | Pandoc {formatSpec :: Text, template :: Maybe FilePath, ondimOptions :: OndimOptions}
 
 newtype OndimOptions = OndimOptions
@@ -74,6 +75,7 @@ backend' =
   hsubparser
     ( command "ast" (info ast (progDesc "Export the parsed AST"))
         <> command "html" (info html (progDesc "Export to HTML using Ondim."))
+        <> command "latex" (info latex (progDesc "Export to LaTeX using Ondim."))
         <> command
           "pandoc"
           ( info
@@ -88,6 +90,7 @@ backend' =
   where
     ast = AST . not <$> switch (long "no-pretty" <> help "Disable pretty-printing of the parsed AST")
     html = HTML <$> ondimOptions'
+    latex = LaTeX <$> ondimOptions'
     pandoc =
       Pandoc
         <$> strArgument
