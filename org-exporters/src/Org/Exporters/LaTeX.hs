@@ -35,7 +35,6 @@ defLaTeXBackend =
       srcPretty _ _ _ = pure Nothing
       rawBlock "latex" = one . TeXRaw
       rawBlock _ = const []
-      mergeLists = id
       plainObjsToEls = id
       stringify = nodeText
       inlBabelCall _ = pure []

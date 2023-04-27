@@ -66,7 +66,6 @@ data ExportBackend m obj elm = ExportBackend
   , srcPretty :: Keywords -> Text -> Text -> Ondim m (Maybe [[obj]])
   , affiliatedMap :: Keywords -> ExpansionMap m
   , rawBlock :: Text -> Text -> [elm]
-  , mergeLists :: [elm] -> [elm]
   , plainObjsToEls :: [obj] -> [elm]
   , stringify :: obj -> Text
   , customElement :: OrgElement -> Maybe (Ondim m [elm])
@@ -504,7 +503,7 @@ table ::
   ExportBackend m obj elm ->
   [TableRow] ->
   ExpansionMap m
-table bk@(ExportBackend {..}) rows = do
+table bk rows = do
   "table:head" #* \inner ->
     case tableHead of
       Just rs ->
@@ -528,7 +527,7 @@ table bk@(ExportBackend {..}) rows = do
 
     tableBodies :: Expansion m elm
     tableBodies inner =
-      mergeLists . join <$> forM bodies \body ->
+      join <$> forM bodies \body ->
         liftChildren inner `binding` do
           "body:rows" #* tableRows body
 
