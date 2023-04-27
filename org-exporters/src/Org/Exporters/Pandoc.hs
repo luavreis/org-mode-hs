@@ -31,13 +31,6 @@ defPandocBackend =
       affiliatedMap _ = pure ()
       rawBlock l = one . P.RawBlock (P.Format l)
       srcPretty _ _ _ = pure Nothing
-      mergeLists = foldr go []
-        where
-          go :: P.Block -> [P.Block] -> [P.Block]
-          go (P.BulletList x) (P.BulletList y : r) = P.BulletList (x ++ y) : r
-          go (P.OrderedList a x) (P.OrderedList b y : r) | a == b = P.OrderedList a (x ++ y) : r
-          go (P.DefinitionList x) (P.DefinitionList y : r) = P.DefinitionList (x ++ y) : r
-          go x y = x : y
       plainObjsToEls = one . P.Plain
       inlBabelCall _ = pure []
       macro _ _ = pure []

@@ -37,7 +37,6 @@ defHtmlBackend =
       srcPretty _ _ _ = pure Nothing
       rawBlock "html" = one . rawNode
       rawBlock _ = const []
-      mergeLists = id
       plainObjsToEls = id
       stringify = nodeText
       inlBabelCall _ = pure []
