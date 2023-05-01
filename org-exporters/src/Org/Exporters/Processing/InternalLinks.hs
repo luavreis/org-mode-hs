@@ -32,7 +32,7 @@ makeAnchorUnique a = do
             map (\n -> a <> "-" <> show (n :: Int)) [1 ..]
       else a
 
-registerFootnote :: Text -> F [OrgElement] -> M ()
+registerFootnote :: Text -> F (Either [OrgObject] [OrgElement]) -> M ()
 registerFootnote name def =
   modify2 \s -> do
     def' <- def
@@ -119,7 +119,7 @@ resolveFootnoteRefs r = \case
   FootnoteRefDef label objs -> Compose $ do
     objs' <- getCompose $ traverse r objs
     label' <- maybe popUniqueId pure label
-    registerFootnote label' (one . Paragraph mempty <$> objs')
+    registerFootnote label' (Left <$> objs')
     return $ pure $ FootnoteRefLabel label'
   x -> pure x
 
@@ -167,7 +167,7 @@ resolveElements r f = \case
   fd@(FootnoteDef label stuff) ->
     Compose $ do
       stuff' <- getCompose $ traverse r stuff
-      registerFootnote label stuff' $> pure fd
+      registerFootnote label (Right <$> stuff') $> pure fd
   (PlainList aff t i) -> PlainList aff t <$> resolveListItems r i
   kw@(Keyword k _) -> do
     Compose $ do

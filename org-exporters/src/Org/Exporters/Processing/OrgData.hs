@@ -99,7 +99,7 @@ data OrgData = OrgData
     exporterSettings :: ExporterSettings,
     parserOptions :: OrgOptions,
     internalTargets :: Map Text (Id, [OrgObject]),
-    footnotes :: Map Text [OrgElement]
+    footnotes :: Map Text (Either [OrgObject] [OrgElement])
   }
   deriving (Eq, Ord, Show, Typeable, Generic, NFData)
 
