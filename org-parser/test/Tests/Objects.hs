@@ -75,8 +75,8 @@ testObjects =
           "also linebreak \\\\" =?> "also linebreak " <> B.linebreak
         ],
       "Image or links" ~: regularLinkOrImage $
-        [ "[[http://blablebli.com]]" =?> B.link (UnresolvedLink "http://blablebli.com") mempty,
-          "[[http://blablebli.com][/uh/ duh! *foo*]]" =?> B.link (UnresolvedLink "http://blablebli.com") (B.italic "uh" <> " duh! " <> B.bold "foo")
+        [ "[[http://blablebli.com]]" =?> B.link (URILink "http" "//blablebli.com") mempty,
+          "[[http://blablebli.com][/uh/ duh! *foo*]]" =?> B.link (URILink "http" "//blablebli.com") (B.italic "uh" <> " duh! " <> B.bold "foo")
         ],
       "Statistic Cookies" ~: statisticCookie $
         [ "[13/18]" =?> B.statisticCookie (Left (13, 18)),
