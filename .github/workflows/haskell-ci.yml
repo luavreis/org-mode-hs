@@ -175,7 +175,7 @@ jobs:
           source-repository-package
             type:     git
             location: https://github.com/lucasvreis/ondim.git
-            tag:      0edb090b0fe558b2b8f5bf8272a4d55cedd52885
+            tag:      56702c73e5e55cd86ecbbb70a6c2c5647bb73f24
           EOF
           cat cabal.project
           cat cabal.project.local
