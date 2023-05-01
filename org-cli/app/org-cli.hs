@@ -1,8 +1,10 @@
 module Main where
 
+import Control.Exception (try)
 import Data.Text.IO qualified as T
+import Ondim.Extra.Loading (TemplateLoadingError (..))
 import Ondim.Targets.HTML.Load qualified as H
-import Ondim.Targets.LaTeX.Load qualified as L
+import Ondim.Targets.Whiskers.Load qualified as L
 import Ondim.Targets.Pandoc.Load qualified as P
 import Options qualified as O
 import Options.Applicative
@@ -54,7 +56,7 @@ main = do
             gatherSettings parsed
             pruned <- withCurrentData $ pruneDoc parsed
             getCompose $ resolveLinks pruned
-      out <-
+      out <- try
         case O.backend opts of
           O.AST False -> pure $ show processed
           O.AST True -> pure $ encodeUtf8 $ pShowNoColor processed
@@ -72,7 +74,7 @@ main = do
             let usrDir = O.templateDir oo
                 lclDir = (</> "latex") <$> udir
             defDir <- L.laTeXTemplateDir
-            tpls <- L.loadTemplates $ catMaybes [usrDir, lclDir, Just defDir]
+            tpls <- L.loadTemplates ("<<", ">>") $ catMaybes [usrDir, lclDir, Just defDir]
             layout <-
               maybe empty L.loadLayout (usrDir <|> lclDir)
                 <|> L.loadLayout defDir
@@ -104,6 +106,8 @@ main = do
               case w of
                 TP.TextWriter f -> encodeUtf8 <$> f wopt doc
                 TP.ByteStringWriter f -> toStrict <$> f wopt doc
-      case O.output opts of
-        O.StdOutput -> putBSLn out
-        O.FileOutput f -> writeFileBS f out
+      case out of
+        Right out' -> case O.output opts of
+          O.StdOutput -> putBSLn out'
+          O.FileOutput f -> writeFileBS f out'
+        Left (TemplateLoadingException s) -> putStrLn s
