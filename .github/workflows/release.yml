@@ -5,14 +5,26 @@ on:
   push:
     tags:
       - "v*"
+      - "nightly"
 
 jobs:
   create_release:
-    name: Create Github Release
+    name: Create Github Build
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v2
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Build ${{ github.ref }}
+          draft: true
+          prerelease: true
 
       - name: Output Release URL File
         run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
@@ -40,7 +52,7 @@ jobs:
         uses: olegtarasov/get-tag@v2.1
         id: tag
         with:
-          tagRegex: "v(.*)"
+          tagRegex: "(.*)"
           tagRegexGroup: 1
 
       - name: Setup Haskell
