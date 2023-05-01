@@ -1,0 +1,91 @@
+name: Build
+
+on: [workflow_call, workflow_dispatch, push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build - GHC ${{ matrix.ghc }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+        ghc: ['9.2', '9.4']
+        cabal: ['3.6']
+        include:
+          - ghc: '9.2'
+            executable: true
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Haskell
+        uses: haskell/actions/setup@v2
+        id: setup
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: ${{ matrix.cabal }}
+
+      - name: Installed minor versions of GHC and Cabal
+        shell: bash
+        run: |
+          GHC_VERSION=$(ghc --numeric-version)
+          CABAL_VERSION=$(cabal --numeric-version)
+          echo "GHC_VERSION=${GHC_VERSION}"     >> "${GITHUB_ENV}"
+          echo "CABAL_VERSION=${CABAL_VERSION}" >> "${GITHUB_ENV}"
+
+      - name: Configure the build
+        run: |
+          cabal configure --enable-tests --enable-benchmarks --enable-documentation
+          cabal build all --dry-run
+
+      - name: Restore cached dependencies
+        uses: actions/cache/restore@v3
+        id: cache
+        with:
+          path: ${{ steps.setup.outputs.cabal-store }}
+          key: ${{ runner.os }}-ghc-${{ env.GHC_VERSION }}-cabal-${{ env.CABAL_VERSION }}-plan-${{ hashFiles('**/plan.json') }}
+          restore-keys: |
+            ${{ runner.os }}-ghc-${{ env.GHC_VERSION }}-cabal-${{ env.CABAL_VERSION }}-
+
+      - name: Install dependencies
+        run: cabal build all --only-dependencies
+
+      # Cache dependencies already here, so that we do not have to rebuild them should the subsequent steps fail.
+      - name: Save cached dependencies
+        uses: actions/cache/save@v3
+        # Caches are immutable, trying to save with the same key would error.
+        if: ${{ steps.cache.outputs.cache-primary-key != steps.cache.outputs.cache-matched-key }}
+        with:
+          path: ${{ steps.setup.outputs.cabal-store }}
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+
+      - name: Build
+        run: cabal build all
+
+      - name: Run tests
+        run: cabal test all
+
+      - name: Build documentation
+        run: cabal haddock all
+
+      - name: Output executable
+        run: |
+          cabal install all:exes --install-method=copy --installdir=target
+        if: ${{ matrix.executable }}
+
+      - name: Compress binaries
+        uses: svenstaro/upx-action@v2
+        with:
+          files: |
+            target/*
+        if: ${{ matrix.executable }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ runner.os }}-${{ github.ref_name }}
+          path: target/
+        if: ${{ matrix.executable }}
