@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <o:if org.document:title>
+      <title><org.document:title/></title>
+    </o:if>
+    <style type="text/css" media="screen">
+      .todokw {
+        font-family: monospace;
+      }
+      .todokw.todo {
+        color: red;
+      }
+      .todokw.done {
+        color: green;
+      }
+      .linenumber {
+        display: inline-block;
+        float: left;
+        padding-left: auto;
+        margin-left: auto;
+        text-align: right;
+      }
+      .line-of-code {
+        float: left;
+        clear: right;
+      }
+      .coderef {
+        float: right;
+      }
+    </style>
+  </head>
+  <body>
+    <t:extra.toc>
+      <h2>Table of Contents</h2>
+    </t:extra.toc>
+
+    <org.document:children/>
+    <org.document:sections/>
+
+    <o:if doc.document.footnotes>
+      <br/>
+      <div id="footnotes">
+        <doc.footnotes:list footnote>
+          <div class="footdef">
+            <a id="fn-!(footnote:number)" href="#fnr-!(footnote:number)"
+              >[<footnote:number />]</a
+            >
+            <footnote:elements/>
+          </div>
+        </doc.footnotes:list>
+      </div>
+    </o:if>
+  </body>
+</html>
