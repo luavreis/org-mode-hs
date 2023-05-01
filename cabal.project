@@ -16,4 +16,4 @@ source-repository-package
   tag: 0edb090b0fe558b2b8f5bf8272a4d55cedd52885
 
 constraints:
-  fsnotify >= 0.3 && < 0.4
+  fsnotify   >= 0.3 && < 0.4,

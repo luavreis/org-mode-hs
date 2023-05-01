@@ -165,7 +165,7 @@ jobs:
           echo "package org-exporters" >> cabal.project
           echo "    ghc-options: -Werror=missing-methods" >> cabal.project
           cat >> cabal.project <<EOF
-          constraints: fsnotify >= 0.3 && < 0.4
+          constraints: fsnotify   >= 0.3 && < 0.4
 
           source-repository-package
             type:     git
@@ -177,7 +177,6 @@ jobs:
             location: https://github.com/lucasvreis/ondim.git
             tag:      0edb090b0fe558b2b8f5bf8272a4d55cedd52885
           EOF
-          $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: $_ installed\n" unless /^(org-cli|org-exporters|org-parser)$/; }' >> cabal.project.local
           cat cabal.project
           cat cabal.project.local
       - name: dump install plan

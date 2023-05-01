@@ -1,4 +1,4 @@
-cabal-version: 2.4
+cabal-version: 3.6
 name:          org-parser
 version:       0.1
 license:       GPL-3.0-only
@@ -30,7 +30,7 @@ common common-options
     , relude              >=1.2.0  && <1.3
     , replace-megaparsec  >=1.4.5  && <1.5
     , text                >=1.2.5  && <2.1
-    , time                >=1.11.1 && <1.12
+    , time                >=1.11.1 && <1.13
 
   mixins:
     base hiding (Prelude),
