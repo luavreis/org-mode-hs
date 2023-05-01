@@ -1,0 +1,43 @@
+<<~#o:bind my:hlevel~>>
+  <<#o:match this.level>>
+    <<#o:case 1>>\section<</o:case>>
+    <<#o:case 2>>\subsection<</o:case>>
+    <<#o:case 3>>\subsubsection<</o:case>>
+    <<#o:case 4>>\paragraph<</o:case>>
+    <<#o:case 5>>\subparagraph<</o:case>>
+    <<#o:case 6>>\subsubparagraph<</o:case>>
+  <</o:match>>
+<<~/o:bind~>>
+
+<<~#o:bind my:headline~>>
+  <<# @try>>{\bfseries\sffamily <<section:todo>>} <</~>>
+  <<# @try>>\framebox{\#<<section:proprity>>}<</~>>
+  <<section:title>>
+  <<~# @try~>>
+    \hfill{}
+    <<~#section.tags:list intercalate=":">>
+      <<~tag~>>
+    <</section.tags:list>>
+  <<~/~>>
+<<~/o:bind~>>
+
+<<#o:match this.type>>
+  <<#o:case normal>>
+    <<~#this:list~>>
+      <<my:hlevel>>{<<my:headline>>}
+      \label{sec:<<section.anchor>>}
+      <<section.children>>
+      <<section.subsections>>
+    <<~/this:list~>>
+  <</o:case>>
+  <<#o:case over-level>>
+    \begin{enumerate}
+      <<#this:list~>>
+        \item <<my:headline>>
+        \label{sec:<<section.anchor>>}
+        <<section.children>>
+        <<section.subsections>>
+      <</this:list>>
+    \end{enumerate}
+  <</o:case>>
+<</o:match>>

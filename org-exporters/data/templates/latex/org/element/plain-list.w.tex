@@ -1,0 +1,27 @@
+<<~#o:bind my:item-params~>>
+  <<#o:match item.checkbox>>
+    <<#o:case true>>[{$\boxtimes$}]<</o:case>>
+    <<#o:case false>>[{$\square$}]<</o:case>>
+    <<#o:case partial>>[{$\boxminus$}]<</o:case>>
+    <<#o:default>>
+      <<~#o:if item.descriptive-tag~>>
+        [{<<item.descriptive-tag>>}]
+      <<~/o:if~>>
+    <</o:default>>
+  <</o:match>>
+<<~/o:bind~>>
+
+<<~#o:bind my:list-env~>>
+  <<#o:match this.type>>
+    <<#o:case unordered>>itemize<</o:case>>
+    <<#o:case ordered-num>>enumerate<</o:case>>
+    <<#o:case ordered-alpha>>enumerate<</o:case>>
+    <<#o:case descriptive>>description<</o:case>>
+  <</o:match>>
+<<~/o:bind~>>
+
+\begin{<<my:list-env>>}
+  <<#this:list-items~>>
+    \item<<my:item-params>> <<item.content>>
+  <</this:list-items>>
+\end{<<my:list-env>>}

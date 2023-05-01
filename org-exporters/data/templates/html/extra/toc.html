@@ -1,0 +1,16 @@
+<div id="table-of-contents">
+  <extra.toc:content/>
+  <o:scope>
+    <o:bind t:org.sections>
+      <ul>
+        <org.sections:list section>
+          <li>
+            <a href="#!(section:anchor)"><section:headline/></a>
+            <section:subsections/>
+          </li>
+        </org.sections:list>
+      </ul>
+    </o:bind>
+    <org.document:sections/>
+  </o:scope>
+</div>
