@@ -9,7 +9,7 @@ description:
   aims to be accurate where possible.
 
 maintainer:    @lucasvreis
-bug-reports:   https://github.com/lucasvreis/org-parser/issues
+bug-reports:   https://github.com/lucasvreis/org-mode-hs/issues
 copyright:     (c) 2022 lucasvreis
 category:      Text
 build-type:    Simple
@@ -17,7 +17,7 @@ tested-with:   GHC ==8.10.7 || ==9.0.2 || ==9.2.7
 
 source-repository head
   type:     git
-  location: git://github.com/lucasvreis/org-hs.git
+  location: git://github.com/lucasvreis/org-mode-hs.git
 
 common common-options
   default-language:   Haskell2010
