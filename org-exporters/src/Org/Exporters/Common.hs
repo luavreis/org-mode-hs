@@ -28,6 +28,7 @@ import Ondim hiding
   , GlobalFilter
   , Ondim
   , OndimState
+  , SomeExpansion
   )
 import Ondim qualified
 import Ondim.Extra
@@ -48,6 +49,7 @@ type Ondim m a = Ondim.Ondim (ExporterMonad m) a
 type OndimState m = Ondim.OndimState (ExporterMonad m)
 
 type Expansion m a = Ondim.Expansion (ExporterMonad m) a
+type SomeExpansion m = Ondim.SomeExpansion (ExporterMonad m)
 type GlobalExpansion m = Ondim.GlobalExpansion (ExporterMonad m)
 type ExpansionMap m = Ondim.ExpansionMap (ExporterMonad m)
 
@@ -94,7 +96,7 @@ withSettingsExp node = do
       merged y = y
   case do fromJSON (merged x) of
     Success s -> withSettings s $ liftChildren node
-    Error e -> throwCustom (toText e)
+    Error e -> throwTemplateError (toText e)
 
 justOrIgnore :: Monad m => Maybe a -> (a -> Expansion m b) -> Expansion m b
 justOrIgnore = flip (maybe ignore)
@@ -104,12 +106,17 @@ keywordsMap ::
   ExportBackend m obj elm ->
   Keywords ->
   ExpansionMap m
-keywordsMap bk kws = do
-  forM_ (Map.toList parsedKws) \(name, t) -> name ## const $ expandOrgObjects bk t
-  forM_ (Map.toList textKws) (uncurry (#@))
-  where
-    parsedKws = Map.mapMaybe (\case ParsedKeyword t -> pure t; _ -> Nothing) kws
-    textKws = Map.mapMaybe (\case ValueKeyword t -> pure t; _ -> Nothing) kws
+keywordsMap bk = mapExp (kwValueExp bk)
+
+kwValueExp ::
+  BackendC m obj elm =>
+  ExportBackend m obj elm ->
+  KeywordValue ->
+  SomeExpansion m
+kwValueExp bk = \case
+  ParsedKeyword t -> someExpansion $ const $ expandOrgObjects bk t
+  ValueKeyword t -> textData t
+  BackendKeyword t -> namespace $ assocsExp textData t
 
 -- | Text expansion for link target.
 linkTarget ::
@@ -156,7 +163,7 @@ parseObjectsExp bk self = do
               traverse resolveLinks $
                 toList parsed
        in expandOrgObjects bk solved
-    Nothing -> throwCustom $ "Could not parse " <> show txt
+    Nothing -> throwTemplateError $ "Could not parse " <> show txt
   where
     parser = plainMarkupContext standardSet
 
@@ -174,7 +181,7 @@ parseElementsExp bk self = do
               traverse resolveLinks $
                 toList parsed
        in expandOrgElements bk solved
-    Nothing -> throwCustom $ "Could not parse " <> show txt
+    Nothing -> throwTemplateError $ "Could not parse " <> show txt
 
 expandOrgObjects ::
   BackendC m obj elm =>
@@ -276,8 +283,9 @@ expandOrgObject bk@(ExportBackend {..}) obj = do
       (FootnoteRef (FootnoteRefLabel name)) -> do
         def <- asks ((Map.!? name) . footnotes)
         "org:object:footnote-ref" `callWith` do
-          whenJust def \els ->
-            "content" ## const $ expandOrgElements bk els
+          whenJust def \thing ->
+            whenLeft () thing \objs ->
+              "content" ## const $ expandOrgObjects bk objs
           "key" #@ name
       (FootnoteRef _) -> pure []
       (Cite _) ->
@@ -395,47 +403,24 @@ expandOrgElement bk@(ExportBackend {..}) el = do
       callExpansion x nullEl
         `binding` do "this" #. y
 
-expandOrgSections ::
-  forall m obj elm.
+sectionExp ::
   BackendC m obj elm =>
   ExportBackend m obj elm ->
-  [OrgSection] ->
-  Expansion m elm
-expandOrgSections bk@(ExportBackend {..}) sections inner = do
-  hlevels <- getSetting orgExportHeadlineLevels
-  shift <- getSetting headlineLevelShift
-  join <$> forM (groupByLevel sections) \(level, sameLvlSecs) ->
-    callExpansion "org:sections" inner
-      `binding` do
-        "this" #. do
-          "type" #@ if level + shift > hlevels then "over-level" else "normal"
-          "level" #@ show $ level + shift
-          "list" ## \x ->
-            mergeLists . join <$> forM sameLvlSecs \section@(OrgSection {..}) ->
-              liftChildren x
-                `binding` do
-                  "section" #. do
-                    "title" ## const $ expandOrgObjects bk sectionTitle
-                    "tags:list" #* \inner' ->
-                      join <$> forM sectionTags \tag ->
-                        liftChildren inner' `binding` do "tag" #@ tag
-                    "children" ## const $ expandOrgElements bk sectionChildren
-                    "subsections" ## expandOrgSections bk sectionSubsections
-                    planning sectionPlanning
-                    for_ sectionTodo todo
-                    for_ sectionPriority priority
-                    "prop" #. for_ (Map.toList sectionProperties) (uncurry (#@))
-                    "anchor" #@ sectionAnchor
-                    -- Debug
-                    "debug.ast" #@ show section
+  OrgSection ->
+  ExpansionMap m
+sectionExp bk section@(OrgSection {..}) = do
+  "title" ## const $ expandOrgObjects bk sectionTitle
+  "tags" #. listExp textData sectionTags
+  "children" ## const $ expandOrgElements bk sectionChildren
+  "subsections" ## expandOrgSections bk sectionSubsections
+  planning sectionPlanning
+  for_ sectionTodo todo
+  for_ sectionPriority priority
+  "prop" #. mapExp textData sectionProperties
+  "anchor" #@ sectionAnchor
+  -- Debug
+  "debug.ast" #@ show section
   where
-    groupByLevel :: [OrgSection] -> [(Int, [OrgSection])]
-    groupByLevel = foldr go []
-      where
-        go s [] = [(sectionLevel s, [s])]
-        go s l@((i, ss) : ls)
-          | sectionLevel s == i = (i, s : ss) : ls
-          | otherwise = (sectionLevel s, [s]) : l
     todo (TodoKeyword st nm) =
       "todo" #. do
         "state" #@ todost st
@@ -451,6 +436,31 @@ expandOrgSections bk@(ExportBackend {..}) sections inner = do
         for_ planningClosed \ts -> "closed" ## const $ expandOrgObject bk (Timestamp ts)
         for_ planningDeadline \ts -> "deadline" ## const $ expandOrgObject bk (Timestamp ts)
         for_ planningScheduled \ts -> "scheduled" ## const $ expandOrgObject bk (Timestamp ts)
+
+expandOrgSections ::
+  forall m obj elm.
+  BackendC m obj elm =>
+  ExportBackend m obj elm ->
+  [OrgSection] ->
+  Expansion m elm
+expandOrgSections bk sections inner = do
+  hlevels <- getSetting orgExportHeadlineLevels
+  shift <- getSetting headlineLevelShift
+  join <$> forM (groupByLevel sections) \(level, sameLvlSecs) ->
+    callExpansion "org:sections" inner
+      `binding` do
+        "this" #. do
+          "type" #@ if level + shift > hlevels then "over-level" else "normal"
+          "level" #@ show $ level + shift
+          listExp (namespace . sectionExp bk) sameLvlSecs
+  where
+    groupByLevel :: [OrgSection] -> [(Int, [OrgSection])]
+    groupByLevel = foldr go []
+      where
+        go s [] = [(sectionLevel s, [s])]
+        go s l@((i, ss) : ls)
+          | sectionLevel s == i = (i, s : ss) : ls
+          | otherwise = (sectionLevel s, [s]) : l
 
 liftDocument ::
   forall m obj elm doc.
@@ -478,24 +488,17 @@ bindDocument bk datum (OrgDocument {..}) node = do
     `binding` do
       "doc" #. do
         "kw" #. keywordsMap bk (keywords datum)
-        "prop" #. forM_ (Map.toList documentProperties) (uncurry (#@))
+        "prop" #. mapExp textData documentProperties
         "children" ## const $ expandOrgElements bk documentChildren
         "sections" ## expandOrgSections bk documentSections
-        "footnotes" #* \node' ->
-          let fns = Map.toList (footnotes datum)
-           in ifElse (not (null fns)) node'
-                `binding` do
-                  "footnote-defs" ## \inner ->
-                    join <$> forM fns \(key, els) ->
-                      liftChildren @elm inner
-                        `binding` do
-                          "footnote-def" #. do
-                            "key" #@ key
-                            "content" ## const $ expandOrgElements bk els
-        "tags" ## \inner ->
-          join <$> forM (filetags datum) \tag ->
-            liftChildren @obj inner
-              `binding` do "tag" #@ tag
+        "footnotes" #. mapExp fnExp (footnotes datum)
+        "tags" #. listExp textData (filetags datum)
+  where
+    fnExp =
+      someExpansion
+        . const
+        . expandOrgElements bk
+        . either (one . Paragraph mempty) id
 
 table ::
   forall m obj elm.
@@ -561,7 +564,7 @@ plainList ::
   [ListItem] ->
   ExpansionMap m
 plainList bk@(ExportBackend {..}) kind items = do
-  "list-items" ## listItems
+  "items" #. listExp (namespace . listItemExp) items
   case kind of
     Ordered OrderedNum -> "type" #@ "ordered-num"
     Ordered OrderedAlpha -> "type" #@ "ordered-alpha"
@@ -570,22 +573,18 @@ plainList bk@(ExportBackend {..}) kind items = do
       "type" #@ "unordered"
       "bullet" #@ one b
   where
-    listItems :: Expansion m elm
-    listItems inner =
-      mergeLists . join <$> forM items \(ListItem _ i cbox t c) ->
-        liftChildren inner
-          `binding` do
-            "item" #. do
-              for_ i \i' -> "counter-set" #@ show i'
-              for_ cbox \cbox' -> "checkbox" #@ checkbox cbox'
-              "descriptive-tag" ## const $ expandOrgObjects bk t
-              "content" ## const $ doPlainOrPara c
+    listItemExp :: ListItem -> ExpansionMap m
+    listItemExp (ListItem _ i cbox t c) = do
+      for_ i \i' -> "counter-set" #@ show i'
+      for_ cbox \cbox' -> "checkbox" #@ checkbox cbox'
+      unless (null t) $
+        "descriptive-tag" ## const $
+          expandOrgObjects bk t
+      "content" ## const $ doPlainOrPara c
       where
         doPlainOrPara :: [OrgElement] -> Ondim m [elm]
         doPlainOrPara [Paragraph _ objs] = plainObjsToEls <$> expandOrgObjects bk objs
         doPlainOrPara els = expandOrgElements bk els
-
-        _start = join $ flip viaNonEmpty items \(ListItem _ i _ _ _ :| _) -> i
 
         checkbox :: Checkbox -> Text
         checkbox (BoolBox True) = "true"
