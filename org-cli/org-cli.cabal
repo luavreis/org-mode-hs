@@ -14,7 +14,7 @@ bug-reports:   https://github.com/lucasvreis/org-mode-hs/issues
 copyright:     (c) 2022 lucasvreis
 category:      Text
 build-type:    Simple
-tested-with:   GHC ==9.0.2 || ==9.2.7 || ==9.4.4
+tested-with:   GHC ==9.2.7 || ==9.4.4
 
 source-repository head
   type:     git
