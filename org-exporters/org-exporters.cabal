@@ -83,7 +83,6 @@ library
     , xmlhtml
 
   if flag(latex)
-    build-depends:   HaTeX
     exposed-modules: Org.Exporters.LaTeX
 
   if flag(pandoc)

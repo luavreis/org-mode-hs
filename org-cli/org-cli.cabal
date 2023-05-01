@@ -29,7 +29,6 @@ common common-options
                    , dir-traverse
                    , directory
                    , filepath
-                   , map-syntax
                    , megaparsec
                    , ondim
                    , pandoc-types >= 1.22
