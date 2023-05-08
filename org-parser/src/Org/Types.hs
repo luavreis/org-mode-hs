@@ -5,18 +5,18 @@
 module Org.Types where
 
 import Data.Aeson
+import Data.Aeson qualified as Aeson
 import Data.Aeson.Encoding (text)
 import Data.Char (isDigit, toLower)
 import Data.Map qualified as M
 import Data.Text qualified as T
-import qualified Data.Aeson as Aeson
 
 -- * Document, Sections and Headings
 
 data OrgDocument = OrgDocument
-  { documentProperties :: Properties,
-    documentChildren :: [OrgElement],
-    documentSections :: [OrgSection]
+  { documentProperties :: Properties
+  , documentChildren :: [OrgElement]
+  , documentSections :: [OrgSection]
   }
   deriving (Eq, Ord, Read, Show, Generic)
 
@@ -24,18 +24,18 @@ lookupProperty :: Text -> OrgDocument -> Maybe Text
 lookupProperty k = M.lookup k . documentProperties
 
 data OrgSection = OrgSection
-  { sectionLevel :: Int,
-    sectionProperties :: Properties,
-    sectionTodo :: Maybe TodoKeyword,
-    sectionIsComment :: Bool,
-    sectionPriority :: Maybe Priority,
-    sectionTitle :: [OrgObject],
-    sectionRawTitle :: Text,
-    sectionAnchor :: Id,
-    sectionTags :: Tags,
-    sectionPlanning :: PlanningInfo,
-    sectionChildren :: [OrgElement],
-    sectionSubsections :: [OrgSection]
+  { sectionLevel :: Int
+  , sectionProperties :: Properties
+  , sectionTodo :: Maybe TodoKeyword
+  , sectionIsComment :: Bool
+  , sectionPriority :: Maybe Priority
+  , sectionTitle :: [OrgObject]
+  , sectionRawTitle :: Text
+  , sectionAnchor :: Id
+  , sectionTags :: Tags
+  , sectionPlanning :: PlanningInfo
+  , sectionChildren :: [OrgElement]
+  , sectionSubsections :: [OrgSection]
   }
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
@@ -89,8 +89,8 @@ instance FromJSON TodoState where
 
 -- | A to-do keyword like @TODO@ or @DONE@.
 data TodoKeyword = TodoKeyword
-  { todoState :: TodoState,
-    todoName :: Text
+  { todoState :: TodoState
+  , todoName :: Text
   }
   deriving (Show, Eq, Ord, Read, Generic)
 
@@ -123,9 +123,9 @@ data TimestampData
 
 -- | Planning information for a subtree/headline.
 data PlanningInfo = PlanningInfo
-  { planningClosed :: Maybe TimestampData,
-    planningDeadline :: Maybe TimestampData,
-    planningScheduled :: Maybe TimestampData
+  { planningClosed :: Maybe TimestampData
+  , planningDeadline :: Maybe TimestampData
+  , planningScheduled :: Maybe TimestampData
   }
   deriving (Show, Eq, Ord, Read, Generic)
 
@@ -137,28 +137,28 @@ type Properties = Map Text Text
 data OrgElement
   = -- | Greater block
     GreaterBlock
-      { -- | Affiliated keywords
-        affKws :: Keywords,
-        -- | Greater block type
-        blkType :: GreaterBlockType,
-        -- | Greater block elements
-        blkElements :: [OrgElement]
+      { affKws :: Keywords
+      -- ^ Affiliated keywords
+      , blkType :: GreaterBlockType
+      -- ^ Greater block type
+      , blkElements :: [OrgElement]
+      -- ^ Greater block elements
       }
   | -- | Drawer
     Drawer
-      { -- | Drawer name
-        drawerName :: Text,
-        -- | Drawer elements
-        drawerElements :: [OrgElement]
+      { drawerName :: Text
+      -- ^ Drawer name
+      , drawerElements :: [OrgElement]
+      -- ^ Drawer elements
       }
   | -- | Plain list
     PlainList
-      { -- | Affiliated keywords
-        affKws :: Keywords,
-        -- | List types
-        listType :: ListType,
-        -- | List items
-        listItems :: [ListItem]
+      { affKws :: Keywords
+      -- ^ Affiliated keywords
+      , listType :: ListType
+      -- ^ List types
+      , listItems :: [ListItem]
+      -- ^ List items
       }
   | -- | Export block
     ExportBlock
@@ -176,22 +176,22 @@ data OrgElement
       -- ^ Contents
   | -- | Source blocks
     SrcBlock
-      { -- | Affiliated keywords
-        affKws :: Keywords,
-        -- | Language
-        srcBlkLang :: Text,
-        -- | Switches
-        srcBlkSwitches :: Map Text Text,
-        -- | Header arguments
-        srcBlkArguments :: [(Text, Text)],
-        -- | Contents
-        srcBlkLines :: [SrcLine]
+      { affKws :: Keywords
+      -- ^ Affiliated keywords
+      , srcBlkLang :: Text
+      -- ^ Language
+      , srcBlkSwitches :: Map Text Text
+      -- ^ Switches
+      , srcBlkArguments :: [(Text, Text)]
+      -- ^ Header arguments
+      , srcBlkLines :: [SrcLine]
+      -- ^ Contents
       }
   | VerseBlock Keywords [[OrgObject]]
   | HorizontalRule
   | Keyword
-      { keywordKey :: Text,
-        keywordValue :: KeywordValue
+      { keywordKey :: Text
+      , keywordValue :: KeywordValue
       }
   | LaTeXEnvironment
       Keywords
@@ -284,8 +284,9 @@ orderedStyle :: Text -> OrderedStyle
 orderedStyle (T.any isDigit -> True) = OrderedNum
 orderedStyle _ = OrderedAlpha
 
--- | One item of a list. Parameters are bullet, counter cookie, checkbox and
--- tag.
+{- | One item of a list. Parameters are bullet, counter cookie, checkbox and
+tag.
+-}
 data ListItem = ListItem Bullet (Maybe Int) (Maybe Checkbox) [OrgObject] [OrgElement]
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
@@ -303,10 +304,10 @@ listItemType (ListItem (Bullet c) _ _ _ _) = Unordered c
 -- Babel call
 
 data BabelCall = BabelCall
-  { babelCallName :: Text,
-    babelCallHeader1 :: Text,
-    babelCallHeader2 :: Text,
-    babelCallArguments :: Text
+  { babelCallName :: Text
+  , babelCallHeader1 :: Text
+  , babelCallHeader2 :: Text
+  , babelCallArguments :: Text
   }
   deriving (Eq, Ord, Read, Show, Typeable, Generic)
 
@@ -398,18 +399,18 @@ data FragmentType
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 data Citation = Citation
-  { citationStyle :: Text,
-    citationVariant :: Text,
-    citationPrefix :: [OrgObject],
-    citationSuffix :: [OrgObject],
-    citationReferences :: [CiteReference]
+  { citationStyle :: Text
+  , citationVariant :: Text
+  , citationPrefix :: [OrgObject]
+  , citationSuffix :: [OrgObject]
+  , citationReferences :: [CiteReference]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
 data CiteReference = CiteReference
-  { refId :: Text,
-    refPrefix :: [OrgObject],
-    refSuffix :: [OrgObject]
+  { refId :: Text
+  , refPrefix :: [OrgObject]
+  , refSuffix :: [OrgObject]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
 
