@@ -432,10 +432,14 @@ sectionExp bk section@(OrgSection {..}) = do
         (LetterPriority c) -> T.singleton c
         (NumericPriority n) -> show n
     planning (PlanningInfo {..}) =
-      "planning" #. do
-        for_ planningClosed \ts -> "closed" ## const $ expandOrgObject bk (Timestamp ts)
-        for_ planningDeadline \ts -> "deadline" ## const $ expandOrgObject bk (Timestamp ts)
-        for_ planningScheduled \ts -> "scheduled" ## const $ expandOrgObject bk (Timestamp ts)
+      let assocs =
+            catMaybes
+              [ ("closed",) <$> planningClosed
+              , ("deadline",) <$> planningDeadline
+              , ("scheduled",) <$> planningScheduled
+              ]
+          renderTs a = someExpansion $ const $ expandOrgObject bk (Timestamp a)
+       in "planning" #. assocsExp renderTs assocs
 
 expandOrgSections ::
   forall m obj elm.
