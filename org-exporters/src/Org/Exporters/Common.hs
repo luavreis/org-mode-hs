@@ -360,17 +360,18 @@ expandOrgElement bk@(ExportBackend {..}) el = do
           "name" #@ name
       (ExportBlock lang code) ->
         pure $ rawBlock lang code
-      (ExampleBlock aff switches c) ->
+      (ExampleBlock aff _ c) ->
         "org:element:example-block" `callWith` do
           affMap aff
           srcOrExample bk aff "" c
           "content" #@ srcLinesToText c
-      (SrcBlock aff lang switches _ c) ->
+      (SrcBlock aff lang _ attrs c) ->
         "org:element:src-block" `callWith` do
           affMap aff
           srcOrExample bk aff lang c
           "language" #@ lang
           "content" #@ srcLinesToText c
+          "attributes" #. assocsExp textData attrs
       (LaTeXEnvironment aff env text) ->
         "org:element:latex-environment" `callWith` do
           affMap aff
