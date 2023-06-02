@@ -512,13 +512,13 @@ table ::
   [TableRow] ->
   ExpansionMap m
 table bk rows = do
-  "table:head" #* \inner ->
+  "head" #* \inner ->
     case tableHead of
       Just rs ->
         liftChildren inner `binding` do
           "head:rows" #* tableRows rs
       Nothing -> pure []
-  "table:bodies" ## tableBodies
+  "bodies" ## tableBodies
   where
     (groups, props) = foldr go ([], []) rows
       where
