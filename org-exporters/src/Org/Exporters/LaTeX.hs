@@ -6,29 +6,18 @@ import Control.Exception (throwIO)
 import Ondim.Extra.Loading (TemplateLoadingError (..))
 import Ondim.Targets.Whiskers
 import Org.Exporters.Common
-import Org.Exporters.Processing.OrgData (OrgData, initialOrgData)
+import Org.Exporters.Processing.OrgData (OrgData)
 import Org.Types
 import System.FilePath
 
-type LaTeXBackend m = ExportBackend m Node Node
-
-defLaTeXBackend :: Monad m => LaTeXBackend m
+defLaTeXBackend :: Monad m => ExportBackend m
 defLaTeXBackend =
-  let nullObj = Textual ""
-      plain = one . Textual -- TODO protect
-      exportSnippet "latex" = one . Textual
-      exportSnippet _ = const []
-      nullEl = nullObj
-      affiliatedMap _ = pure ()
-      srcPretty _ _ _ = pure Nothing
-      rawBlock "latex" = one . Textual
-      rawBlock _ = const []
-      plainObjsToEls = id
-      stringify = mempty
-      inlBabelCall _ = pure []
-      macro _ _ = pure []
+  let affiliatedMap _ = pure ()
       customElement _ = Nothing
       customObject _ = Nothing
+      srcPretty _ _ _ = namespace pass
+      babelCall _ = namespace pass
+      macro _ _ = namespace pass
    in ExportBackend {..}
 
 laTeXTemplateDir :: IO FilePath
@@ -40,36 +29,26 @@ loadLayout dir = do
   text <- parseWhiskers ("<<", ">>") file . decodeUtf8 <$> readFileBS file
   either (throwIO . TemplateLoadingException) pure text
 
-evalOndim ::
-  Monad m =>
-  OndimState m ->
-  OrgData ->
-  Ondim m a ->
-  m (Either OndimException a)
-evalOndim st eSt spl =
-  spl
-    & bindDefaults
-    & evalOndimTWith st
-    & flip runReaderT eSt
-
 render ::
   Monad m =>
   OndimState m ->
-  OrgData ->
   Ondim m [Node] ->
   m (Either OndimException LByteString)
-render st eSt spl =
-  evalOndim st eSt spl
+render st spl =
+  evalOndimTWith st spl
     <&> fmap (encodeUtf8 . renderWhiskers)
 
 renderDoc ::
   Monad m =>
-  LaTeXBackend m ->
+  ExportBackend m ->
   OndimState m ->
   [Node] ->
   OrgData ->
   OrgDocument ->
   m (Either OndimException LByteString)
 renderDoc bk st layout datum doc =
-  evalOndim st initialOrgData (bindDocument bk datum doc (liftNodes layout))
+  liftNodes layout
+    `binding` documentExp bk datum doc
+    & bindDefaults
+    & evalOndimTWith st
     <&> fmap (encodeUtf8 . renderWhiskers)
