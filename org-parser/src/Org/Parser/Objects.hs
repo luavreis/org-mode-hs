@@ -326,34 +326,7 @@ orgCiteKey = do
 
 orgCiteKeyChar :: Char -> Bool
 orgCiteKeyChar c =
-  isAlphaNum c
-    || c
-      `elem` [ '.',
-               ':',
-               '?',
-               '!',
-               '`',
-               '\'',
-               '/',
-               '*',
-               '@',
-               '+',
-               '|',
-               '(',
-               ')',
-               '{',
-               '}',
-               '<',
-               '>',
-               '&',
-               '_',
-               '^',
-               '$',
-               '#',
-               '%',
-               '~',
-               '-'
-             ]
+  isAlphaNum c || c `elem` (".:?!`\'/*@+|(){}<>&_^$#%~-" :: String)
 
 -- * Inline Babel calls
 
