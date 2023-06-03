@@ -25,7 +25,6 @@ defPandocBackend :: Monad m => PandocBackend m
 defPandocBackend =
   let nullObj = P.Str ""
       plain = toList . B.text
-      softbreak = [P.SoftBreak]
       exportSnippet l = one . P.RawInline (P.Format l)
       nullEl = P.Plain []
       affiliatedMap _ = pure ()

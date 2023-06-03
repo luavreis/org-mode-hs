@@ -13,8 +13,7 @@ import Prelude hiding (many, some)
 minimalSet :: Marked OrgParser OrgObjects
 minimalSet =
   mconcat
-    [ endline,
-      code,
+    [ code,
       verbatim,
       italic,
       underline,
@@ -62,7 +61,7 @@ newlineAndClear' :: OrgParser ()
 newlineAndClear' = newline' <* clearLastChar
 
 emphasisPreChars :: String
-emphasisPreChars = "-\t ('\"{\8203"
+emphasisPreChars = "-\t\n ('\"{\8203"
 
 emphasisPostChars :: String
 emphasisPostChars = " ,.-\t\n:!?;'\")}[\8203"
@@ -125,15 +124,6 @@ singleQuoted = markup B.singleQuoted '\''
 
 doubleQuoted :: Marked OrgParser OrgObjects
 doubleQuoted = markup B.doubleQuoted '"'
-
--- | An endline character that can be treated as a space, not a line break.
-endline :: Marked OrgParser OrgObjects
-endline =
-  Marked "\n" $
-    try $
-      newlineAndClear
-        *> hspace
-        $> B.softbreak
 
 -- * Entities and LaTeX fragments
 
