@@ -13,7 +13,6 @@ toCslJson [] = CslEmpty
 toCslJson (x : xs) = to x <> toCslJson xs
   where
     to (Plain t) = CslText t
-    to SoftBreak = CslText " "
     to LineBreak = CslText " "
     to (Italic o) = CslItalic $ toCslJson o
     to (Underline o) = CslUnderline $ toCslJson o

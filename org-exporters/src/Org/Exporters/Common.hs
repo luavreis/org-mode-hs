@@ -61,7 +61,6 @@ data ExportBackend m obj elm = ExportBackend
   { nullObj :: obj
   , nullEl :: elm
   , plain :: Text -> [obj]
-  , softbreak :: [obj]
   , exportSnippet :: Text -> Text -> [obj]
   , macro :: Text -> [Text] -> Ondim m [obj]
   , inlBabelCall :: BabelCall -> Ondim m [obj]
@@ -204,8 +203,6 @@ expandOrgObject bk@(ExportBackend {..}) obj = do
         specialStrings <- getSetting orgExportWithSpecialStrings
         pure $
           plain (if specialStrings then doSpecialStrings txt else txt)
-      SoftBreak ->
-        pure softbreak
       LineBreak ->
         callExpansion "org:object:linebreak" nullObj
       (Code txt) ->

@@ -22,7 +22,6 @@ defHtmlBackend :: Monad m => HtmlBackend m
 defHtmlBackend =
   let nullObj = TextNode ""
       plain = one . TextNode
-      softbreak = [TextNode " "]
       exportSnippet "html" = one . rawNode
       exportSnippet _ = const []
       nullEl = TextNode ""

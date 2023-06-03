@@ -55,9 +55,6 @@ instance Semigroup OrgObjects where
               (Strikethrough i1, Strikethrough i2) -> xs' |> Strikethrough (i1 <> i2)
               (Code i1, Code i2) -> xs' |> Code (i1 <> i2)
               (Verbatim i1, Verbatim i2) -> xs' |> Verbatim (i1 <> i2)
-              (SoftBreak, LineBreak) -> xs' |> LineBreak
-              (LineBreak, SoftBreak) -> xs' |> LineBreak
-              (SoftBreak, SoftBreak) -> xs' |> SoftBreak
               _ -> xs' |> x |> y
 
 instance Monoid OrgObjects where
@@ -65,7 +62,7 @@ instance Monoid OrgObjects where
   mappend = (<>)
 
 instance IsString OrgObjects where
-  fromString = text . T.pack
+  fromString = plain . T.pack
 
 -- * Element builders
 
@@ -165,17 +162,6 @@ keyword key = one . Keyword key
 
 -- * Object builders
 
-text :: Text -> OrgObjects
-text = fromList . map conv . breakByNewline
-  where
-    breakByNewline = T.groupBy sameCategory
-    sameCategory x y = is_newline x == is_newline y
-    conv xs | T.any is_newline xs = SoftBreak
-    conv xs = Plain xs
-    is_newline '\r' = True
-    is_newline '\n' = True
-    is_newline _ = False
-
 plain :: Text -> OrgObjects
 plain = one . Plain
 
@@ -222,9 +208,6 @@ code = one . Code
 -- | Inline verbatim.
 verbatim :: Text -> OrgObjects
 verbatim = one . Verbatim
-
-softbreak :: OrgObjects
-softbreak = one SoftBreak
 
 linebreak :: OrgObjects
 linebreak = one LineBreak

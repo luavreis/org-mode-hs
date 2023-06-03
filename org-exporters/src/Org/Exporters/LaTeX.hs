@@ -16,7 +16,6 @@ defLaTeXBackend :: Monad m => LaTeXBackend m
 defLaTeXBackend =
   let nullObj = Textual ""
       plain = one . Textual -- TODO protect
-      softbreak = [Textual "\n"]
       exportSnippet "latex" = one . Textual
       exportSnippet _ = const []
       nullEl = nullObj
