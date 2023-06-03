@@ -329,7 +329,6 @@ data ColumnAlignment = AlignLeft | AlignCenter | AlignRight
 -- | Objects (inline elements).
 data OrgObject
   = Plain Text
-  | SoftBreak
   | LineBreak
   | Italic [OrgObject]
   | Underline [OrgObject]
