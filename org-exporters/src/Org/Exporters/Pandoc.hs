@@ -8,7 +8,6 @@ module Org.Exporters.Pandoc where
 import Control.Exception (throw)
 import Ondim.Extra.Loading (TemplateLoadingError (..))
 import Ondim.Targets.Pandoc hiding (stringify)
-import Ondim.Targets.Pandoc qualified as OPandoc
 import Org.Exporters.Common
 import Org.Types (OrgDocument)
 import System.FilePath
@@ -19,23 +18,14 @@ import Text.Pandoc.Extensions (pandocExtensions)
 import Text.Pandoc.Readers.Markdown (readMarkdown)
 import Org.Exporters.Processing.OrgData
 
-type PandocBackend m = ExportBackend m P.Inline P.Block
-
-defPandocBackend :: Monad m => PandocBackend m
+defPandocBackend :: Monad m => ExportBackend m
 defPandocBackend =
-  let nullObj = P.Str ""
-      plain = toList . B.text
-      exportSnippet l = one . P.RawInline (P.Format l)
-      nullEl = P.Plain []
-      affiliatedMap _ = pure ()
-      rawBlock l = one . P.RawBlock (P.Format l)
-      srcPretty _ _ _ = pure Nothing
-      plainObjsToEls = one . P.Plain
-      inlBabelCall _ = pure []
-      macro _ _ = pure []
-      stringify = OPandoc.stringify
+  let affiliatedMap _ = pure ()
       customElement _ = Nothing
       customObject _ = Nothing
+      srcPretty _ _ _ = namespace pass
+      babelCall _ = namespace pass
+      macro _ _ = namespace pass
    in ExportBackend {..}
 
 pandocTemplateDir :: IO FilePath
@@ -54,14 +44,14 @@ loadPandocDoc dir = do
 
 renderDoc ::
   Monad m =>
-  PandocBackend m ->
+  ExportBackend m ->
   OndimState m ->
   P.Pandoc ->
   OrgData ->
   OrgDocument ->
   m (Either OndimException P.Pandoc)
 renderDoc bk st layout datum doc =
-  liftDocument bk datum doc layout
+  liftSubstructures layout
+    `binding` documentExp bk datum doc
     & bindDefaults
     & evalOndimTWith st
-    & flip runReaderT initialOrgData

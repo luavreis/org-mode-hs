@@ -1,10 +1,6 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE RankNTypes #-}
 {-# HLINT ignore "Avoid lambda" #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Org.Exporters.Common
@@ -13,113 +9,58 @@ module Org.Exporters.Common
   )
 where
 
-import Data.Aeson (Result (..), Value (..), decode, fromJSON, toJSON)
-import Data.Aeson.Key qualified as K
-import Data.Aeson.KeyMap qualified as KM
 import Data.Map qualified as Map
 import Data.Text qualified as T
 import Data.Time (Day, TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
-import Ondim hiding
-  ( Expansion
-  , ExpansionMap
-  , Filter
-  , FilterMap
-  , GlobalExpansion
-  , GlobalFilter
-  , Ondim
-  , OndimState
-  , SomeExpansion
-  )
-import Ondim qualified
+import Ondim
 import Ondim.Extra
 import Org.Data.Entities qualified as Data
 import Org.Exporters.Processing (resolveLinks, runPipeline)
 import Org.Exporters.Processing.OrgData
 import Org.Exporters.Processing.SpecialStrings (doSpecialStrings)
 import Org.Parser (evalOrgMaybe)
+import Org.Parser.Definitions (OrgOptions, OrgParser)
 import Org.Parser.Elements (elements)
 import Org.Parser.Objects (plainMarkupContext, standardSet)
 import Org.Types
+import Org.Walk (MWTag, MultiWalk)
 import Paths_org_exporters (getDataDir)
 import System.FilePath (isRelative, takeExtension, (-<.>), (</>))
 
-type ExporterMonad m = ReaderT OrgData m
-
-type Ondim m a = Ondim.Ondim (ExporterMonad m) a
-type OndimState m = Ondim.OndimState (ExporterMonad m)
-
-type Expansion m a = Ondim.Expansion (ExporterMonad m) a
-type SomeExpansion m = Ondim.SomeExpansion (ExporterMonad m)
-type GlobalExpansion m = Ondim.GlobalExpansion (ExporterMonad m)
-type ExpansionMap m = Ondim.ExpansionMap (ExporterMonad m)
-
-type Filter m a = Ondim.Filter (ExporterMonad m) a
-type GlobalFilter m = Ondim.GlobalFilter (ExporterMonad m)
-type FilterMap m = Ondim.FilterMap (ExporterMonad m)
-
-data ExportBackend m obj elm = ExportBackend
-  { nullObj :: obj
-  , nullEl :: elm
-  , plain :: Text -> [obj]
-  , exportSnippet :: Text -> Text -> [obj]
-  , macro :: Text -> [Text] -> Ondim m [obj]
-  , inlBabelCall :: BabelCall -> Ondim m [obj]
-  , srcPretty :: Keywords -> Text -> Text -> Ondim m (Maybe [[obj]])
-  , affiliatedMap :: Keywords -> ExpansionMap m
-  , rawBlock :: Text -> Text -> [elm]
-  , plainObjsToEls :: [obj] -> [elm]
-  , stringify :: obj -> Text
-  , customElement :: OrgElement -> Maybe (Ondim m [elm])
-  , customObject :: OrgObject -> Maybe (Ondim m [obj])
+data ExportBackend m = ExportBackend
+  { affiliatedMap :: Keywords -> ExpansionMap m
+  , macro :: Text -> [Text] -> SomeExpansion m
+  , babelCall :: BabelCall -> SomeExpansion m
+  , srcPretty :: Keywords -> Text -> Text -> SomeExpansion m
+  , customElement :: OrgElement -> Maybe (ExpansionMap m)
+  , customObject :: OrgObject -> Maybe (ExpansionMap m)
   }
 
 templateDir :: IO FilePath
 templateDir = (</> "templates") <$> getDataDir
 
-getSetting :: Monad m => (ExporterSettings -> b) -> Ondim m b
-getSetting f = asks (f . exporterSettings)
-
-withSettings :: Monad m => ExporterSettings -> Ondim m a -> Ondim m a
-withSettings x = local (\s -> s {exporterSettings = x})
-
-withSettingsExp :: (Monad m, OndimNode a) => Expansion m a
-withSettingsExp node = do
-  attrs <-
-    KM.fromList . map (first K.fromText)
-      <$> attributes node
-  x <- toJSON <$> getSetting id
-  let merged (Object x') =
-        Object $ (`KM.mapWithKey` x') \k v ->
-          fromMaybe v $
-            decode . encodeUtf8 =<< KM.lookup k attrs
-      merged y = y
-  case do fromJSON (merged x) of
-    Success s -> withSettings s $ liftChildren node
-    Error e -> throwTemplateError (toText e)
-
 justOrIgnore :: Monad m => Maybe a -> (a -> Expansion m b) -> Expansion m b
 justOrIgnore = flip (maybe ignore)
 
 keywordsMap ::
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+  ExportBackend m ->
+  OrgData ->
   Keywords ->
   ExpansionMap m
-keywordsMap bk = mapExp (kwValueExp bk)
+keywordsMap bk odata = mapExp (kwValueExp bk odata)
 
 kwValueExp ::
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+  ExportBackend m ->
+  OrgData ->
   KeywordValue ->
   SomeExpansion m
-kwValueExp bk = \case
-  ParsedKeyword t -> someExpansion $ const $ expandOrgObjects bk t
+kwValueExp bk odata = \case
+  ParsedKeyword t -> namespace $ objectsExp bk odata t
   ValueKeyword t -> textData t
   BackendKeyword t -> namespace $ assocsExp textData t
 
 -- | Text expansion for link target.
 linkTarget ::
-  Monad m =>
   LinkTarget ->
   ExpansionMap m
 linkTarget tgt = do
@@ -143,281 +84,280 @@ linkTarget tgt = do
         then file -<.> ".html"
         else file
 
-type BackendC m obj elm =
-  ( GlobalConstraints m obj
-  , GlobalConstraints m elm
-  )
-
-parseObjectsExp ::
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
-  Expansion m obj
-parseObjectsExp bk self = do
-  opts <- asks parserOptions
+parserExp ::
+  (OndimNode b, Monad m, MultiWalk MWTag a) =>
+  OrgOptions ->
+  OrgParser [a] ->
+  ([a] -> ExpansionMap m) ->
+  Expansion m b
+parserExp opts parser expand self = do
   txt <- fromMaybe "" <$> lookupAttr "text" self
   case evalOrgMaybe opts parser txt of
     Just parsed ->
       let (solved, _) =
             runPipeline . getCompose $
-              traverse resolveLinks $
-                toList parsed
-       in expandOrgObjects bk solved
+              traverse resolveLinks parsed
+       in liftChildren self
+            `binding` expand solved
     Nothing -> throwTemplateError $ "Could not parse " <> show txt
-  where
-    parser = plainMarkupContext standardSet
+
+parserObjExp ::
+  GlobalConstraints m obj =>
+  ExportBackend m ->
+  OrgData ->
+  Expansion m obj
+parserObjExp bk odata =
+  parserExp
+    (parserOptions odata)
+    (toList <$> plainMarkupContext standardSet)
+    (objectsExp bk odata)
 
 parseElementsExp ::
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+  GlobalConstraints m elm =>
+  ExportBackend m ->
+  OrgData ->
   Expansion m elm
-parseElementsExp bk self = do
-  opts <- asks parserOptions
-  txt <- fromMaybe "" <$> lookupAttr "text" self
-  case evalOrgMaybe opts elements txt of
-    Just parsed ->
-      let (solved, _) =
-            runPipeline . getCompose $
-              traverse resolveLinks $
-                toList parsed
-       in expandOrgElements bk solved
-    Nothing -> throwTemplateError $ "Could not parse " <> show txt
+parseElementsExp bk odata = do
+  parserExp
+    (parserOptions odata)
+    (toList <$> elements)
+    (elementsExp bk odata)
 
-expandOrgObjects ::
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+objectsExp ::
+  ExportBackend m ->
+  OrgData ->
   [OrgObject] ->
-  Ondim m [obj]
-expandOrgObjects = foldMapM . expandOrgObject
+  ExpansionMap m
+objectsExp bk odata = listExp (namespace . objectExp bk odata)
 
-expandOrgObject ::
-  forall m obj elm.
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+objectExp ::
+  forall m.
+  ExportBackend m ->
+  OrgData ->
   OrgObject ->
-  Ondim m [obj]
-expandOrgObject bk@(ExportBackend {..}) obj = do
-  s <- getSetting orgInlineImageRules
+  ExpansionMap m
+objectExp bk@ExportBackend {..} odata@OrgData {..} obj =
   (`fromMaybe` customObject obj)
     case obj of
       (Plain txt) -> do
-        specialStrings <- getSetting orgExportWithSpecialStrings
-        pure $
-          plain (if specialStrings then doSpecialStrings txt else txt)
-      LineBreak ->
-        callExpansion "org:object:linebreak" nullObj
-      (Code txt) ->
-        "org:object:code" `callWith` do
-          "content" #@ txt
-      (Entity name) -> do
-        withEntities <- getSetting orgExportWithEntities
-        case Map.lookup name Data.defaultEntitiesMap of
-          Just (Data.Entity _ latex mathP html ascii latin utf8)
-            | withEntities ->
-                "org:object:entity" `callWith` do
-                  "if-math" ## ifElse @obj mathP
-                  "latex" #@ latex
-                  "ascii" #@ ascii
-                  "html" #@ html
-                  "latin" #@ latin
-                  "utf8" #@ utf8
-          _ -> pure $ plain ("\\" <> name)
-      (LaTeXFragment ftype txt) ->
-        "org:object:latex-fragment" `callWith` do
-          "content" #@ txt
-          "type" #@ case ftype of
-            InlMathFragment -> "inline"
-            DispMathFragment -> "display"
-            RawFragment -> "raw"
-      (ExportSnippet backend code) ->
-        pure $ exportSnippet backend code
-      (Src lang _params txt) ->
-        "org:object:src" `callWith` do
-          "language" #@ lang
-          "content" #@ txt
-      (Target anchor name) ->
-        "org:object:target" `callWith` do
-          "anchor" #@ anchor
-          "name" #@ name
-      (Italic objs) ->
-        "org:object:italic" `callWith` do
-          "content" ## expObjs objs
-      (Underline objs) ->
-        "org:object:underline" `callWith` do
-          "content" ## expObjs objs
-      (Bold objs) ->
-        "org:object:bold" `callWith` do
-          "content" ## expObjs objs
-      (Strikethrough objs) ->
-        "org:object:strikethrough" `callWith` do
-          "content" ## expObjs objs
-      (Superscript objs) ->
-        "org:object:superscript" `callWith` do
-          "content" ## expObjs objs
-      (Subscript objs) ->
-        "org:object:subscript" `callWith` do
-          "content" ## expObjs objs
-      (Quoted qtype objs) ->
-        "org:object:quoted" `callWith` do
-          "content" ## expObjs objs
-          "type" #@ case qtype of
-            SingleQuote -> "single"
-            DoubleQuote -> "double"
-      (Verbatim txt) ->
-        "org:object:verbatim" `callWith` do
-          "content" #@ txt
+        tag #@ "plain"
+        let specialStrings = orgExportWithSpecialStrings exporterSettings
+        content #@ if specialStrings then doSpecialStrings txt else txt
+      LineBreak -> do
+        tag #@ "linebreak"
+      (Code txt) -> do
+        tag #@ "code"
+        content #@ txt
+      (Entity name)
+        | orgExportWithEntities exporterSettings -> do
+            tag #@ "entity"
+            let Data.Entity {..} = Data.defaultEntitiesMap Map.! name
+            "if-math" #* ifElse latexMathP
+            "latex" #@ latexReplacement
+            "ascii" #@ asciiReplacement
+            "html" #@ htmlReplacement
+            "latin" #@ latin1Replacement
+            "utf8" #@ utf8Replacement
+        | otherwise -> objectExp bk odata (Plain $ "\\" <> name)
+      (LaTeXFragment ftype txt) -> do
+        tag #@ "latex-fragment"
+        content #@ txt
+        "type" #@ case ftype of
+          InlMathFragment -> "inline"
+          DispMathFragment -> "display"
+          RawFragment -> "raw"
+      (ExportSnippet backend code) -> do
+        tag #@ "export-snippet"
+        "backend" #@ backend
+        content #@ code
+      (Src lang _params txt) -> do
+        tag #@ "src"
+        "language" #@ lang
+        content #@ txt
+      (Target anchor name) -> do
+        tag #@ "target"
+        "anchor" #@ anchor
+        "name" #@ name
+      (Italic objs) -> do
+        tag #@ "italic"
+        content #. expObjs objs
+      (Underline objs) -> do
+        tag #@ "underline"
+        content #. expObjs objs
+      (Bold objs) -> do
+        tag #@ "bold"
+        content #. expObjs objs
+      (Strikethrough objs) -> do
+        tag #@ "strikethrough"
+        content #. expObjs objs
+      (Superscript objs) -> do
+        tag #@ "superscript"
+        content #. expObjs objs
+      (Subscript objs) -> do
+        tag #@ "subscript"
+        content #. expObjs objs
+      (Quoted qtype objs) -> do
+        tag #@ "quoted"
+        content #. expObjs objs
+        "type" #@ case qtype of
+          SingleQuote -> "single"
+          DoubleQuote -> "double"
+      (Verbatim txt) -> do
+        tag #@ "verbatim"
+        content #@ txt
       (Link tgt [])
-        | isImgTarget s tgt -> do
-            "org:object:image" `callWith` do
-              linkTarget tgt
-        | otherwise -> expandOrgObject bk (Link tgt [Plain $ linkTargetToText tgt])
-      (Link tgt objs) ->
-        "org:object:link" `callWith` do
-          linkTarget tgt
-          "content" ## expObjs objs
-      (Timestamp ts) ->
-        "org:object:timestamp" `callWith` do
-          timestamp bk ts
+        | isImgTarget (orgInlineImageRules exporterSettings) tgt -> do
+            tag #@ "image"
+            linkTarget tgt
+        | otherwise -> objectExp bk odata (Link tgt [Plain $ linkTargetToText tgt])
+      (Link tgt objs) -> do
+        tag #@ "link"
+        linkTarget tgt
+        content #. expObjs objs
+      (Timestamp ts) -> do
+        tag #@ "timestamp"
+        timestamp ts
       (FootnoteRef (FootnoteRefLabel name)) -> do
-        def <- asks ((Map.!? name) . footnotes)
-        "org:object:footnote-ref" `callWith` do
-          whenJust def \thing ->
-            whenLeft () thing \objs ->
-              "content" ## const $ expandOrgObjects bk objs
-          "key" #@ name
-      (FootnoteRef _) -> pure []
-      (Cite _) ->
-        pure $ plain "(unresolved citation)" -- TODO
-      (StatisticCookie c) ->
-        "org:object:statistic-cookie" `callWith` do
-          case c of
-            Left (show -> n, show -> d) -> do
-              "type" #@ "fraction"
-              "numerator" #@ n
-              "denominator" #@ d
-              "value" #@ n <> "/" <> d
-            Right (show -> p) -> do
-              "type" #@ "percentage"
-              "percentage" #@ p
-              "value" #@ p <> "%"
-      Macro key args -> macro key args
-      InlBabelCall args -> inlBabelCall args
+        tag #@ "footnote-ref"
+        let def = footnotes Map.!? name
+        whenJust def \thing ->
+          whenLeft () thing \objs ->
+            content #. expObjs objs
+        "key" #@ name
+      (FootnoteRef _) -> pass
+      (Cite _) -> pass -- TODO
+      (StatisticCookie c) -> do
+        tag #@ "statistic-cookie"
+        case c of
+          Left (show -> n, show -> d) -> do
+            "type" #@ "fraction"
+            "numerator" #@ n
+            "denominator" #@ d
+            "value" #@ n <> "/" <> d
+          Right (show -> p) -> do
+            "type" #@ "percentage"
+            "percentage" #@ p
+            "value" #@ p <> "%"
+      Macro name args -> do
+        tag #@ "macro"
+        "name" #@ name
+        "arguments" #. listExp textData args
+        content #: macro name args
+      InlBabelCall args -> do
+        tag #@ "babel-call"
+        content #: babelCall args
   where
-    expObjs :: [OrgObject] -> Expansion m obj
-    expObjs o = const $ expandOrgObjects bk o
-    callWith x y =
-      callExpansion x nullObj
-        `binding` do "this" #. y
+    tag = "object"
+    content = "content"
+    expObjs = objectsExp bk odata
 
-expandOrgElements ::
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+elementsExp ::
+  ExportBackend m ->
+  OrgData ->
   [OrgElement] ->
-  Ondim m [elm]
-expandOrgElements = foldMapM . expandOrgElement
+  ExpansionMap m
+elementsExp bk odata = listExp (namespace . elementExp bk odata)
 
-expandOrgElement ::
-  forall m obj elm.
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+elementExp ::
+  forall m.
+  ExportBackend m ->
+  OrgData ->
   OrgElement ->
-  Ondim m [elm]
-expandOrgElement bk@(ExportBackend {..}) el = do
-  s <- getSetting orgInlineImageRules
+  ExpansionMap m
+elementExp bk@ExportBackend {..} odata@OrgData {..} el = do
   (`fromMaybe` customElement el)
     case el of
       (Paragraph aff [Link tgt []])
-        | isImgTarget s tgt ->
-            "org:element:figure" `callWith` do
-              affMap aff
-              linkTarget tgt
-      (Paragraph aff c) ->
-        "org:element:paragraph" `callWith` do
-          affMap aff
-          "content" ## const $ expandOrgObjects bk c
-      (GreaterBlock aff Quote c) ->
-        "org:element:quote-block" `callWith` do
-          affMap aff
-          "content" ## expEls c
-      (GreaterBlock aff Center c) ->
-        "org:element:center-block" `callWith` do
-          affMap aff
-          "content" ## expEls c
-      (GreaterBlock aff (Special cls) c) ->
-        "org:element:special-block" `callWith` do
-          affMap aff
-          "name" #@ cls
-          "content" ## expEls c
-      (PlainList aff k i) ->
-        "org:element:plain-list" `callWith` do
-          affMap aff
-          plainList bk k i
-      (Drawer name els) ->
-        "org:element:drawer" `callWith` do
-          "content" ## expEls els
-          "name" #@ name
-      (ExportBlock lang code) ->
-        pure $ rawBlock lang code
-      (ExampleBlock aff _ c) ->
-        "org:element:example-block" `callWith` do
-          affMap aff
-          srcOrExample bk aff "" c
-          "content" #@ srcLinesToText c
-      (SrcBlock aff lang _ attrs c) ->
-        "org:element:src-block" `callWith` do
-          affMap aff
-          srcOrExample bk aff lang c
-          "language" #@ lang
-          "content" #@ srcLinesToText c
-          "attributes" #. assocsExp textData attrs
-      (LaTeXEnvironment aff env text) ->
-        "org:element:latex-environment" `callWith` do
-          affMap aff
-          "name" #@ env
-          "content" #@ text
-      (Table aff rs) ->
-        "org:element:table" `callWith` do
-          affMap aff
-          table bk rs
+        | isImgTarget (orgInlineImageRules exporterSettings) tgt -> do
+            tag #@ "figure"
+            affMap aff
+            linkTarget tgt
+      (Paragraph aff c) -> do
+        tag #@ "paragraph"
+        affMap aff
+        content #. objectsExp bk odata c
+      (GreaterBlock aff Quote c) -> do
+        tag #@ "quote-block"
+        affMap aff
+        content #. expEls c
+      (GreaterBlock aff Center c) -> do
+        tag #@ "center-block"
+        affMap aff
+        content #. expEls c
+      (GreaterBlock aff (Special cls) c) -> do
+        tag #@ "special-block"
+        affMap aff
+        "name" #@ cls
+        content #. expEls c
+      (PlainList aff k i) -> do
+        tag #@ "plain-list"
+        affMap aff
+        plainList bk odata k i
+      (Drawer name els) -> do
+        tag #@ "drawer"
+        content #. expEls els
+        "name" #@ name
+      (ExportBlock backend code) -> do
+        tag #@ "export-block"
+        "backend" #@ backend
+        content #@ code
+      (ExampleBlock aff _ c) -> do
+        tag #@ "example-block"
+        affMap aff
+        srcOrExample bk aff "" c
+        content #@ srcLinesToText c
+      (SrcBlock aff lang _ attrs c) -> do
+        tag #@ "src-block"
+        affMap aff
+        srcOrExample bk aff lang c
+        "language" #@ lang
+        content #@ srcLinesToText c
+        "attributes" #. assocsExp textData attrs
+      (LaTeXEnvironment aff env text) -> do
+        tag #@ "latex-environment"
+        affMap aff
+        "name" #@ env
+        content #@ text
+      (Table aff rs) -> do
+        tag #@ "table"
+        affMap aff
+        table bk odata rs
       HorizontalRule ->
-        callExpansion "org:element:horizontal-rule" nullEl
-      Keyword k v ->
-        "org:element:keyword" `callWith` do
-          "key" #@ k
-          case v of
-            ValueKeyword v' -> do
-              "value" #@ v'
-            ParsedKeyword v' -> do
-              "value" ## const $ expandOrgObjects bk v'
-            _ -> pure ()
-      FootnoteDef {} -> pure []
-      VerseBlock {} -> error "TODO"
+        tag #@ "horizontal-rule"
+      Keyword k v -> do
+        tag #@ "keyword"
+        "key" #@ k
+        case v of
+          ValueKeyword v' -> do
+            "value" #@ v'
+          ParsedKeyword v' -> do
+            "value" #. objectsExp bk odata v'
+          _ -> pass
+      FootnoteDef {} -> pass
+      VerseBlock {} -> pass -- TODO
   where
+    tag = "object"
+    content = "content"
+    expEls = elementsExp bk odata
     affMap aff = do
       affiliatedMap aff
-      "akw" #. keywordsMap bk aff
-    expEls :: [OrgElement] -> Expansion m elm
-    expEls o = const $ expandOrgElements bk o
-    callWith x y =
-      callExpansion x nullEl
-        `binding` do "this" #. y
+      "akw" #. keywordsMap bk odata aff
 
 sectionExp ::
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+  ExportBackend m ->
+  OrgData ->
   OrgSection ->
   ExpansionMap m
-sectionExp bk section@(OrgSection {..}) = do
-  "title" ## const $ expandOrgObjects bk sectionTitle
+sectionExp bk odata (OrgSection {..}) = do
+  "title" #. objectsExp bk odata sectionTitle
   "tags" #. listExp textData sectionTags
-  "children" ## const $ expandOrgElements bk sectionChildren
-  "subsections" ## expandOrgSections bk sectionSubsections
+  "children" #. elementsExp bk odata sectionChildren
+  "subsections" #. sectionsExp bk odata sectionSubsections
   planning sectionPlanning
   for_ sectionTodo todo
   for_ sectionPriority priority
   "prop" #. mapExp textData sectionProperties
   "anchor" #@ sectionAnchor
-  -- Debug
-  "debug.ast" #@ show section
   where
     todo (TodoKeyword st nm) =
       "todo" #. do
@@ -436,26 +376,24 @@ sectionExp bk section@(OrgSection {..}) = do
               , ("deadline",) <$> planningDeadline
               , ("scheduled",) <$> planningScheduled
               ]
-          renderTs a = someExpansion $ const $ expandOrgObject bk (Timestamp a)
+          renderTs a = namespace $ objectExp bk odata (Timestamp a)
        in "planning" #. assocsExp renderTs assocs
 
-expandOrgSections ::
-  forall m obj elm.
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+sectionsExp ::
+  forall m.
+  ExportBackend m ->
+  OrgData ->
   [OrgSection] ->
-  Expansion m elm
-expandOrgSections bk sections inner = do
-  hlevels <- getSetting orgExportHeadlineLevels
-  shift <- getSetting headlineLevelShift
-  join <$> forM (groupByLevel sections) \(level, sameLvlSecs) ->
-    callExpansion "org:sections" inner
-      `binding` do
-        "this" #. do
-          "type" #@ if level + shift > hlevels then "over-level" else "normal"
-          "level" #@ show $ level + shift
-          listExp (namespace . sectionExp bk) sameLvlSecs
+  ExpansionMap m
+sectionsExp bk odata sections = listExp (namespace . sameLevel) (groupByLevel sections)
   where
+    hlevels = orgExportHeadlineLevels (exporterSettings odata)
+    shift = headlineLevelShift (exporterSettings odata)
+    sameLevel (level, sameLvlSecs) = do
+      "type" #@ if level + shift > hlevels then "over-level" else "normal"
+      "level" #@ show $ level + shift
+      listExp (namespace . sectionExp bk odata) sameLvlSecs
+
     groupByLevel :: [OrgSection] -> [(Int, [OrgSection])]
     groupByLevel = foldr go []
       where
@@ -464,108 +402,76 @@ expandOrgSections bk sections inner = do
           | sectionLevel s == i = (i, s : ss) : ls
           | otherwise = (sectionLevel s, [s]) : l
 
-liftDocument ::
-  forall m obj elm doc.
-  OndimNode doc =>
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
-  OrgData ->
-  OrgDocument ->
-  doc ->
-  Ondim m doc
-liftDocument bk datum doc node =
-  bindDocument bk datum doc (liftSubstructures node)
-
-bindDocument ::
-  forall m obj elm doc.
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+documentExp ::
+  forall m.
+  ExportBackend m ->
   -- | Prefix for expansion names
   OrgData ->
   OrgDocument ->
-  Ondim m doc ->
-  Ondim m doc
-bindDocument bk datum (OrgDocument {..}) node = do
-  local (const datum) node
-    `binding` do
-      "doc" #. do
-        "kw" #. keywordsMap bk (keywords datum)
-        "prop" #. mapExp textData documentProperties
-        "children" ## const $ expandOrgElements bk documentChildren
-        "sections" ## expandOrgSections bk documentSections
-        "footnotes" #. mapExp fnExp (footnotes datum)
-        "tags" #. listExp textData (filetags datum)
+  ExpansionMap m
+documentExp bk odata (OrgDocument {..}) = do
+  "doc" #. do
+    "kw" #. keywordsMap bk odata (keywords odata)
+    "prop" #. mapExp textData documentProperties
+    "children" #. elementsExp bk odata documentChildren
+    "sections" #. sectionsExp bk odata documentSections
+    "footnotes" #. mapExp fnExp (footnotes odata)
+    "tags" #. listExp textData (filetags odata)
   where
     fnExp =
-      someExpansion
-        . const
-        . expandOrgElements bk
+      namespace
+        . elementsExp bk odata
         . either (one . Paragraph mempty) id
 
 table ::
-  forall m obj elm.
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+  forall m.
+  ExportBackend m ->
+  OrgData ->
   [TableRow] ->
   ExpansionMap m
-table bk rows = do
-  "head" #* \inner ->
-    case tableHead of
-      Just rs ->
-        liftChildren inner `binding` do
-          "head:rows" #* tableRows rs
-      Nothing -> pure []
-  "bodies" ## tableBodies
+table bk odata rows = do
+  "head" #. tableRows tableHead
+  "bodies" #. tableBodies
   where
     (groups, props) = foldr go ([], []) rows
       where
-        go (ColumnPropsRow p) ~(l, r) = (l, p : r)
-        go (StandardRow cs) ~(l, r)
+        go (ColumnPropsRow p) (l, r) = (l, p : r)
+        go (StandardRow cs) (l, r)
           | g : gs <- l = ((cs : g) : gs, r)
           | [] <- l = ([cs] : l, r)
-        go RuleRow ~(l, r) = ([] : l, r)
+        go RuleRow (l, r) = ([] : l, r)
 
     (tableHead, bodies) = case groups of
-      [] -> (Nothing, [])
-      [b] -> (Nothing, [b])
-      h : b -> (Just h, b)
+      [] -> ([], [])
+      [b] -> ([], [b])
+      h : b -> (h, b)
 
-    tableBodies :: Expansion m elm
-    tableBodies inner =
-      join <$> forM bodies \body ->
-        liftChildren inner `binding` do
-          "body:rows" #* tableRows body
+    tableBodies = listExp (namespace . tableRows) bodies
+    tableRows = listExp (namespace . tableRow)
+    tableRow = listExp (namespace . tableCell) . zip alignment
 
-    tableRows :: [[TableCell]] -> GlobalExpansion m
-    tableRows rs inner =
-      join <$> forM rs \cells ->
-        liftChildren inner
-          `binding` do
-            "row:cells" ## \inner' ->
-              join <$> forM (zip cells alignment) \(row, alig) ->
-                liftChildren @obj inner'
-                  `binding` do
-                    "cell:content" ## const $ expandOrgObjects bk row
-                    for_ alig \a ->
-                      "cell:alignment" #@ case a of
-                        AlignLeft -> "left"
-                        AlignRight -> "right"
-                        AlignCenter -> "center"
+    tableCell :: (Maybe ColumnAlignment, TableCell) -> ExpansionMap m
+    tableCell (alig, cell) = do
+      "content" #. objectsExp bk odata cell
+      for_ alig \a ->
+        "alignment" #@ case a of
+          AlignLeft -> "left"
+          AlignRight -> "right"
+          AlignCenter -> "center"
 
     alignment =
       (++ repeat Nothing) $
         fromMaybe [] $
-          listToMaybe
-            props
+          listToMaybe props
 
 plainList ::
-  forall m obj elm.
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+  forall m.
+  ExportBackend m ->
+  OrgData ->
   ListType ->
   [ListItem] ->
   ExpansionMap m
-plainList bk@(ExportBackend {..}) kind items = do
+plainList bk odata kind items = do
   "items" #. listExp (namespace . listItemExp) items
   case kind of
     Ordered OrderedNum -> "type" #@ "ordered-num"
@@ -579,82 +485,66 @@ plainList bk@(ExportBackend {..}) kind items = do
     listItemExp (ListItem _ i cbox t c) = do
       for_ i \i' -> "counter-set" #@ show i'
       for_ cbox \cbox' -> "checkbox" #@ checkbox cbox'
-      unless (null t) $
-        "descriptive-tag" ## const $
-          expandOrgObjects bk t
-      "content" ## const $ doPlainOrPara c
+      "descriptive-tag" #. objectsExp bk odata t
+      "content" #. elementsExp bk odata c
       where
-        doPlainOrPara :: [OrgElement] -> Ondim m [elm]
-        doPlainOrPara [Paragraph _ objs] = plainObjsToEls <$> expandOrgObjects bk objs
-        doPlainOrPara els = expandOrgElements bk els
-
         checkbox :: Checkbox -> Text
         checkbox (BoolBox True) = "true"
         checkbox (BoolBox False) = "false"
         checkbox PartialBox = "partial"
 
 srcOrExample ::
-  forall m obj elm.
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+  forall m.
+  ExportBackend m ->
   Keywords ->
   Text ->
   [SrcLine] ->
   ExpansionMap m
 srcOrExample (ExportBackend {..}) aff lang lins = do
-  "src-lines" ## runLines
+  "lines" #. runLines
+  "lines-pretty" #: srcPretty aff lang (srcLinesToText lins)
   "content" #@ srcLinesToText lins
   where
-    runLines :: Expansion m obj
-    runLines inner = do
-      cP <- contentPretty
-      intercalate (plain "\n")
-        <$> mapM (`lineExps` inner) (zip lins cP)
+    runLines :: ExpansionMap m
+    runLines = listExp (\x -> globalExpansion (lineExps x)) lins
 
-    contentPretty =
-      (++ repeat Nothing) . sequence <$> srcPretty aff lang (srcLinesToText lins)
-
-    bPretty p = whenJust p \inls -> "content-pretty" ## const $ pure inls
-
-    lineExps (SrcLine c, pretty) inner =
+    lineExps (SrcLine c) inner =
       switch "plain" inner
         `binding` do
           "content" #@ c
-          bPretty pretty
-    lineExps (RefLine i ref c, pretty) inner =
+    lineExps (RefLine i ref c) inner =
       switch "ref" inner
         `binding` do
           "ref" #@ ref
           "id" #@ i
           "content" #@ c
-          bPretty pretty
 
 timestamp ::
-  forall m obj elm.
-  BackendC m obj elm =>
-  ExportBackend m obj elm ->
+  forall m.
   TimestampData ->
   ExpansionMap m
-timestamp (ExportBackend {..}) ts =
+timestamp ts =
   case ts of
     TimestampData a (dateToDay -> d, fmap toTime -> t, r, w) -> do
       dtExps d t r w
-      switchCases (active a <> "-single")
+      "type" #@ active a
+      "span" #@ "single"
     TimestampRange
       a
       (dateToDay -> d1, fmap toTime -> t1, r1, w1)
       (dateToDay -> d2, fmap toTime -> t2, r2, w2) -> do
-        "from" #* \x -> liftChildren x `binding` dtExps d1 t1 r1 w1
-        "to" #* \x -> liftChildren x `binding` dtExps d2 t2 r2 w2
-        switchCases (active a <> "-range")
+        "from" #. dtExps d1 t1 r1 w1
+        "to" #. dtExps d2 t2 r2 w2
+        "type" #@ active a
+        "span" #@ "range"
   where
     dtExps d t r w = do
-      "repeater"
-        #* justOrIgnore r \r' x -> liftChildren x `binding` tsMark r'
-      "warning-period"
-        #* justOrIgnore w \w' x -> liftChildren x `binding` tsMark w'
-      "ts-date" ## tsDate d
-      "ts-time" ## tsTime t
+      whenJust r \r' ->
+        "repeater" #. tsMark r'
+      whenJust w \w' ->
+        "warning-period" #. tsMark w'
+      "date" #* tsDate d
+      "time" #* tsTime t
 
     active True = "active"
     active False = "inactive"
@@ -667,14 +557,17 @@ timestamp (ExportBackend {..}) ts =
     dateToDay (y, m, d, _) = fromGregorian (toInteger y) m d
     toTime (h, m) = TimeOfDay h m 0
 
-    tsDate :: Day -> Expansion m obj
+    tsDate :: Day -> GlobalExpansion m
     tsDate day input = do
-      let format = toString $ stringify input
-          locale = defaultTimeLocale -- TODO
-      pure . plain . toText $ formatTime locale format day
+      format <- toString <$> lookupAttr' "format" input
+      let locale = defaultTimeLocale -- TODO
+      liftChildren input `binding` do
+        "value" #@ toText $ formatTime locale format day
 
-    tsTime :: Maybe TimeOfDay -> Expansion m obj
+    tsTime :: Maybe TimeOfDay -> GlobalExpansion m
     tsTime time input = do
-      let format = toString $ stringify input
-          locale = defaultTimeLocale -- TODO
-      maybe (pure []) (pure . plain . toText . formatTime locale format) time
+      format <- toString <$> lookupAttr' "format" input
+      let locale = defaultTimeLocale -- TODO
+      liftChildren input `binding` do
+        whenJust time \t ->
+          "value" #@ toText $ formatTime locale format t
