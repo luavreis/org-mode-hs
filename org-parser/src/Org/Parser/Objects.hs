@@ -29,9 +29,6 @@ minimalSet =
       macro
     ]
 
--- minimalSetChars :: Set Char
--- minimalSetChars = fromList "\n~=/_*+\\$'\"^["
-
 standardSet :: Marked OrgParser OrgObjects
 standardSet =
   mconcat
@@ -47,9 +44,6 @@ standardSet =
       angleLink,
       citation
     ]
-
--- standardSetChars :: Set Char
--- standardSetChars = minimalSetChars <> fromList "@cs<"
 
 plainMarkupContext :: Marked OrgParser OrgObjects -> OrgParser OrgObjects
 plainMarkupContext = markupContext B.plain
