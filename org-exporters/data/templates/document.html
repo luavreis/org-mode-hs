@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title @try><doc.kw.title/></title>
+    <extra:style/>
+  </head>
+  <body>
+    <extra:toc>
+      <h2>Table of Contents</h2>
+    </extra:toc>
+
+    <doc.children:list with=org:element/>
+    <doc.sections:list with=org:sections/>
+
+    <doc.footnotes:nonempty>
+      <br/>
+      <div id="footnotes">
+        <doc.footnotes:list as=footnote>
+          <div class="footdef">
+            <a id="fn-!(footnote:key)" href="#fnr-!(footnote:key)">[<footnote:key />]</a>
+            <footnote:value/>
+          </div>
+        </doc.footnotes:list>
+      </div>
+    </doc.footnotes:nonempty>
+  </body>
+</html>
