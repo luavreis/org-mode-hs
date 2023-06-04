@@ -33,12 +33,9 @@ defHtmlBackend =
       customObject _ = Nothing
    in ExportBackend {..}
 
-htmlTemplateDir :: IO FilePath
-htmlTemplateDir = (</> "html") <$> templateDir
-
 loadLayout :: FilePath -> IO X.Document
 loadLayout dir = do
-  let file = dir </> "org/document.tpl"
+  let file = dir </> "document.tpl"
   text <- readFileBS file
   case X.parseHTML file text of
     Left s -> throw (TemplateLoadingException s)

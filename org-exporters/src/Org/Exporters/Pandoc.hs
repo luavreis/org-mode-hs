@@ -28,12 +28,9 @@ defPandocBackend =
       macro _ _ = namespace pass
    in ExportBackend {..}
 
-pandocTemplateDir :: IO FilePath
-pandocTemplateDir = (</> "pandoc") <$> templateDir
-
 loadPandocDoc :: FilePath -> IO P.Pandoc
 loadPandocDoc dir = do
-  let file = dir </> "org/document.md"
+  let file = dir </> "document.md"
   text :: Text <- decodeUtf8 <$> readFileBS file
   let pandoc =
         runPure $

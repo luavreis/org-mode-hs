@@ -1,0 +1,43 @@
+<o:bind my:headline>
+  <span class="headline">
+    <span class="title"><section:title/></span>
+    <o:try><span class="priority !(section:priority)">Priority: <section:priority/></span></o:try>
+    <o:try><span class="todokw !(section.todo:state)"><section.todo:name/></span></o:try>
+    <section.tags:list tag><span class="tag tag-!(tag:value)"><tag:value/></span></o:list>
+  </span>
+</o:bind>
+
+<o:bind my:hlevel>
+  <o:match section:level>
+    <o:case 1><h1><my:hlevel:args/></h1></o:case>
+    <o:case 2><h2><my:hlevel:args/></h2></o:case>
+    <o:case 3><h3><my:hlevel:args/></h3></o:case>
+    <o:case 4><h4><my:hlevel:args/></h4></o:case>
+  </o:match>
+</o:bind>
+
+<o:match org.sections:type>
+
+  <o:case normal>
+    <org.sections:list section>
+      <section id="!(section:anchor)">
+        <my:hlevel><my:headline /></my:hlevel>
+        <section:children/>
+        <section:subsections/>
+      </section>
+    </org.sections:list>
+  </o:case>
+
+  <o:case over-level>
+    <ol>
+      <sections>
+        <li>
+          <a id="!(section:anchor)"></a><headline /><br />
+          <section:children/>
+          <section:subsections/>
+        </li>
+      </sections>
+    </ol>
+  </o:case>
+
+</o:match>
