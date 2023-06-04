@@ -20,12 +20,9 @@ defLaTeXBackend =
       macro _ _ = namespace pass
    in ExportBackend {..}
 
-laTeXTemplateDir :: IO FilePath
-laTeXTemplateDir = (</> "latex") <$> templateDir
-
 loadLayout :: FilePath -> IO [Node]
 loadLayout dir = do
-  let file = dir </> "org/document.tex"
+  let file = dir </> "document.tex"
   text <- parseWhiskers ("<<", ">>") file . decodeUtf8 <$> readFileBS file
   either (throwIO . TemplateLoadingException) pure text
 
