@@ -88,11 +88,11 @@ linkTarget tgt = do
         else file
 
 parserExp ::
-  (OndimNode b, Monad m, MultiWalk MWTag a) =>
+  (Monad m, MultiWalk MWTag a) =>
   OrgOptions ->
   OrgParser [a] ->
   ([a] -> ExpansionMap m) ->
-  Expansion m b
+  GlobalExpansion m
 parserExp opts parser expand self = do
   txt <- fromMaybe "" <$> lookupAttr "text" self
   case evalOrgMaybe opts parser txt of
@@ -104,23 +104,21 @@ parserExp opts parser expand self = do
             `binding` expand solved
     Nothing -> throwTemplateError $ "Could not parse " <> show txt
 
-parserObjExp ::
-  GlobalConstraints m obj =>
+parserExpObjs ::
   ExportBackend m ->
   OrgData ->
-  Expansion m obj
-parserObjExp bk odata =
+  GlobalExpansion m
+parserExpObjs bk odata =
   parserExp
     (parserOptions odata)
     (toList <$> plainMarkupContext standardSet)
     (objectsExp bk odata)
 
-parseElementsExp ::
-  GlobalConstraints m elm =>
+parserExpElms ::
   ExportBackend m ->
   OrgData ->
-  Expansion m elm
-parseElementsExp bk odata = do
+  GlobalExpansion m
+parserExpElms bk odata = do
   parserExp
     (parserOptions odata)
     (toList <$> elements)
