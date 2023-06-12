@@ -4,7 +4,7 @@ import Control.Exception (try)
 import Data.Text.IO qualified as T
 import Ondim.Extra.Loading (TemplateLoadingError (..))
 import Ondim.Targets.HTML.Load qualified as H
-import Ondim.Targets.Whiskers.Load qualified as L
+import Ondim.Targets.LaTeX.Load qualified as L
 import Ondim.Targets.Pandoc.Load qualified as P
 import Options qualified as O
 import Options.Applicative
@@ -18,7 +18,6 @@ import Org.Exporters.Processing.Prune (pruneDoc)
 import Org.Parser
 import Path (parseAbsDir, parseRelDir)
 import Path.IO (copyDirRecur', doesDirExist)
-import System.FilePath ((</>))
 import Text.Megaparsec (errorBundlePretty)
 import Text.Pandoc qualified as TP
 import Text.Pandoc.Format qualified as TP
@@ -28,7 +27,7 @@ main :: IO ()
 main = do
   ddir <- parseAbsDir =<< templateDir
   tdir <- parseRelDir ".horg"
-  udir <-
+  ldir <-
     ifM
       (doesDirExist tdir)
       (pure $ Just ".horg")
@@ -62,32 +61,23 @@ main = do
           O.AST True -> pure $ encodeUtf8 $ pShowNoColor processed
           O.HTML oo -> do
             let usrDir = O.templateDir oo
-                lclDir = (</> "html") <$> udir
-            defDir <- H.htmlTemplateDir
-            tpls <- H.loadTemplates $ catMaybes [usrDir, lclDir, Just defDir]
-            layout <-
-              maybe empty H.loadLayout (usrDir <|> lclDir)
-                <|> H.loadLayout defDir
+            defDir <- templateDir
+            tpls <- H.loadTemplates $ catMaybes [usrDir, ldir, Just defDir]
+            layout <- H.loadLayout $ fromMaybe defDir (usrDir <|> ldir)
             either (error . show) toStrict
               <$> H.renderDoc H.defHtmlBackend tpls layout datum processed
           O.LaTeX oo -> do
             let usrDir = O.templateDir oo
-                lclDir = (</> "latex") <$> udir
-            defDir <- L.laTeXTemplateDir
-            tpls <- L.loadTemplates ("<<", ">>") $ catMaybes [usrDir, lclDir, Just defDir]
-            layout <-
-              maybe empty L.loadLayout (usrDir <|> lclDir)
-                <|> L.loadLayout defDir
+            defDir <- templateDir
+            tpls <- L.loadTemplates $ catMaybes [usrDir, ldir, Just defDir]
+            layout <- L.loadLayout $ fromMaybe defDir (usrDir <|> ldir)
             either (error . show) toStrict
               <$> L.renderDoc L.defLaTeXBackend tpls layout datum processed
           O.Pandoc fmt tplo oo -> do
             let usrDir = O.templateDir oo
-                lclDir = (</> "pandoc") <$> udir
-            defDir <- P.pandocTemplateDir
-            tpls <- P.loadTemplates $ catMaybes [usrDir, lclDir, Just defDir]
-            layout <-
-              maybe empty P.loadPandocDoc (usrDir <|> lclDir)
-                <|> P.loadPandocDoc defDir
+            defDir <- templateDir
+            tpls <- P.loadTemplates $ catMaybes [usrDir, ldir, Just defDir]
+            layout <- P.loadPandocDoc $ fromMaybe defDir (usrDir <|> ldir)
             doc <-
               either (error . show) id
                 <$> P.renderDoc P.defPandocBackend tpls layout datum processed
