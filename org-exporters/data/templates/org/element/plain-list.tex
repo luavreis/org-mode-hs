@@ -1,0 +1,27 @@
+\@bind[my.item-params]{%!
+  \@match[item.checkbox]{
+    \@case[true]{[{$\boxtimes$}]}
+    \@case[false]{[{$\square$}]}
+    \@case[partial]{[{$\boxminus$}]}
+    \@default{%!
+      \@item@descriptiveTag@nonempty{%!
+        [{\@item@descriptiveTag[with=org.objects]}]%!
+      }%!
+    }
+  }%!
+}%!
+
+\@bind[my.list-env]{%!
+  \@match[this.type]{
+    \@case[unordered]{itemize}
+    \@case[ordered-num]{enumerate}
+    \@case[ordered-alpha]{enumerate}
+    \@case[descriptive]{description}
+  }%!
+}%!
+
+\begin{\@my@listEnv}%!
+  \@this@items@list[as=item]{
+    \item\@my@itemParams \@item@content@list[with=org.elements]%!
+  }
+\end{\@my@listEnv}
