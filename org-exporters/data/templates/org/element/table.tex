@@ -1,0 +1,34 @@
+\@bind[opt]{%!
+  \@bodies@head@head@list{%!
+    \@match[this.alignment]{
+      \@case[left]{l}
+      \@case[right]{r}
+      \@case[center]{c}
+      \@default{l}
+    }%!
+  }%!
+}%!
+\@bind[head]{%!
+  \@this@head@nonempty{
+    \@this@head@list[with=rows]
+    \hline
+  }%!
+}%!
+\@bind[bodies]{\@this@bodies@list[with=rows, intercalate={\hline
+}]}%!
+\@bind[rows]{\@this@list[with=row, intercalate={\\[0pt]
+}]}%!
+\@bind[row]{%!
+  \@if[this.list]{%!
+    \@this@list[as=cell, with=cell, intercalate={ & }]%!
+    \@else{OHNOO!!!}%!
+  }%!
+}%!
+\@bind[cell]{\@this@content@list[@try, with=org.objects]}%!
+
+\begin{center}
+  \begin{tabular}
+    \@head
+    \@bodies
+  \end{tabular}
+\end{center}
