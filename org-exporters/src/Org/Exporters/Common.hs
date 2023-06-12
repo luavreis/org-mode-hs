@@ -43,6 +43,7 @@ justOrIgnore :: Monad m => Maybe a -> (a -> Expansion m b) -> Expansion m b
 justOrIgnore = flip (maybe ignore)
 
 keywordsMap ::
+  Monad m =>
   ExportBackend m ->
   OrgData ->
   Keywords ->
@@ -50,6 +51,7 @@ keywordsMap ::
 keywordsMap bk odata = mapExp (kwValueExp bk odata)
 
 kwValueExp ::
+  Monad m =>
   ExportBackend m ->
   OrgData ->
   KeywordValue ->
@@ -61,6 +63,7 @@ kwValueExp bk odata = \case
 
 -- | Text expansion for link target.
 linkTarget ::
+  Monad m =>
   LinkTarget ->
   ExpansionMap m
 linkTarget tgt = do
@@ -124,6 +127,7 @@ parseElementsExp bk odata = do
     (elementsExp bk odata)
 
 objectsExp ::
+  Monad m =>
   ExportBackend m ->
   OrgData ->
   [OrgObject] ->
@@ -132,6 +136,7 @@ objectsExp bk odata = listExp (namespace . objectExp bk odata)
 
 objectExp ::
   forall m.
+  Monad m =>
   ExportBackend m ->
   OrgData ->
   OrgObject ->
@@ -252,6 +257,7 @@ objectExp bk@ExportBackend {..} odata@OrgData {..} obj =
     expObjs = objectsExp bk odata
 
 elementsExp ::
+  Monad m =>
   ExportBackend m ->
   OrgData ->
   [OrgElement] ->
@@ -260,6 +266,7 @@ elementsExp bk odata = listExp (namespace . elementExp bk odata)
 
 elementExp ::
   forall m.
+  Monad m =>
   ExportBackend m ->
   OrgData ->
   OrgElement ->
@@ -344,6 +351,7 @@ elementExp bk@ExportBackend {..} odata@OrgData {..} el = do
       "akw" #. keywordsMap bk odata aff
 
 sectionExp ::
+  Monad m =>
   ExportBackend m ->
   OrgData ->
   OrgSection ->
@@ -381,6 +389,7 @@ sectionExp bk odata (OrgSection {..}) = do
 
 sectionsExp ::
   forall m.
+  Monad m =>
   ExportBackend m ->
   OrgData ->
   [OrgSection] ->
@@ -404,6 +413,7 @@ sectionsExp bk odata sections = listExp (namespace . sameLevel) (groupByLevel se
 
 documentExp ::
   forall m.
+  Monad m =>
   ExportBackend m ->
   -- | Prefix for expansion names
   OrgData ->
@@ -425,6 +435,7 @@ documentExp bk odata (OrgDocument {..}) = do
 
 table ::
   forall m.
+  Monad m =>
   ExportBackend m ->
   OrgData ->
   [TableRow] ->
@@ -466,6 +477,7 @@ table bk odata rows = do
 
 plainList ::
   forall m.
+  Monad m =>
   ExportBackend m ->
   OrgData ->
   ListType ->
@@ -495,6 +507,7 @@ plainList bk odata kind items = do
 
 srcOrExample ::
   forall m.
+  Monad m =>
   ExportBackend m ->
   Keywords ->
   Text ->
@@ -521,6 +534,7 @@ srcOrExample (ExportBackend {..}) aff lang lins = do
 
 timestamp ::
   forall m.
+  Monad m =>
   TimestampData ->
   ExpansionMap m
 timestamp ts =
