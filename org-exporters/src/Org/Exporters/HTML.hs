@@ -29,8 +29,8 @@ defHtmlBackend =
       srcPretty _ _ _ = namespace pass
       babelCall _ = namespace pass
       macro _ _ = namespace pass
-      customElement _ = Nothing
-      customObject _ = Nothing
+      customElement _ _ _ = Nothing
+      customObject _ _ _ = Nothing
    in ExportBackend {..}
 
 loadLayout :: FilePath -> IO X.Document

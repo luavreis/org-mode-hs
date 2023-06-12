@@ -32,8 +32,8 @@ data ExportBackend m = ExportBackend
   , macro :: Text -> [Text] -> SomeExpansion m
   , babelCall :: BabelCall -> SomeExpansion m
   , srcPretty :: Keywords -> Text -> Text -> SomeExpansion m
-  , customElement :: OrgElement -> Maybe (ExpansionMap m)
-  , customObject :: OrgObject -> Maybe (ExpansionMap m)
+  , customElement :: ExportBackend m -> OrgData -> OrgElement -> Maybe (ExpansionMap m)
+  , customObject :: ExportBackend m -> OrgData -> OrgObject -> Maybe (ExpansionMap m)
   }
 
 templateDir :: IO FilePath
@@ -142,7 +142,7 @@ objectExp ::
   OrgObject ->
   ExpansionMap m
 objectExp bk@ExportBackend {..} odata@OrgData {..} obj =
-  (`fromMaybe` customObject obj)
+  (`fromMaybe` customObject bk odata obj)
     case obj of
       (Plain txt) -> do
         tag #@ "plain"
@@ -272,7 +272,7 @@ elementExp ::
   OrgElement ->
   ExpansionMap m
 elementExp bk@ExportBackend {..} odata@OrgData {..} el = do
-  (`fromMaybe` customElement el)
+  (`fromMaybe` customElement bk odata el)
     case el of
       (Paragraph aff [Link tgt []])
         | isImgTarget (orgInlineImageRules exporterSettings) tgt -> do

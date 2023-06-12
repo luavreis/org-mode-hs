@@ -21,8 +21,8 @@ import Org.Exporters.Processing.OrgData
 defPandocBackend :: Monad m => ExportBackend m
 defPandocBackend =
   let affiliatedMap _ = pure ()
-      customElement _ = Nothing
-      customObject _ = Nothing
+      customElement _ _ _ = Nothing
+      customObject _ _ _ = Nothing
       srcPretty _ _ _ = namespace pass
       babelCall _ = namespace pass
       macro _ _ = namespace pass
