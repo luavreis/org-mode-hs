@@ -1,0 +1,38 @@
+\@bind[my:hlevel]{%!
+  \@match[this.level]{
+    \@case[1]{\section}
+    \@case[2]{\subsection}
+    \@case[3]{\subsubsection}
+    \@case[4]{\paragraph}
+    \@case[5]{\subparagraph}
+    \@case[6]{\subsubparagraph}
+  }%!
+}%!
+
+\@bind[my:headline]{%!
+  \@[@try]{\bfseries\sffamily \@section@todo }%!
+  \@[@try]{\framebox{\#\@section@priority}}%!
+  \@section@title@list[with=org.objects]%!
+  \@section@tags@nonempty{\hfill{} \@section@tags@list[intercalate={:}]{\@this}}%!
+}%!
+
+\@match[this.type]{
+  \@case[normal]{
+    \@this@list[as=section]{%!
+      \@my@hlevel{}{\@my@headline}
+      \label{sec:\@section@anchor}
+      \@section@children@list[with=org.elements]
+      \@section@subsections@list[with=org.sections]%!
+    }%!
+  }
+  \@case[over-level]{
+    \begin{enumerate}
+      \@this@list[as=section]{%!
+        \item \@my@headline
+        \label{sec:\@section@anchor}
+        \@section@children@list[with=org.elements]
+        \@section@subsections@list[with=org.sections]%!
+      }%!
+    \end{enumerate}
+  }
+}
