@@ -252,7 +252,7 @@ objectExp bk@ExportBackend {..} odata@OrgData {..} obj =
         tag #@ "babel-call"
         content #: babelCall args
   where
-    tag = "object"
+    tag = "tag"
     content = "content"
     expObjs = objectsExp bk odata
 
@@ -343,7 +343,7 @@ elementExp bk@ExportBackend {..} odata@OrgData {..} el = do
       FootnoteDef {} -> pass
       VerseBlock {} -> pass -- TODO
   where
-    tag = "object"
+    tag = "tag"
     content = "content"
     expEls = elementsExp bk odata
     affMap aff = do
