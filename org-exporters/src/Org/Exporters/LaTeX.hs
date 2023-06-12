@@ -4,7 +4,7 @@ module Org.Exporters.LaTeX where
 
 import Control.Exception (throwIO)
 import Ondim.Extra.Loading (TemplateLoadingError (..))
-import Ondim.Targets.Whiskers
+import Ondim.Targets.LaTeX
 import Org.Exporters.Common
 import Org.Exporters.Processing.OrgData (OrgData)
 import Org.Types
@@ -23,7 +23,7 @@ defLaTeXBackend =
 loadLayout :: FilePath -> IO [Node]
 loadLayout dir = do
   let file = dir </> "document.tex"
-  text <- parseWhiskers ("<<", ">>") file . decodeUtf8 <$> readFileBS file
+  text <- parseLaTeX file . decodeUtf8 <$> readFileBS file
   either (throwIO . TemplateLoadingException) pure text
 
 render ::
@@ -33,7 +33,7 @@ render ::
   m (Either OndimException LByteString)
 render st spl =
   evalOndimTWith st spl
-    <&> fmap (encodeUtf8 . renderWhiskers)
+    <&> fmap (encodeUtf8 . renderLaTeX)
 
 renderDoc ::
   Monad m =>
@@ -48,4 +48,4 @@ renderDoc bk st layout datum doc =
     `binding` documentExp bk datum doc
     & bindDefaults
     & evalOndimTWith st
-    <&> fmap (encodeUtf8 . renderWhiskers)
+    <&> fmap (encodeUtf8 . renderLaTeX)
