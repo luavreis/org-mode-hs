@@ -4,7 +4,15 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Org.Exporters.Common
-  ( module Org.Exporters.Common
+  ( ExportBackend (..)
+  , templateDir
+  , objectExp
+  , objectsExp
+  , elementExp
+  , elementsExp
+  , documentExp
+  , parserExpObjs
+  , parserExpElms
   , module Ondim
   )
 where
