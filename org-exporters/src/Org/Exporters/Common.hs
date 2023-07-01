@@ -39,9 +39,6 @@ data ExportBackend m = ExportBackend
 templateDir :: IO FilePath
 templateDir = (</> "templates") <$> getDataDir
 
-justOrIgnore :: Monad m => Maybe a -> (a -> Expansion m b) -> Expansion m b
-justOrIgnore = flip (maybe ignore)
-
 keywordsMap ::
   Monad m =>
   ExportBackend m ->
