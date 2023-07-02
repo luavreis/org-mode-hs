@@ -1,4 +1,6 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -8,6 +10,7 @@ import Data.Aeson
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Encoding (text)
 import Data.Char (isDigit, toLower)
+import Data.Data (Data)
 import Data.Map qualified as M
 import Data.Text qualified as T
 
@@ -19,6 +22,7 @@ data OrgDocument = OrgDocument
   , documentSections :: [OrgSection]
   }
   deriving (Eq, Ord, Read, Show, Generic)
+  deriving anyclass (NFData)
 
 lookupProperty :: Text -> OrgDocument -> Maybe Text
 lookupProperty k = M.lookup k . documentProperties
@@ -37,7 +41,8 @@ data OrgSection = OrgSection
   , sectionChildren :: [OrgElement]
   , sectionSubsections :: [OrgSection]
   }
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 lookupSectionProperty :: Text -> OrgSection -> Maybe Text
 lookupSectionProperty k = M.lookup k . sectionProperties
@@ -72,7 +77,8 @@ type Tags = [Tag]
 
 -- | The states in which a todo item can be
 data TodoState = Todo | Done
-  deriving (Eq, Ord, Show, Read, Generic)
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 instance ToJSON TodoState where
   toJSON Todo = "todo"
@@ -92,7 +98,8 @@ data TodoKeyword = TodoKeyword
   { todoState :: TodoState
   , todoName :: Text
   }
-  deriving (Show, Eq, Ord, Read, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 instance ToJSON TodoKeyword where
   toJSON (TodoKeyword s n) = object ["state" .= s, "name" .= n]
@@ -105,7 +112,8 @@ instance FromJSON TodoKeyword where
 data Priority
   = LetterPriority Char
   | NumericPriority Int
-  deriving (Show, Eq, Ord, Read, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 type Date = (Int, Int, Int, Maybe Text)
 
@@ -119,7 +127,8 @@ type DateTime = (Date, Maybe Time, Maybe TimestampMark, Maybe TimestampMark)
 data TimestampData
   = TimestampData Bool DateTime
   | TimestampRange Bool DateTime DateTime
-  deriving (Show, Eq, Ord, Read, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 -- | Planning information for a subtree/headline.
 data PlanningInfo = PlanningInfo
@@ -127,7 +136,8 @@ data PlanningInfo = PlanningInfo
   , planningDeadline :: Maybe TimestampData
   , planningScheduled :: Maybe TimestampData
   }
-  deriving (Show, Eq, Ord, Read, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 type Properties = Map Text Text
 
@@ -206,10 +216,12 @@ data OrgElement
       -- ^ Footnote name
       [OrgElement]
       -- ^ Footnote content
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 data QuoteType = SingleQuote | DoubleQuote
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 data SrcLine
   = SrcLine Text
@@ -220,7 +232,8 @@ data SrcLine
       -- ^ Reference name (how it appears)
       Text
       -- ^ Line contents
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 srcLineContent :: SrcLine -> Text
 srcLineContent (SrcLine c) = c
@@ -239,7 +252,8 @@ data KeywordValue
   = ValueKeyword Text
   | ParsedKeyword [OrgObject]
   | BackendKeyword [(Text, Text)]
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 instance Semigroup KeywordValue where
   (ValueKeyword t1) <> (ValueKeyword t2) = ValueKeyword (t1 <> "\n" <> t2)
@@ -270,15 +284,18 @@ keywordsFromList = M.fromListWith (flip (<>))
 -- Greater Blocks
 
 data GreaterBlockType = Center | Quote | Special Text
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 -- Lists
 
 data ListType = Ordered OrderedStyle | Descriptive | Unordered Char
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 data OrderedStyle = OrderedNum | OrderedAlpha
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 orderedStyle :: Text -> OrderedStyle
 orderedStyle (T.any isDigit -> True) = OrderedNum
@@ -288,13 +305,16 @@ orderedStyle _ = OrderedAlpha
 tag.
 -}
 data ListItem = ListItem Bullet (Maybe Int) (Maybe Checkbox) [OrgObject] [OrgElement]
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 data Bullet = Bullet Char | Counter Text Char
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 data Checkbox = BoolBox Bool | PartialBox
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 listItemType :: ListItem -> ListType
 listItemType (ListItem (Counter t _) _ _ _ _) = Ordered (orderedStyle t)
@@ -309,7 +329,8 @@ data BabelCall = BabelCall
   , babelCallHeader2 :: Text
   , babelCallArguments :: Text
   }
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 -- Tables
 
@@ -317,12 +338,14 @@ data TableRow
   = StandardRow [TableCell]
   | ColumnPropsRow [Maybe ColumnAlignment]
   | RuleRow
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 type TableCell = [OrgObject]
 
 data ColumnAlignment = AlignLeft | AlignCenter | AlignRight
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 -- * Objects (inline elements)
 
@@ -368,12 +391,14 @@ data OrgObject
     StatisticCookie
       (Either (Int, Int) Int)
       -- ^ Either [num1/num2] or [percent%].
-  deriving (Show, Eq, Ord, Read, Typeable, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 data FootnoteRefData
   = FootnoteRefLabel Text
   | FootnoteRefDef (Maybe Text) [OrgObject]
-  deriving (Show, Eq, Ord, Read, Typeable, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 type Protocol = Text
 
@@ -383,7 +408,8 @@ data LinkTarget
   = URILink Protocol Text
   | InternalLink Id
   | UnresolvedLink Text
-  deriving (Show, Eq, Ord, Read, Typeable, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 linkTargetToText :: LinkTarget -> Text
 linkTargetToText = \case
@@ -395,7 +421,8 @@ data FragmentType
   = RawFragment
   | InlMathFragment
   | DispMathFragment
-  deriving (Show, Eq, Ord, Read, Typeable, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 data Citation = Citation
   { citationStyle :: Text
@@ -404,45 +431,19 @@ data Citation = Citation
   , citationSuffix :: [OrgObject]
   , citationReferences :: [CiteReference]
   }
-  deriving (Show, Eq, Ord, Read, Typeable, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 data CiteReference = CiteReference
   { refId :: Text
   , refPrefix :: [OrgObject]
   , refSuffix :: [OrgObject]
   }
-  deriving (Show, Eq, Ord, Read, Typeable, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
 aesonOptions :: Aeson.Options
 aesonOptions =
   Aeson.defaultOptions
     { Aeson.fieldLabelModifier = Aeson.camelTo2 '-'
     }
-
-{- ORMOLU_DISABLE -}
-instance NFData OrgDocument
-instance NFData KeywordValue
-instance NFData FootnoteRefData
-instance NFData OrgObject
-instance NFData QuoteType
-instance NFData BabelCall
-instance NFData TimestampData
-instance NFData FragmentType
-instance NFData Citation
-instance NFData CiteReference
-instance NFData LinkTarget
-instance NFData OrgElement
-instance NFData GreaterBlockType
-instance NFData ListType
-instance NFData OrderedStyle
-instance NFData ListItem
-instance NFData Bullet
-instance NFData Checkbox
-instance NFData SrcLine
-instance NFData TableRow
-instance NFData ColumnAlignment
-instance NFData OrgSection
-instance NFData TodoKeyword
-instance NFData TodoState
-instance NFData Priority
-instance NFData PlanningInfo
