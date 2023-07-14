@@ -51,8 +51,7 @@ withContext_ ::
   OrgParser a ->
   OrgParser (a, end)
 withContext_ skip end p =
-  withContext__ skip end p
-    <&> \ ~(x, y, _) -> (x, y)
+  withContext__ skip end p <&> \(x, y, _) -> (x, y)
 {-# INLINEABLE withContext_ #-}
 
 withContext ::
@@ -88,7 +87,7 @@ withMContext ::
   OrgParser a
 withMContext skip end p =
   withMContext__ skip end p
-    <&> \ ~(x, _, _) -> x
+    <&> \(x, _, _) -> x
 {-# INLINEABLE withMContext #-}
 
 withBalancedContext ::

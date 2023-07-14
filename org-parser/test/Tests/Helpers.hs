@@ -18,6 +18,7 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Text.Pretty.Simple
 import Text.PrettyPrint (render, text)
+import Org.Parser (parseOrg)
 
 -- | This class is mainly used for the tests cases.
 -- @Parsed m a@ is the "monad-stripped" version of parse
@@ -28,7 +29,7 @@ class Parsable m a where
 
 instance Parsable OrgParser a where
   type Parsed OrgParser a = a
-  parse' p = parse (evalStateT p defaultState <* eof) ""
+  parse' p = parseOrg defaultOrgOptions (p <* eof) ""
 
 instance Parsable (Marked OrgParser) a where
   type Parsed (Marked OrgParser) a = a
@@ -40,7 +41,7 @@ instance PrettyFormable Properties where
 
 instance Parsable OrgParser OrgDocument where
   type Parsed OrgParser OrgDocument = OrgDocument
-  parse' p = parse (evalStateT p defaultState <* eof) ""
+  parse' p = parseOrg defaultOrgOptions (p <* eof) ""
 
 instance PrettyFormable OrgDocument where
   type PrettyForm OrgDocument = OrgDocument
@@ -53,6 +54,10 @@ class PrettyFormable a where
 instance PrettyFormable (Many a) where
   type PrettyForm (Many a) = [a]
   prettyForm = toList
+
+instance PrettyFormable OrgElementData where
+  type PrettyForm OrgElementData = OrgElementData
+  prettyForm = id
 
 prettyParse :: (Parsable m a, PrettyFormable (Parsed m a), Show (PrettyForm (Parsed m a))) => m a -> Text -> IO ()
 prettyParse parser txt =

@@ -38,7 +38,6 @@ section lvl = try $ do
   (title, tags, titleTxt) <- titleObjects
   planning <- option emptyPlanning planningInfo
   properties <- option mempty propertyDrawer
-  clearPendingAffiliated
   contents <- elements
   children <- many (section (level + 1))
   return
@@ -67,7 +66,7 @@ section lvl = try $ do
 
     endOfTitle :: OrgParser Tags
     endOfTitle = try $ do
-      skipSpaces
+      _ <- skipSpaces
       tags <- option [] (headerTags <* skipSpaces)
       void newline <|> eof
       return tags
@@ -132,9 +131,9 @@ planningInfo = try $ do
 -- within.
 propertyDrawer :: OrgParser Properties
 propertyDrawer = try $ do
-  skipSpaces
+  _ <- skipSpaces
   _ <- string' ":properties:"
-  skipSpaces
+  _ <- skipSpaces
   _ <- newline
   fromList <$> manyTill nodeProperty (try endOfDrawer)
   where

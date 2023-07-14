@@ -66,64 +66,66 @@ instance IsString OrgObjects where
 
 -- * Element builders
 
-para :: Keywords -> OrgObjects -> OrgElements
-para aff = one . Paragraph aff . toList
+element :: OrgElementData -> OrgElements
+element = one . OrgElement mempty
 
-export :: Text -> Text -> OrgElements
-export format = one . ExportBlock format
+element' :: [(Text, KeywordValue)] -> OrgElementData -> OrgElements
+element' aff = one . OrgElement (fromList aff)
+
+para :: OrgObjects -> OrgElementData
+para = Paragraph . toList
+
+export :: Text -> Text -> OrgElementData
+export = ExportBlock
 
 example ::
-  Keywords ->
   Map Text Text ->
   [SrcLine] ->
-  OrgElements
-example aff sw = one . ExampleBlock aff sw
+  OrgElementData
+example = ExampleBlock
 
 srcBlock ::
-  Keywords ->
   Text ->
   Map Text Text ->
   [(Text, Text)] ->
   [SrcLine] ->
-  OrgElements
-srcBlock aff lang sw args = one . SrcBlock aff lang sw args
+  OrgElementData
+srcBlock = SrcBlock
 
 greaterBlock ::
-  Keywords ->
   GreaterBlockType ->
   OrgElements ->
-  OrgElements
-greaterBlock aff btype = one . GreaterBlock aff btype . toList
+  OrgElementData
+greaterBlock btype = GreaterBlock btype . toList
 
 drawer ::
   Text ->
   OrgElements ->
-  OrgElements
-drawer name = one . Drawer name . toList
+  OrgElementData
+drawer name = Drawer name . toList
 
 latexEnvironment ::
-  Keywords ->
   Text ->
   Text ->
-  OrgElements
-latexEnvironment aff name = one . LaTeXEnvironment aff name
+  OrgElementData
+latexEnvironment = LaTeXEnvironment
+
+listItemUnord :: Char -> OrgElements -> ListItem
+listItemUnord s = ListItem (Bullet s) Nothing Nothing [] . toList
 
 list ::
-  Keywords ->
   ListType ->
   [ListItem] ->
-  OrgElements
-list aff kind = one . PlainList aff kind
+  OrgElementData
+list = PlainList
 
 orderedList ::
-  Keywords ->
   OrderedStyle ->
   Char ->
   [OrgElements] ->
-  OrgElements
-orderedList aff style separator =
-  one
-    . PlainList aff (Ordered style)
+  OrgElementData
+orderedList style separator =
+  PlainList (Ordered style)
     . zipWith (\b -> ListItem b Nothing Nothing [] . toList) bullets
   where
     bullets = case style of
@@ -131,12 +133,10 @@ orderedList aff style separator =
       OrderedAlpha -> [Counter (one a) separator | a <- ['a' ..]]
 
 descriptiveList ::
-  Keywords ->
   [(OrgObjects, OrgElements)] ->
-  OrgElements
-descriptiveList aff =
-  one
-    . PlainList aff Descriptive
+  OrgElementData
+descriptiveList =
+  PlainList Descriptive
     . map (\(tag, els) -> ListItem (Bullet '-') Nothing Nothing (toList tag) (toList els))
 
 parsedKeyword ::
@@ -157,8 +157,20 @@ attrKeyword = BackendKeyword
 keyword ::
   Text ->
   KeywordValue ->
-  OrgElements
-keyword key = one . Keyword key
+  OrgElementData
+keyword = Keyword
+
+footnoteDef :: Text -> OrgElements -> OrgElementData
+footnoteDef l = FootnoteDef l . toList
+
+horizontalRule :: OrgElementData
+horizontalRule = HorizontalRule
+
+table :: [TableRow] -> OrgElementData
+table = Table
+
+standardRow :: [OrgObjects] -> TableRow
+standardRow = StandardRow . map toList
 
 -- * Object builders
 
@@ -251,17 +263,5 @@ footnoteLabel = one . FootnoteRef . FootnoteRefLabel
 footnoteInlDef :: Maybe Text -> OrgObjects -> OrgObjects
 footnoteInlDef l = one . FootnoteRef . FootnoteRefDef l . toList
 
-footnoteDef :: Text -> OrgElements -> OrgElements
-footnoteDef l = one . FootnoteDef l . toList
-
 statisticCookie :: Either (Int, Int) Int -> OrgObjects
 statisticCookie = one . StatisticCookie
-
-horizontalRule :: OrgElements
-horizontalRule = one HorizontalRule
-
-table :: Keywords -> [TableRow] -> OrgElements
-table aff = one . Table aff
-
-standardRow :: [OrgObjects] -> TableRow
-standardRow = StandardRow . map toList

@@ -68,7 +68,7 @@ asciiAlpha =
   satisfy isAsciiAlpha
     <?> "a-z or A-Z character"
 
-manyAsciiAlpha :: MonadParser m => m Text
+manyAsciiAlpha :: OrgParser Text
 manyAsciiAlpha =
   takeWhileP
     (Just "a-z or A-Z characters")
@@ -80,34 +80,39 @@ someAsciiAlpha =
     (Just "a-z or A-Z characters")
     isAsciiAlpha
 
-someNonSpace :: MonadParser m => m Text
+someNonSpace :: OrgParser Text
 someNonSpace = takeWhile1P (Just "not whitespace") (not . isSpace)
 
 isSpaceOrTab :: Char -> Bool
 isSpaceOrTab c = c == ' ' || c == '\t'
 
-spaceOrTab :: MonadParser m => m Char
+spaceOrTab :: OrgParser Char
 spaceOrTab = satisfy isSpaceOrTab <?> "space or tab character"
 
-spacesOrTabs :: (MonadParser m, MonadState OrgParserState m) => m Int
-spacesOrTabs = try $ sum <$> many (oneSpace <|> oneTab)
+countSpaces :: Int -> Text -> Int
+countSpaces tabWidth = T.foldr go 0
   where
-    oneSpace = char ' ' $> 1
-    oneTab = char '\t' >> getsO orgSrcTabWidth
+    go ' ' = (+ 1)
+    go '\t' = (+ tabWidth)
+    go _ = id
 
-spacesOrTabs1 :: (MonadParser m, MonadState OrgParserState m) => m Int
-spacesOrTabs1 = sum <$> some (oneSpace <|> oneTab)
-  where
-    oneSpace = char ' ' $> 1
-    oneTab = char '\t' >> getsO orgSrcTabWidth
+spacesOrTabs :: OrgParser Int
+spacesOrTabs = do
+  tw <- getsO orgSrcTabWidth
+  countSpaces tw <$> skipSpaces
+
+spacesOrTabs1 :: OrgParser Int
+spacesOrTabs1 = do
+  tw <- getsO orgSrcTabWidth
+  countSpaces tw <$> skipSpaces1
 
 -- | Skips one or more spaces or tabs.
-skipSpaces1 :: MonadParser m => m ()
-skipSpaces1 = void $ takeWhile1P (Just "at least one space or tab whitespace") isSpaceOrTab
+skipSpaces1 :: MonadParser m => m Text
+skipSpaces1 = takeWhile1P (Just "at least one space or tab whitespace") isSpaceOrTab
 
 -- | Skips zero or more spaces or tabs.
-skipSpaces :: MonadParser m => m ()
-skipSpaces = void $ takeWhileP (Just "space or tab whitespace") isSpaceOrTab
+skipSpaces :: MonadParser m => m Text
+skipSpaces = takeWhileP (Just "spaces or tabs") isSpaceOrTab
 
 -- | Makes sure a value is Just, else fail with a custom
 -- error message.
@@ -170,8 +175,7 @@ parseFromText (prevPS, prevOS) txt parser = do
       -- concatenated) or must be handled
       -- manually like affiliated keywords.
       cOS
-        { orgStateLastChar = orgStateLastChar prevOS,
-          orgStatePendingAffiliated = orgStatePendingAffiliated prevOS
+        { orgStateLastChar = orgStateLastChar prevOS
         }
     )
   result <- parser
@@ -184,9 +188,7 @@ parseFromText (prevPS, prevOS) txt parser = do
         },
       aOS
         { orgStateLastChar =
-            orgStateLastChar cOS,
-          orgStatePendingAffiliated =
-            orgStatePendingAffiliated cOS
+            orgStateLastChar cOS
         }
     )
   pure result
