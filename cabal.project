@@ -12,6 +12,16 @@ source-repository-package
 
 source-repository-package
   type: git
+  location: https://github.com/lucasvreis/lvar.git
+  tag: b5c16f1f48a784bdb0578a663c3bb0d355fe0fc6
+
+source-repository-package
+  type: git
+  location: https://github.com/lucasvreis/unionmount.git
+  tag: 5fef2d328b5c15b9feec7ca0dd71d2d403c39941
+
+source-repository-package
+  type: git
   location: https://github.com/lucasvreis/ondim.git
   tag: db15203a73fe2fadb674330a19dbccfcd4a911e8
 
