@@ -8,12 +8,12 @@ package *
 source-repository-package
   type: git
   location: https://github.com/lucasvreis/multiwalk.git
-  tag: v0.1.0.0
+  tag: v0.3.0.0
 
 source-repository-package
   type: git
   location: https://github.com/lucasvreis/ondim.git
-  tag: 56702c73e5e55cd86ecbbb70a6c2c5647bb73f24
+  tag: db15203a73fe2fadb674330a19dbccfcd4a911e8
 
 constraints:
   fsnotify   >= 0.3 && < 0.4,

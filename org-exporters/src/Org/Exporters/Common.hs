@@ -21,12 +21,12 @@ import Data.Map qualified as Map
 import Data.Text qualified as T
 import Data.Time (Day, TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
 import Ondim
-import Ondim.Extra
+import Ondim.Extra.Expansions (assocsExp, ifElse, listExp, lookupAttr', mapExp)
 import Org.Data.Entities qualified as Data
 import Org.Exporters.Processing (resolveLinks, runPipeline)
 import Org.Exporters.Processing.OrgData
 import Org.Exporters.Processing.SpecialStrings (doSpecialStrings)
-import Org.Parser (evalOrgMaybe)
+import Org.Parser (parseOrgMaybe)
 import Org.Parser.Definitions (OrgOptions, OrgParser)
 import Org.Parser.Elements (elements)
 import Org.Parser.Objects (plainMarkupContext, standardSet)
@@ -100,7 +100,7 @@ parserExp ::
   GlobalExpansion m
 parserExp opts parser expand self = do
   txt <- fromMaybe "" <$> lookupAttr "text" self
-  case evalOrgMaybe opts parser txt of
+  case parseOrgMaybe opts parser txt of
     Just parsed ->
       let (solved, _) =
             runPipeline . getCompose $
@@ -135,7 +135,13 @@ objectsExp ::
   OrgData ->
   [OrgObject] ->
   ExpansionMap m
-objectsExp bk odata = listExp (namespace . objectExp bk odata)
+objectsExp bk odata objs = do
+  listExp (namespace . objectExp bk odata) objs
+  "" #* \inner ->
+    join <$> forM objs \obj ->
+      callExpansion "org:objects" inner
+        `binding` do
+          "this" #. objectExp bk odata obj
 
 objectExp ::
   forall m.
@@ -265,7 +271,13 @@ elementsExp ::
   OrgData ->
   [OrgElement] ->
   ExpansionMap m
-elementsExp bk odata = listExp (namespace . elementExp bk odata)
+elementsExp bk odata els = do
+  listExp (namespace . elementExp bk odata) els
+  "" #* \inner ->
+    join <$> forM els \el ->
+      callExpansion "org:elements" inner
+        `binding` do
+          "this" #. elementExp bk odata el
 
 elementDataExp ::
   forall m.
@@ -394,7 +406,14 @@ sectionsExp ::
   OrgData ->
   [OrgSection] ->
   ExpansionMap m
-sectionsExp bk odata sections = listExp (namespace . sameLevel) (groupByLevel sections)
+sectionsExp bk odata sections = do
+  let sections' = groupByLevel sections
+  listExp (namespace . sameLevel) sections'
+  "" #* \inner ->
+    join <$> forM sections' \section ->
+      callExpansion "org:sections" inner
+        `binding` do
+          "this" #. sameLevel section
   where
     hlevels = orgExportHeadlineLevels (exporterSettings odata)
     shift = headlineLevelShift (exporterSettings odata)
@@ -499,6 +518,10 @@ plainList bk odata kind items = do
       for_ cbox \cbox' -> "checkbox" #@ checkbox cbox'
       "descriptive-tag" #. objectsExp bk odata t
       "content" #. elementsExp bk odata c
+      case c of
+        [OrgElement _ (Paragraph o)] -> do
+          "plain" #. objectsExp bk odata o
+        _ -> pass
       where
         checkbox :: Checkbox -> Text
         checkbox (BoolBox True) = "true"
@@ -508,29 +531,23 @@ plainList bk odata kind items = do
 srcOrExample ::
   forall m.
   Monad m =>
-  ExportBackend m ->
-  Keywords ->
-  Text ->
   [SrcLine] ->
   ExpansionMap m
-srcOrExample (ExportBackend {..}) aff lang lins = do
+srcOrExample lins = do
   "lines" #. runLines
-  "lines-pretty" #: srcPretty aff lang (srcLinesToText lins)
   "content" #@ srcLinesToText lins
   where
     runLines :: ExpansionMap m
-    runLines = listExp (\x -> globalExpansion (lineExps x)) lins
+    runLines = listExp (\x -> namespace (lineExps x)) lins
 
-    lineExps (SrcLine c) inner =
-      switch "plain" inner
-        `binding` do
-          "content" #@ c
-    lineExps (RefLine i ref c) inner =
-      switch "ref" inner
-        `binding` do
-          "ref" #@ ref
-          "id" #@ i
-          "content" #@ c
+    lineExps (SrcLine c) = do
+      "type" #@ "plain"
+      "content" #@ c
+    lineExps (RefLine i ref c) = do
+      "type" #@ "ref"
+      "ref" #@ ref
+      "id" #@ i
+      "content" #@ c
 
 timestamp ::
   forall m.
@@ -575,13 +592,16 @@ timestamp ts =
     tsDate day input = do
       format <- toString <$> lookupAttr' "format" input
       let locale = defaultTimeLocale -- TODO
-      liftChildren input `binding` do
-        "value" #@ toText $ formatTime locale format day
+      return $
+        case ondimCast of
+          Just fT -> fT $ toText $ formatTime locale format day
+          Nothing -> []
 
     tsTime :: Maybe TimeOfDay -> GlobalExpansion m
     tsTime time input = do
       format <- toString <$> lookupAttr' "format" input
       let locale = defaultTimeLocale -- TODO
-      liftChildren input `binding` do
-        whenJust time \t ->
-          "value" #@ toText $ formatTime locale format t
+      return $
+        case (ondimCast, time) of
+          (Just fT, Just t) -> fT $ toText $ formatTime locale format t
+          _ -> []

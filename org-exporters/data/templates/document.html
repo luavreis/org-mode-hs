@@ -2,27 +2,27 @@
 <html>
   <head>
     <meta charset="utf-8"/>
-    <title @try><doc.kw.title/></title>
-    <extra:style/>
+    <e:try><title><e:doc.kw.title/></title></e:try>
+    <e:extra.style/>
   </head>
   <body>
-    <extra:toc>
+    <e:extra.toc>
       <h2>Table of Contents</h2>
-    </extra:toc>
+    </e:extra.toc>
 
-    <doc.children:list with=org:element/>
-    <doc.sections:list with=org:sections/>
+    <e:doc.children/>
+    <e:doc.sections/>
 
-    <doc.footnotes:nonempty>
+    <e:if doc.footnotes.nonempty>
       <br/>
       <div id="footnotes">
-        <doc.footnotes:list as=footnote>
+        <e:doc.footnotes.list as=footnote>
           <div class="footdef">
-            <a id="fn-!(footnote:key)" href="#fnr-!(footnote:key)">[<footnote:key />]</a>
-            <footnote:value/>
+            <a id="fn-${footnote.key}" href="#fnr-${footnote.key}">[<e:footnote.key />]</a>
+            <e:footnote.value/>
           </div>
-        </doc.footnotes:list>
+        </e:doc.footnotes.list>
       </div>
-    </doc.footnotes:nonempty>
+    </e:if>
   </body>
 </html>

@@ -1,43 +1,74 @@
-<o:bind my:headline>
+<e:bind my_headline>
   <span class="headline">
-    <span class="title"><section:title/></span>
-    <o:try><span class="priority !(section:priority)">Priority: <section:priority/></span></o:try>
-    <o:try><span class="todokw !(section.todo:state)"><section.todo:name/></span></o:try>
-    <section.tags:list tag><span class="tag tag-!(tag:value)"><tag:value/></span></o:list>
+    <e:try>
+      <span class="todokw ${section.todo.state} ${section.todo.name}">
+        ${section.todo.name}
+      </span>
+    </e:try>
+    <e:try>
+      <span class="priority ${section:priority}">
+        Priority: ${section:priority}
+      </span>
+    </e:try>
+    <span class="title"><e:section:title/></span>
+    <e:section.tags:list as=tag>
+      <span class="meta-item tag tag-${tag}">${tag}</span>
+    </e:section.tags:list>
   </span>
-</o:bind>
+</e:bind>
 
-<o:bind my:hlevel>
-  <o:match section:level>
-    <o:case 1><h1><my:hlevel:args/></h1></o:case>
-    <o:case 2><h2><my:hlevel:args/></h2></o:case>
-    <o:case 3><h3><my:hlevel:args/></h3></o:case>
-    <o:case 4><h4><my:hlevel:args/></h4></o:case>
-  </o:match>
-</o:bind>
-
-<o:match org.sections:type>
-
-  <o:case normal>
-    <org.sections:list section>
-      <section id="!(section:anchor)">
-        <my:hlevel><my:headline /></my:hlevel>
-        <section:children/>
-        <section:subsections/>
-      </section>
-    </org.sections:list>
-  </o:case>
-
-  <o:case over-level>
-    <ol>
-      <sections>
-        <li>
-          <a id="!(section:anchor)"></a><headline /><br />
-          <section:children/>
-          <section:subsections/>
+<e:bind my_planning>
+  <e:if section.planning.nonempty>
+    <ul class="planning">
+      <e:try>
+        <li class="scheduled">
+          Scheduled: <e:section:planning:scheduled/>
         </li>
-      </sections>
-    </ol>
-  </o:case>
+      </e:try>
+      <e:try>
+        <li class="deadline">
+          Deadline: <e:section:planning:deadline/>
+        </li>
+      </e:try>
+      <e:try>
+        <li class="closed">
+          Closed: <e:section:planning:closed/>
+        </li>
+      </e:try>
+    </ul>
+  </e:if>
+</e:bind>
 
-</o:match>
+<e:bind my_hlevel>
+  <e:match this.level>
+    <e:case 1><h2><e:caller.children/></h2></e:case>
+    <e:case 2><h3><e:caller.children/></h3></e:case>
+    <e:case 3><h4><e:caller.children/></h4></e:case>
+    <e:case 4><h5><e:caller.children/></h5></e:case>
+  </e:match>
+</e:bind>
+
+<e:match this.type>
+  <e:case normal>
+    <e:this:list as="section">
+      <section id="${section.anchor}">
+        <e:my_hlevel><e:my_headline /></e:my_hlevel>
+        <e:my_planning/>
+        <e:section:children/>
+        <e:section:subsections/>
+      </section>
+    </e:this:list>
+  </e:case>
+
+  <e:case over-level>
+    <ol>
+      <e:this:list as="section">
+        <li id="${section.anchor}">
+          <p><b><e:my_headline /></b></p>
+          <e:section:children/>
+          <e:section:subsections/>
+        </li>
+      </e:this:list>
+    </ol>
+  </e:case>
+</e:match>
