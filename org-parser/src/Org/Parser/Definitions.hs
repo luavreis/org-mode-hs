@@ -2,14 +2,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Org.Parser.Definitions
-  ( module Org.Parser.Definitions,
-    module Org.Types,
-    module Org.Builder,
-    module Org.Parser.State,
-    module Text.Megaparsec,
-    module Text.Megaparsec.Char,
-    module Text.Megaparsec.Debug,
-    module Data.Char,
+  ( module Org.Parser.Definitions
+  , module Org.Types
+  , module Org.Builder
+  , module Org.Parser.State
+  , module Text.Megaparsec
+  , module Text.Megaparsec.Char
+  , module Text.Megaparsec.Debug
+  , module Data.Char
   )
 where
 
@@ -26,26 +26,9 @@ type Parser = Parsec Void Text
 
 type MonadParser m = MonadParsec Void Text m
 
-type OrgParser = StateT OrgParserState Parser
+type OrgParser = ReaderT OrgParserEnv (StateT OrgParserState Parser)
 
 type OrgParseError = ParseErrorBundle Text Void
-
-registerAffiliated :: (Text, KeywordValue) -> OrgParser ()
-registerAffiliated kw =
-  updateState \s ->
-    s
-      { orgStatePendingAffiliated =
-          kw : orgStatePendingAffiliated s
-      }
-
-clearPendingAffiliated :: OrgParser ()
-clearPendingAffiliated = modify (\s -> s {orgStatePendingAffiliated = []})
-
-withAffiliated :: (Keywords -> a) -> OrgParser a
-withAffiliated f = do
-  affs <- gets orgStatePendingAffiliated
-  f (keywordsFromList affs)
-    <$ clearPendingAffiliated
 
 -- * Last char
 
@@ -59,32 +42,27 @@ clearLastChar = modify (\c -> c {orgStateLastChar = Nothing})
 putLastChar :: Char -> OrgParser ()
 putLastChar lchar = modify (\c -> c {orgStateLastChar = Just lchar})
 
--- * State and Future convenience functions
+withIndentLevel :: Int -> OrgParser a -> OrgParser a
+withIndentLevel i = local \s -> s {orgEnvIndentLevel = i}
+
+-- * State and Environment convenience functions
 
 type FullState = (State Text Void, OrgParserState)
 
-getState :: OrgParser OrgParserState
-getState = get
-
 getFullState :: OrgParser FullState
-getFullState = liftA2 (,) getParserState getState
+getFullState = liftA2 (,) getParserState get
 
 setFullState :: FullState -> OrgParser ()
 setFullState (pS, oS) = setParserState pS >> put oS
 
-updateState ::
-  (OrgParserState -> OrgParserState) ->
-  OrgParser ()
-updateState = modify
-
-getsO :: MonadState OrgParserState m => (OrgOptions -> a) -> m a
-getsO f = f <$> gets orgStateOptions
+getsO :: (OrgOptions -> a) -> OrgParser a
+getsO f = asks (f . orgEnvOptions)
 
 -- * Marked parsers
 
 data Marked m a = Marked
-  { getMarks :: String,
-    getParser :: m a
+  { getMarks :: String
+  , getParser :: m a
   }
 
 instance Functor m => Functor (Marked m) where

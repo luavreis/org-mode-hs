@@ -28,12 +28,12 @@ toAtoms :: MultiWalk MWTag a => a -> [Atom]
 toAtoms = buildMultiQ \f l ->
   l ?> objToAtoms f ?> elmToAtoms f
 
-elmToAtoms :: Query [Atom] -> OrgElement -> [Atom]
+elmToAtoms :: Query [Atom] -> OrgElementData -> [Atom]
 elmToAtoms f = (Separator :) . \case
   ExportBlock _ t -> [Literal t]
-  ExampleBlock _ _ t -> [Literal $ srcLinesToText t]
+  ExampleBlock _ t -> [Literal $ srcLinesToText t]
   SrcBlock {..} -> [Literal $ srcLinesToText srcBlkLines]
-  LaTeXEnvironment _ _ t -> [Literal t]
+  LaTeXEnvironment _ t -> [Literal t]
   x -> f x
 
 objToAtoms :: Query [Atom] -> OrgObject -> [Atom]
