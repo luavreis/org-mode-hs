@@ -287,10 +287,10 @@ elementDataExp ::
   OrgElementData ->
   ExpansionMap m
 elementDataExp bk odata@OrgData {..} = \case
-  (Paragraph [Link tgt []])
+  (Paragraph [l@(Link tgt [])])
     | isImgTarget (orgInlineImageRules exporterSettings) tgt -> do
         tag #@ "figure"
-        linkTarget tgt
+        objectExp bk odata l
   (Paragraph c) -> do
     tag #@ "paragraph"
     content #. objectsExp bk odata c
