@@ -1,3 +1,0 @@
-``` {class="!(language)" affiliated=""}
-!(content)
-```

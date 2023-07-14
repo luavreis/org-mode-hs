@@ -5,19 +5,12 @@
 
 module Org.Exporters.HTML where
 
-import Control.Exception (throw)
-import Data.ByteString.Builder (toLazyByteString)
 import Data.Map qualified as Map
-import Ondim.Extra
-import Ondim.Targets.HTML
 import Org.Exporters.Common
-import Org.Exporters.Processing.OrgData (OrgData)
 import Org.Types
-import System.FilePath
-import Text.XmlHtml qualified as X
 
-defHtmlBackend :: Monad m => ExportBackend m
-defHtmlBackend =
+defBackend :: Monad m => ExportBackend m
+defBackend =
   let affiliatedMap kws =
         "affiliated" ## const $ pure affAttrs
         where
@@ -32,49 +25,3 @@ defHtmlBackend =
       customElement _ _ _ = Nothing
       customObject _ _ _ = Nothing
    in ExportBackend {..}
-
-loadLayout :: FilePath -> IO X.Document
-loadLayout dir = do
-  let file = dir </> "document.tpl"
-  text <- readFileBS file
-  case X.parseHTML file text of
-    Left s -> throw (TemplateLoadingException s)
-    Right t -> pure t
-
-render' :: X.Document -> LByteString
-render' = toLazyByteString . X.render
-
-render ::
-  Monad m =>
-  OndimState m ->
-  Ondim m X.Document ->
-  m (Either OndimException LByteString)
-render st spl =
-  evalOndimTWith st spl
-    <&> fmap render'
-
-renderFragment' :: [HtmlNode] -> LByteString
-renderFragment' = toLazyByteString . X.renderHtmlFragment X.UTF8 . toNodeList
-
-renderFragment ::
-  Monad m =>
-  OndimState m ->
-  Ondim m [HtmlNode] ->
-  m (Either OndimException LByteString)
-renderFragment st spl =
-  evalOndimTWith st spl <&> fmap renderFragment'
-
-renderDoc ::
-  Monad m =>
-  ExportBackend m ->
-  OndimState m ->
-  X.Document ->
-  OrgData ->
-  OrgDocument ->
-  m (Either OndimException LByteString)
-renderDoc bk st layout datum doc =
-  liftSubstructures layout
-    `binding` documentExp bk datum doc
-    & bindDefaults
-    & evalOndimTWith st
-    <&> fmap render'

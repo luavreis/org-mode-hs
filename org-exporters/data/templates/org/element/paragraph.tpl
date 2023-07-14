@@ -1,3 +1,0 @@
-<p affiliated>
-  <content />
-</p>
