@@ -161,14 +161,14 @@ resolveObjects r f = \case
 resolveElements ::
   WalkM (Compose M F) ->
   WalkM (Compose M F) ->
-  OrgElement ->
-  Compose M F OrgElement
+  OrgElementData ->
+  Compose M F OrgElementData
 resolveElements r f = \case
   fd@(FootnoteDef label stuff) ->
     Compose $ do
       stuff' <- getCompose $ traverse r stuff
       registerFootnote label (Right <$> stuff') $> pure fd
-  (PlainList aff t i) -> PlainList aff t <$> resolveListItems r i
+  (PlainList t i) -> PlainList t <$> resolveListItems r i
   kw@(Keyword k _) -> do
     Compose $ do
       kw' <- getCompose $ f kw

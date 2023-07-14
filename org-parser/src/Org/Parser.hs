@@ -1,9 +1,10 @@
 module Org.Parser
   ( defaultOrgOptions,
     OrgOptions (..),
-    evalOrgMaybe,
+    parseOrgMaybe,
     parseOrg,
-    parseOrgIO,
+    parseOrgDoc,
+    parseOrgDocIO,
   )
 where
 
@@ -12,17 +13,20 @@ import Org.Parser.Document
 
 -- | Wrapper around 'parseMaybe' that evaluates the Org Parser state with the
 -- desired options.
-evalOrgMaybe :: OrgOptions -> OrgParser a -> Text -> Maybe a
-evalOrgMaybe opt = parseMaybe . (`evalStateT` defaultState {orgStateOptions = opt})
+parseOrgMaybe :: OrgOptions -> OrgParser a -> Text -> Maybe a
+parseOrgMaybe opt p = rightToMaybe . parseOrg opt p ""
+
+parseOrg :: OrgOptions -> OrgParser a -> FilePath -> Text -> Either OrgParseError a
+parseOrg opt = parse . (`evalStateT` defaultState) . (`runReaderT` defaultEnv {orgEnvOptions = opt})
 
 -- | Parse an Org document fully, with given options, and a filepath for error messages.
-parseOrg :: OrgOptions -> FilePath -> Text -> Either OrgParseError OrgDocument
-parseOrg opt = parse (evalStateT orgDocument defaultState {orgStateOptions = opt})
+parseOrgDoc :: OrgOptions -> FilePath -> Text -> Either OrgParseError OrgDocument
+parseOrgDoc opt = parseOrg opt orgDocument
 
 -- | Parse an Org document in a UTF8 file, with given options.
-parseOrgIO :: MonadIO m => OrgOptions -> FilePath -> m OrgDocument
-parseOrgIO opt fp = do
+parseOrgDocIO :: MonadIO m => OrgOptions -> FilePath -> m OrgDocument
+parseOrgDocIO opt fp = do
   text <- readFileBS fp
-  case parseOrg opt fp $ decodeUtf8 text of
+  case parseOrgDoc opt fp $ decodeUtf8 text of
     Left e -> error . toText $ errorBundlePretty e
     Right d -> pure d

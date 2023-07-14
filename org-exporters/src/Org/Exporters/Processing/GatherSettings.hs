@@ -2,7 +2,7 @@ module Org.Exporters.Processing.GatherSettings where
 
 import Data.Text qualified as T
 import Org.Exporters.Processing.OrgData
-import Org.Types (KeywordValue (..), OrgDocument (..), OrgElement (..))
+import Org.Types (KeywordValue (..), OrgDocument (..), OrgElementData (..))
 import Org.Walk
 
 registerFiletags :: KeywordValue -> M ()
@@ -12,7 +12,7 @@ registerFiletags = \case
       return s {filetags = filetags s ++ filter (not . T.null) (T.split (== ':') tags)}
   _ -> pure ()
 
-getKeywordSetting :: OrgElement -> Ap M ()
+getKeywordSetting :: OrgElementData -> Ap M ()
 getKeywordSetting = \case
   -- Keyword "exclude_tags" _ -> error "todo" TODO
   -- Keyword "select_tags" _ -> error "todo"

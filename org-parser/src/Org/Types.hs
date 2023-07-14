@@ -144,12 +144,14 @@ type Properties = Map Text Text
 -- * Elements
 
 -- | Org element. Like a Pandoc Block.
-data OrgElement
+data OrgElement = OrgElement {affiliatedKeywords :: Keywords, elementData :: OrgElementData}
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
+
+data OrgElementData
   = -- | Greater block
     GreaterBlock
-      { affKws :: Keywords
-      -- ^ Affiliated keywords
-      , blkType :: GreaterBlockType
+      { blkType :: GreaterBlockType
       -- ^ Greater block type
       , blkElements :: [OrgElement]
       -- ^ Greater block elements
@@ -163,9 +165,7 @@ data OrgElement
       }
   | -- | Plain list
     PlainList
-      { affKws :: Keywords
-      -- ^ Affiliated keywords
-      , listType :: ListType
+      { listType :: ListType
       -- ^ List types
       , listItems :: [ListItem]
       -- ^ List items
@@ -178,17 +178,13 @@ data OrgElement
       -- ^ Contents
   | -- | Example block
     ExampleBlock
-      Keywords
-      -- ^ Affiliated keywords
       (Map Text Text)
       -- ^ Switches
       [SrcLine]
       -- ^ Contents
   | -- | Source blocks
     SrcBlock
-      { affKws :: Keywords
-      -- ^ Affiliated keywords
-      , srcBlkLang :: Text
+      { srcBlkLang :: Text
       -- ^ Language
       , srcBlkSwitches :: Map Text Text
       -- ^ Switches
@@ -197,25 +193,25 @@ data OrgElement
       , srcBlkLines :: [SrcLine]
       -- ^ Contents
       }
-  | VerseBlock Keywords [[OrgObject]]
+  | VerseBlock [[OrgObject]]
   | HorizontalRule
   | Keyword
       { keywordKey :: Text
       , keywordValue :: KeywordValue
       }
   | LaTeXEnvironment
-      Keywords
       Text
       -- ^ Environment name
       Text
       -- ^ Environment contents
-  | Paragraph Keywords [OrgObject]
-  | Table Keywords [TableRow]
+  | Paragraph [OrgObject]
+  | Table [TableRow]
   | FootnoteDef
       Text
       -- ^ Footnote name
       [OrgElement]
       -- ^ Footnote content
+  | Comment
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 

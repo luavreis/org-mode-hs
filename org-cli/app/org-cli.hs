@@ -43,7 +43,7 @@ main = do
         O.StdInput -> (,"stdin") <$> T.getContents
         O.FileInput f -> (,f) . decodeUtf8 <$> readFileBS f
       parsed <-
-        case parseOrg defaultOrgOptions fp txt of -- TODO org options
+        case parseOrgDoc defaultOrgOptions fp txt of -- TODO org options
           Left e -> do
             putTextLn
               "There was an error parsing your Org file.\n\

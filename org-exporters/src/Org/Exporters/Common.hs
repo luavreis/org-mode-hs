@@ -267,6 +267,76 @@ elementsExp ::
   ExpansionMap m
 elementsExp bk odata = listExp (namespace . elementExp bk odata)
 
+elementDataExp ::
+  forall m.
+  Monad m =>
+  ExportBackend m ->
+  OrgData ->
+  OrgElementData ->
+  ExpansionMap m
+elementDataExp bk odata@OrgData {..} = \case
+  (Paragraph [Link tgt []])
+    | isImgTarget (orgInlineImageRules exporterSettings) tgt -> do
+        tag #@ "figure"
+        linkTarget tgt
+  (Paragraph c) -> do
+    tag #@ "paragraph"
+    content #. objectsExp bk odata c
+  (GreaterBlock Quote c) -> do
+    tag #@ "quote-block"
+    content #. expEls c
+  (GreaterBlock Center c) -> do
+    tag #@ "center-block"
+    content #. expEls c
+  (GreaterBlock (Special cls) c) -> do
+    tag #@ "special-block"
+    "name" #@ cls
+    content #. expEls c
+  (PlainList k i) -> do
+    tag #@ "plain-list"
+    plainList bk odata k i
+  (Drawer name els) -> do
+    tag #@ "drawer"
+    content #. expEls els
+    "name" #@ name
+  (ExportBlock backend code) -> do
+    tag #@ "export-block"
+    "backend" #@ backend
+    content #@ code
+  (ExampleBlock _ c) -> do
+    tag #@ "example-block"
+    srcOrExample c
+  (SrcBlock lang _ attrs c) -> do
+    tag #@ "src-block"
+    srcOrExample c
+    "language" #@ lang
+    "attributes" #. assocsExp textData attrs
+  (LaTeXEnvironment env text) -> do
+    tag #@ "latex-environment"
+    "name" #@ env
+    content #@ text
+  (Table rs) -> do
+    tag #@ "table"
+    table bk odata rs
+  HorizontalRule ->
+    tag #@ "horizontal-rule"
+  Keyword k v -> do
+    tag #@ "keyword"
+    "key" #@ k
+    case v of
+      ValueKeyword v' -> do
+        "value" #@ v'
+      ParsedKeyword v' -> do
+        "value" #. objectsExp bk odata v'
+      _ -> pass
+  FootnoteDef {} -> pass
+  Comment {} -> pass
+  VerseBlock {} -> pass -- TODO
+  where
+    tag = "tag"
+    content = "content"
+    expEls = elementsExp bk odata
+
 elementExp ::
   forall m.
   Monad m =>
@@ -274,84 +344,11 @@ elementExp ::
   OrgData ->
   OrgElement ->
   ExpansionMap m
-elementExp bk@ExportBackend {..} odata@OrgData {..} el = do
-  (`fromMaybe` customElement bk odata el)
-    case el of
-      (Paragraph aff [Link tgt []])
-        | isImgTarget (orgInlineImageRules exporterSettings) tgt -> do
-            tag #@ "figure"
-            affMap aff
-            linkTarget tgt
-      (Paragraph aff c) -> do
-        tag #@ "paragraph"
-        affMap aff
-        content #. objectsExp bk odata c
-      (GreaterBlock aff Quote c) -> do
-        tag #@ "quote-block"
-        affMap aff
-        content #. expEls c
-      (GreaterBlock aff Center c) -> do
-        tag #@ "center-block"
-        affMap aff
-        content #. expEls c
-      (GreaterBlock aff (Special cls) c) -> do
-        tag #@ "special-block"
-        affMap aff
-        "name" #@ cls
-        content #. expEls c
-      (PlainList aff k i) -> do
-        tag #@ "plain-list"
-        affMap aff
-        plainList bk odata k i
-      (Drawer name els) -> do
-        tag #@ "drawer"
-        content #. expEls els
-        "name" #@ name
-      (ExportBlock backend code) -> do
-        tag #@ "export-block"
-        "backend" #@ backend
-        content #@ code
-      (ExampleBlock aff _ c) -> do
-        tag #@ "example-block"
-        affMap aff
-        srcOrExample bk aff "" c
-        content #@ srcLinesToText c
-      (SrcBlock aff lang _ attrs c) -> do
-        tag #@ "src-block"
-        affMap aff
-        srcOrExample bk aff lang c
-        "language" #@ lang
-        content #@ srcLinesToText c
-        "attributes" #. assocsExp textData attrs
-      (LaTeXEnvironment aff env text) -> do
-        tag #@ "latex-environment"
-        affMap aff
-        "name" #@ env
-        content #@ text
-      (Table aff rs) -> do
-        tag #@ "table"
-        affMap aff
-        table bk odata rs
-      HorizontalRule ->
-        tag #@ "horizontal-rule"
-      Keyword k v -> do
-        tag #@ "keyword"
-        "key" #@ k
-        case v of
-          ValueKeyword v' -> do
-            "value" #@ v'
-          ParsedKeyword v' -> do
-            "value" #. objectsExp bk odata v'
-          _ -> pass
-      FootnoteDef {} -> pass
-      VerseBlock {} -> pass -- TODO
-  where
-    tag = "tag"
-    content = "content"
-    expEls = elementsExp bk odata
-    affMap aff = do
-      affiliatedMap aff
-      "akw" #. keywordsMap bk odata aff
+elementExp bk@ExportBackend {..} odata el@(OrgElement aff eldata) = do
+  (`fromMaybe` customElement bk odata el) do
+    elementDataExp bk odata eldata
+    affiliatedMap aff
+    "akw" #. keywordsMap bk odata aff
 
 sectionExp ::
   Monad m =>
@@ -434,7 +431,7 @@ documentExp bk odata (OrgDocument {..}) = do
     fnExp =
       namespace
         . elementsExp bk odata
-        . either (one . Paragraph mempty) id
+        . either (one . OrgElement mempty . Paragraph) id
 
 table ::
   forall m.
