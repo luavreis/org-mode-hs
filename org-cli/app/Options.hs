@@ -10,19 +10,24 @@ data AppCmd
   | CmdInitTemplates
 
 data AppOptions = AppOptions
-  { backend :: BackendOptions,
-    input :: Input,
-    output :: Output
+  { backend :: BackendOptions
+  , input :: Input
+  , output :: Output
   }
 
 data BackendOptions
   = AST {pretty :: Bool}
-  | HTML {ondimOptions :: OndimOptions}
-  | LaTeX {ondimOptions :: OndimOptions}
-  | Pandoc {formatSpec :: Text, template :: Maybe FilePath, ondimOptions :: OndimOptions}
+  | Ondim {ondimOptions :: OndimOptions}
 
-newtype OndimOptions = OndimOptions
-  { templateDir :: Maybe FilePath
+data OndimFormat
+  = HTML
+  | Pandoc
+  | LaTeX
+
+data OndimOptions = OndimOptions
+  { format :: OndimFormat
+  , templateDir :: Maybe FilePath
+  , layout :: Text
   }
 
 appCmd :: ParserInfo AppCmd
@@ -41,11 +46,13 @@ appCmd =
                   (pure CmdInitTemplates)
                   (progDesc "Creates a '.horg' directory with the default Ondim template files for all available formats")
               )
-        ) <**> helper
+        )
+        <**> helper
     )
     ( fullDesc
-        <> progDesc "horg is a parser for Org Mode documents with customizable exporters.\
-                    \ Use --help for more info."
+        <> progDesc
+          "horg is a parser for Org Mode documents with customizable exporters.\
+          \ Use --help for more info."
         <> header "horg - parse and export your Org documents."
     )
 
@@ -65,10 +72,16 @@ falsityShow = showDefaultWith $ \case
   True -> "t"
   False -> "nil"
 
-ondimOptions' :: Parser OndimOptions
-ondimOptions' =
-  OndimOptions
+ondimOptions' :: OndimFormat -> Parser OndimOptions
+ondimOptions' fmt =
+  OndimOptions fmt
     <$> optional (strOption (long "template-dir" <> metavar "DIR"))
+    <*> strOption (long "layout" <> metavar "NAME" <> value ("document." <> ext) <> showDefault)
+  where
+    ext = case fmt of
+      HTML -> "html"
+      Pandoc -> "md"
+      LaTeX -> "tex"
 
 backend' :: Parser BackendOptions
 backend' =
@@ -76,36 +89,13 @@ backend' =
     ( command "ast" (info ast (progDesc "Export the parsed AST"))
         <> command "html" (info html (progDesc "Export to HTML using Ondim."))
         <> command "latex" (info latex (progDesc "Export to LaTeX using Ondim."))
-        <> command
-          "pandoc"
-          ( info
-              pandoc
-              ( progDesc
-                  "Export to Pandoc using Ondim \
-                  \(and then to the Pandoc writer of your choice, see FORMAT-SPEC).\n\
-                  \For more advanced Pandoc options, please pipe the generated JSON into the pandoc command."
-              )
-          )
+        <> command "pandoc" (info pandoc (progDesc "Export to Pandoc JSON using Ondim."))
     )
   where
     ast = AST . not <$> switch (long "no-pretty" <> help "Disable pretty-printing of the parsed AST")
-    html = HTML <$> ondimOptions'
-    latex = LaTeX <$> ondimOptions'
-    pandoc =
-      Pandoc
-        <$> strArgument
-          ( metavar "FORMAT-SPEC"
-              <> help "Format spec used by the Pandoc writer. See the Pandoc documentation for a list of available writers and extensions."
-              <> value "json"
-          )
-        <*> optional
-          ( strOption
-              ( long "template"
-                  <> metavar "FILEPATH"
-                  <> help "Template used by the Pandoc writer. See the Pandoc documentation for help with such templates."
-              )
-          )
-        <*> ondimOptions'
+    html = Ondim <$> ondimOptions' HTML
+    latex = Ondim <$> ondimOptions' LaTeX
+    pandoc = Ondim <$> ondimOptions' Pandoc
 
 data Input
   = FileInput FilePath

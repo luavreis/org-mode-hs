@@ -1,16 +1,16 @@
 <div id="table-of-contents">
-  <extra.toc:content/>
-  <o:scope>
-    <o:bind t:org.sections>
+  <e:caller.children/>
+  <e:scope>
+    <e:bind org.sections>
       <ul>
-        <org.sections:list section>
+        <e:this.list section>
           <li>
-            <a href="#!(section:anchor)"><section:headline/></a>
-            <section:subsections/>
+            <a href="#${this.anchor}"><e:this.title/></a>
+            <e:this.subsections/>
           </li>
-        </org.sections:list>
+        </e:this.list>
       </ul>
-    </o:bind>
-    <org.document:sections/>
-  </o:scope>
+    </e:bind>
+    <e:doc.sections/>
+  </e:scope>
 </div>
