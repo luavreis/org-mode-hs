@@ -104,12 +104,115 @@ testElements =
                       )
                       <> B.element (B.para "I don't have a caption")
         ]
-    , -- Add case for affiliated keywords with:
-      -- Add case showing preservation of state of end parser
-      -- Add case showing preservation of state from inside to outside markupContext
-      "Ordered Lists in context" ~: elements $
+    , "Ordered Lists" ~: plainList $
         [ --
           unlines
+            [ "1. our"
+            , "2. moment's"
+            , "3. else's"
+            ]
+            =?> B.orderedList OrderedNum '.' ["our", "moment's", "else's"]
+        ]
+    , "Descriptive Lists" ~: plainList $
+        [ "- foo ::   bar"
+            =?> B.descriptiveList [("foo", "bar")]
+        , "- foo bar  :: baz"
+            =?> B.descriptiveList [("foo bar", "baz")]
+        , "-   :: ::" =?> B.descriptiveList [("::", mempty)]
+        , "-   :: foo ::" =?> B.descriptiveList [(":: foo", mempty)]
+        , "-   :: :: bar" =?> B.descriptiveList [("::", "bar")]
+        , "-  ::  :::" =?> B.list (Unordered '-') [B.listItemUnord '-' "::  :::"]
+        , "- /foo/ :: bar"
+            =?> B.descriptiveList [(B.italic "foo", "bar")]
+        , "- [[foo][bar]] :: bar"
+            =?> B.descriptiveList [(B.link (UnresolvedLink "foo") "bar", "bar")]
+        , "- [[foo:prot.co][bar baz]] :: bla :: ble"
+            =?> B.descriptiveList [(B.link (URILink "foo" "prot.co") "bar baz", "bla :: ble")]
+        ]
+    , "Lists in context" ~: elements $
+        [ --
+          unlines
+            [ "- foo bar"
+            , ""
+            , "  #+caption: foo"
+            , "bla"
+            ]
+            =?> B.element
+              ( B.list
+                  (Unordered '-')
+                  [ B.listItemUnord '-' $
+                      "foo bar" <> B.element (B.keyword "caption" $ B.parsedKeyword "foo")
+                  ]
+              )
+            <> "bla"
+        , unlines
+            [ "- foo bar"
+            , "#+caption: foo"
+            , "  bla"
+            ]
+            =?> B.element
+              ( B.list
+                  (Unordered '-')
+                  [ B.listItemUnord '-' "foo bar"
+                  ]
+              )
+            <> B.element' [("caption", B.parsedKeyword "foo")] (B.para "bla")
+        , unlines
+            [ "- "
+            , " * "
+            , " - foo"
+            , " -"
+            , " + "
+            , "+"
+            ]
+            =?> B.element
+              ( B.list
+                  (Unordered '-')
+                  [ B.listItemUnord '-' $
+                      B.element $
+                        B.list
+                          (Unordered '*')
+                          [ B.listItemUnord '*' mempty
+                          , B.listItemUnord '-' "foo"
+                          , B.listItemUnord '-' mempty
+                          , B.listItemUnord '+' mempty
+                          ]
+                  , B.listItemUnord '+' mempty
+                  ]
+              )
+        , unlines
+            [ "- "
+            , ""
+            , "- foo"
+            , "  "
+            , "  "
+            , " * bar"
+            , " *"
+            , ""
+            , ""
+            , " - doo"
+            ]
+            =?> B.element
+              ( B.list
+                  (Unordered '-')
+                  [ B.listItemUnord '-' mempty
+                  , B.listItemUnord '-' "foo"
+                  ]
+              )
+            <> B.element
+              ( B.list
+                  (Unordered '*')
+                  [ B.listItemUnord '*' "bar"
+                  , B.listItemUnord '*' mempty
+                  ]
+              )
+            <> B.element
+              ( B.list
+                  (Unordered '-')
+                  [ B.listItemUnord '-' "doo"
+                  ]
+              )
+        , unlines
             [ " "
             , " 1. our"
             , " 2. moment's"
@@ -121,27 +224,6 @@ testElements =
                   '.'
                   (map (B.element . B.para) ["our", "moment's", "else's"])
               )
-        ]
-    , "Ordered Lists" ~: plainList $
-        [ --
-          unlines
-            [ "1. our"
-            , "2. moment's"
-            , "3. else's"
-            ]
-            =?> B.orderedList OrderedNum '.' (B.element . B.para <$> ["our", "moment's", "else's"])
-        ]
-    , "Descriptive Lists" ~: plainList $
-        [ "- foo ::   bar"
-            =?> B.descriptiveList [("foo", B.element $ B.para "bar")]
-        , "- foo bar  :: baz"
-            =?> B.descriptiveList [("foo bar", B.element $ B.para "baz")]
-        , "- /foo/ :: bar"
-            =?> B.descriptiveList [(B.italic "foo", B.element $ B.para "bar")]
-        , "- [[foo][bar]] :: bar"
-            =?> B.descriptiveList [(B.link (UnresolvedLink "foo") "bar", B.element $ B.para "bar")]
-        , "- [[foo:prot.co][bar baz]] :: bla :: ble"
-            =?> B.descriptiveList [(B.link (URILink "foo" "prot.co") "bar baz", B.element $ B.para "bla :: ble")]
         ]
     , "Greater Blocks" ~: greaterBlock $
         [ --
