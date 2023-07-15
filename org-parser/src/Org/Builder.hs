@@ -64,6 +64,9 @@ instance Monoid OrgObjects where
 instance IsString OrgObjects where
   fromString = plain . T.pack
 
+instance IsString OrgElements where
+  fromString = element . para . plain . T.pack
+
 -- * Element builders
 
 element :: OrgElementData -> OrgElements

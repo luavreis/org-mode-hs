@@ -1,5 +1,6 @@
 module Org.Parser.Objects where
 
+import Data.Set qualified as Set
 import Data.Text qualified as T
 import Org.Builder qualified as B
 import Org.Data.Entities (defaultEntitiesNames)
@@ -13,37 +14,37 @@ import Prelude hiding (many, some)
 minimalSet :: Marked OrgParser OrgObjects
 minimalSet =
   mconcat
-    [ endline,
-      code,
-      verbatim,
-      italic,
-      underline,
-      bold,
-      striketrough,
-      mathFragment,
-      texMathFragment,
-      entityOrFragment,
-      singleQuoted,
-      doubleQuoted,
-      suscript,
-      statisticCookie,
-      macro
+    [ endline
+    , code
+    , verbatim
+    , italic
+    , underline
+    , bold
+    , striketrough
+    , mathFragment
+    , texMathFragment
+    , entityOrFragment
+    , singleQuoted
+    , doubleQuoted
+    , suscript
+    , statisticCookie
+    , macro
     ]
 
 standardSet :: Marked OrgParser OrgObjects
 standardSet =
   mconcat
-    [ minimalSet,
-      regularLinkOrImage,
-      footnoteReference,
-      timestamp,
-      exportSnippet,
-      inlBabel,
-      inlSrc,
-      linebreak,
-      target,
-      angleLink,
-      citation
+    [ minimalSet
+    , regularLinkOrImage
+    , footnoteReference
+    , timestamp
+    , exportSnippet
+    , inlBabel
+    , inlSrc
+    , linebreak
+    , target
+    , angleLink
+    , citation
     ]
 
 plainMarkupContext :: Marked OrgParser OrgObjects -> OrgParser OrgObjects
@@ -55,11 +56,24 @@ newlineAndClear = newline <* clearLastChar
 newlineAndClear' :: OrgParser ()
 newlineAndClear' = newline' <* clearLastChar
 
-emphasisPreChars :: String
-emphasisPreChars = "-\t\n ('\"{\8203"
+emphasisPreChars :: Set Char
+emphasisPreChars = fromList "-('\"{"
 
-emphasisPostChars :: String
-emphasisPostChars = " ,.-\t\n:!?;'\")}[\8203"
+emphPreChar :: Char -> Bool
+emphPreChar c = isSpace c || c `Set.member` emphasisPreChars
+
+emphasisPre :: Char -> OrgParser ()
+emphasisPre s = try $ do
+  lchar <- gets orgStateLastChar
+  for_ lchar $ guard . emphPreChar
+  _ <- char s
+  notFollowedBy spaceChar
+
+emphasisPostChars :: Set Char
+emphasisPostChars = fromList "-.,;:!?'\")}\\["
+
+emphPostChar :: Char -> Bool
+emphPostChar c = isSpace c || c `Set.member` emphasisPostChars
 
 emphasisPost :: Char -> OrgParser ()
 emphasisPost e = try $ do
@@ -67,16 +81,13 @@ emphasisPost e = try $ do
   for_ lchar $ guard . not . isSpace
   _ <- char e
   putLastChar e
-  lookAhead
-    (eof <|> void (satisfy (`elem` emphasisPostChars)))
+  lookAhead (eof <|> void (satisfy emphPostChar))
 
-emphasisPre :: Char -> OrgParser ()
-emphasisPre s = try $ do
-  lchar <- gets orgStateLastChar
-  for_ lchar $ guard . (`elem` emphasisPreChars)
-  _ <- char s
-  clearLastChar
-  notFollowedBy spaceChar
+emphasisSkip :: Char -> OrgParser ()
+emphasisSkip s = try $ do
+  putLastChar =<< anySingle
+  t <- takeWhileP Nothing (/= s)
+  setLastChar (snd <$> T.unsnoc t)
 
 markup ::
   (OrgObjects -> OrgObjects) ->
@@ -85,7 +96,10 @@ markup ::
 markup f c = Marked [c] $
   try $ do
     emphasisPre c
-    f <$> withMContext (/= c) (emphasisPost c) (plainMarkupContext standardSet)
+    st <- getFullState
+    s <- anySingle
+    (t, _) <- skipManyTill' (emphasisSkip c) (emphasisPost c)
+    f <$> parseFromText st (T.cons s t) (plainMarkupContext standardSet)
 
 rawMarkup ::
   (Text -> OrgObjects) ->
@@ -94,7 +108,7 @@ rawMarkup ::
 rawMarkup f d = Marked [d] $
   try $ do
     emphasisPre d
-    f <$> withMContext (/= d) (emphasisPost d) getInput
+    f . fst <$> skipManyTill' (emphasisSkip d) (emphasisPost d)
 
 code :: Marked OrgParser OrgObjects
 code = rawMarkup B.code '~'
@@ -245,18 +259,18 @@ orgCite = try $ do
   (style, variant) <- citeStyle
   _ <- char ':'
   space
-  globalPrefix <- option mempty (try (citePrefix <* char ';'))
+  globalPrefix <- option mempty (try (citeSuffix <* char ';'))
   items <- citeItems
-  globalSuffix <- option mempty (try (char ';' *> citeSuffix))
+  globalSuffix <- option mempty (try (char ';' *> citePrefix))
   space
   eof
   return
     Citation
-      { citationStyle = style,
-        citationVariant = variant,
-        citationPrefix = toList globalPrefix,
-        citationSuffix = toList globalSuffix,
-        citationReferences = items
+      { citationStyle = style
+      , citationVariant = variant
+      , citationPrefix = toList globalPrefix
+      , citationSuffix = toList globalSuffix
+      , citationReferences = items
       }
 
 citeStyle :: OrgParser (Tokens Text, Tokens Text)
@@ -288,29 +302,25 @@ citeItem = do
   suff <- option mempty citeSuffix
   return
     CiteReference
-      { refId = itemKey,
-        refPrefix = toList pref,
-        refSuffix = toList suff
+      { refId = itemKey
+      , refPrefix = toList pref
+      , refSuffix = toList suff
       }
 
 citePrefix :: OrgParser OrgObjects
 citePrefix = try $ do
   clearLastChar
-  withMContext
-    (\c -> c /= '@' && c /= ';')
-    ( try $
-        eof <|> void (lookAhead $ oneOf ['@', ';'])
-    )
+  withContext
+    (takeWhile1P Nothing (/= '@'))
+    (eof <|> void (lookAhead $ char '@'))
     (plainMarkupContext minimalSet)
 
 citeSuffix :: OrgParser OrgObjects
 citeSuffix = try $ do
   clearLastChar
-  withMContext
-    (/= ';')
-    ( try $
-        eof <|> void (lookAhead $ single ';')
-    )
+  withContext
+    (takeWhile1P Nothing (/= ';'))
+    (eof <|> void (lookAhead $ char ';'))
     (plainMarkupContext minimalSet)
 
 orgCiteKey :: OrgParser Text
@@ -401,15 +411,17 @@ regularLinkOrImage =
     linkDescr = try $ do
       _ <- char '['
       -- FIXME this is not the right set but... whatever
-      withMContext (/= ']') (string "]]") (plainMarkupContext standardSet)
+      withContext skip (string "]]") (plainMarkupContext standardSet)
+      where
+        skip = anySingle >> takeWhileP Nothing (/= ']')
 
 linkToTarget :: Text -> LinkTarget
 linkToTarget link
   | any (`T.isPrefixOf` link) ["/", "./", "../"] =
       let link' = toText (toString link)
        in URILink "file" link'
-  | (prot, rest) <- T.break (== ':') link,
-    Just (_, uri) <- T.uncons rest =
+  | (prot, rest) <- T.break (== ':') link
+  , Just (_, uri) <- T.uncons rest =
       URILink prot uri
   | otherwise = UnresolvedLink link
 
@@ -447,7 +459,7 @@ suscript = Marked "_^" $ try do
 
     plain =
       liftA2 (<>) sign $
-        withMContext isAlphaNum plainEnd $
+        withMContext (const True) isAlphaNum plainEnd $
           plainMarkupContext entityOrFragment
 
     plainEnd :: OrgParser ()
