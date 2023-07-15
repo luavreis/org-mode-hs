@@ -1,11 +1,12 @@
--- | This module used to define a "subparsing" monad but this was later
--- absorbed into OrgState. Maybe I should move its contents elsewhere.
+{- | This module used to define a "subparsing" monad but this was later
+absorbed into OrgState. Maybe I should move its contents elsewhere.
+-}
 module Org.Parser.MarkupContexts where
 
+import Data.Set (notMember)
 import Data.Text qualified as T
 import Org.Parser.Common
 import Org.Parser.Definitions
-import Data.Set (notMember)
 
 skipManyTill' ::
   forall skip end m.
@@ -16,6 +17,7 @@ skipManyTill' ::
 skipManyTill' skip end = try $ do
   o0 <- getOffset
   s0 <- getInput
+  -- note: skipManyTill tries end parser first
   (o1, final) <- skipManyTill skip (liftA2 (,) getOffset end)
   pure (T.take (o1 - o0) s0, final)
 {-# INLINEABLE skipManyTill' #-}
@@ -63,31 +65,22 @@ withContext ::
 withContext skip end = fmap fst . withContext_ skip end
 {-# INLINEABLE withContext #-}
 
-withMContext__ ::
+withMContext ::
   forall a b.
   (Char -> Bool) ->
-  OrgParser b ->
-  OrgParser a ->
-  OrgParser (a, b, Text)
-withMContext__ skip end p = try do
-  clearLastChar
-  st <- getFullState
-  prelim <- takeWhileP Nothing skip
-  ((prelim <>) -> str, final) <- skipManyTill' toSkip end
-  guard (not $ T.null str)
-  (,final,str) <$> parseFromText st str p
-  where
-    toSkip = anySingle *> takeWhileP Nothing skip
-{-# INLINEABLE withMContext__ #-}
-
-withMContext ::
   (Char -> Bool) ->
   OrgParser b ->
   OrgParser a ->
   OrgParser a
-withMContext skip end p =
-  withMContext__ skip end p
-    <&> \(x, _, _) -> x
+withMContext allowed skip end p = try do
+  clearLastChar
+  st <- getFullState
+  prelim <- takeWhileP Nothing \c -> skip c && allowed c
+  ((prelim <>) -> str, _) <- skipManyTill' toSkip end
+  guard (not $ T.null str)
+  parseFromText st str p
+  where
+    toSkip = satisfy allowed *> takeWhileP Nothing \c -> skip c && allowed c
 {-# INLINEABLE withMContext #-}
 
 withBalancedContext ::
@@ -109,9 +102,10 @@ withBalancedContext lchar rchar allowed p = try do
         when (c == lchar) $ modify (+ 1)
         when (c == rchar) $ modify (subtract 1)
         get >>= \case
-          balance | balance < 0 -> fail "unbalaced delimiters"
-                  | balance == 0 -> pure ()
-                  | otherwise -> void anySingle
+          balance
+            | balance < 0 -> fail "unbalaced delimiters"
+            | balance == 0 -> pure ()
+            | otherwise -> void anySingle
       end = try do
         guard . (== 0) =<< get
         _ <- char rchar

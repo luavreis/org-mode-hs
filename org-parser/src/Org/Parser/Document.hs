@@ -14,7 +14,7 @@ import Prelude hiding (many, some)
 -- | Parse input as org document tree.
 orgDocument :: OrgParser OrgDocument
 orgDocument = do
-  _ <- many commentLine
+  skipMany commentLine
   properties <- option mempty propertyDrawer
   topLevel <- elements
   sections <- many (section 1)
@@ -60,15 +60,15 @@ section lvl = try $ do
     titleObjects =
       option mempty $
         withContext__
-          anySingle
+          (anySingle *> takeWhileP Nothing (\c -> not (isSpace c || c == ':')))
           endOfTitle
           (plainMarkupContext standardSet)
 
     endOfTitle :: OrgParser Tags
     endOfTitle = try $ do
-      _ <- skipSpaces
-      tags <- option [] (headerTags <* skipSpaces)
-      void newline <|> eof
+      hspace
+      tags <- option [] (headerTags <* hspace)
+      newline'
       return tags
 
     headerTags :: OrgParser Tags

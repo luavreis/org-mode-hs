@@ -25,12 +25,16 @@ commentLine = try do
   pure Comment
 
 elements :: OrgParser OrgElements
-elements = elementsIndented 0
+elements = mconcat <$> many e
+  where
+    e = notFollowedBy eof >> elementIndented 0 False
 
 elementsIndented :: Int -> OrgParser OrgElements
 elementsIndented minI = mconcat <$> many e
   where
-    e = elementIndented minI False
+    e = do
+      notFollowedBy (try (blankline' *> blankline') <|> eof)
+      elementIndented minI False
 
 {- | Each element parser must consume till the start of a line or EOF.
 This is necessary for correct counting of list indentations.
@@ -39,31 +43,26 @@ elementIndented ::
   Int ->
   Bool ->
   OrgParser OrgElements
-elementIndented minI paraEnd = try $ goKws []
+elementIndented minI paraEnd = try (goKws [])
   where
     goKws kws = do
       notFollowedBy headingStart
       i <- spacesOrTabs
-      guard (i >= minI)
-      optional affiliatedKeyword >>= \case
-        Just akw -> goKws (akw : kws)
-        Nothing -> withIndentLevel i $ finalize kws
+      blank kws <|> do
+        guard (i >= minI)
+        optional affiliatedKeyword >>= \case
+          Just akw -> goKws (akw : kws) <|> return (affToKws (akw : kws))
+          Nothing -> withIndentLevel i $ finalize kws
 
     finalize kws = do
-      v <-
-        blank kws <|> B.element' kws <$> nonParaElement <|> do
-          guard (not (paraEnd && null kws))
-          paraIndented minI kws
-      skipBlanks
-      return v
-
-    skipBlanks = do
-      _ <- many blankline
-      blankline' <|> pure ()
+      B.element' kws <$> nonParaElement <|> do
+        guard (not (paraEnd && null kws))
+        paraIndented minI kws
 
     blank kws = do
-      blankline <|> blankline' *> guard (not $ null kws)
-      return $ mconcat $ B.element . uncurry B.keyword <$> kws
+      blankline' $> affToKws kws
+
+    affToKws kws = mconcat (B.element . uncurry B.keyword <$> kws)
 
     nonParaElement =
       choice
@@ -83,19 +82,22 @@ elementIndented minI paraEnd = try $ goKws []
         ]
 
 paraIndented :: Int -> [(Text, KeywordValue)] -> OrgParser OrgElements
-paraIndented minI kws = do
-  (inls, next, _) <- withMContext__ (/= '\n') end (plainMarkupContext standardSet)
-  return $ B.element' kws (B.para inls) <> next
+paraIndented minI kws =
+  blankline' $> mempty <|> do
+    (inls, next) <- withContext_ skip end (plainMarkupContext standardSet)
+    return $ B.element' kws (B.para inls) <> next
   where
+    skip = anySingle >> takeWhileP Nothing (/= '\n')
     end :: OrgParser OrgElements
     end =
       (eof $> mempty) <|> try do
         _ <- newline
-        blankline' $> mempty
-          <|> lookAhead headingStart $> mempty
-          <|> lookAhead (try $ guard . (< minI) =<< spacesOrTabs) $> mempty
+        lookAhead blankline' $> mempty
           <|> elementIndented minI True
-{-# INLINABLE paraIndented #-}
+          <|> lookAhead headingStart $> mempty
+          -- rest of line can't be blank, otherwise elementIndented would succeed
+          <|> lookAhead (try $ guard . (< minI) =<< spacesOrTabs) $> mempty
+{-# INLINEABLE paraIndented #-}
 
 -- traceWithPos :: String -> OrgParser ()
 -- traceWithPos m = do
@@ -109,26 +111,31 @@ paraIndented minI kws = do
 
 plainList :: OrgParser OrgElementData
 plainList = try do
-  fstItem <- withIndentLevel 0 listItem
-  rest <- many listItem
+  fstItem <- listItem
+  rest <- many itemIndented
   let kind = listItemType fstItem
       items = fstItem : rest
   return $ B.list kind items
+  where
+    itemIndented = try do
+      notFollowedBy headingStart
+      i <- asks orgEnvIndentLevel
+      j <- spacesOrTabs
+      guard (j == i)
+      listItem
 
 listItem :: OrgParser ListItem
 listItem = try do
-  notFollowedBy headingStart
-  indent <- spacesOrTabs
-  i <- asks orgEnvIndentLevel
-  guard (indent == i)
+  indent <- asks orgEnvIndentLevel
   bullet <- unorderedBullet <|> counterBullet
-  hspace1 <|> lookAhead (void newline')
+  hspace1 <|> lookAhead newline'
   cookie <- optional counterSet
   box <- optional checkbox
+  -- for the tag, previous horizontal space must have been consumed
   tag <- case bullet of
-    Bullet _ -> toList <$> option mempty itemTag
+    Bullet _ -> option [] (toList <$> itemTag)
     _ -> return []
-  els <- liftA2 (<>) (paraIndented (indent + 2) []) (elementsIndented (indent + 2))
+  els <- liftA2 (<>) (paraIndented (indent + 1) []) (elementsIndented (indent + 1))
   return (ListItem bullet cookie box tag (toList els))
   where
     unorderedBullet = try $ Bullet <$> satisfy \c -> c == '+' || c == '-' || c == '*'
@@ -153,7 +160,7 @@ checkbox =
     char '['
       *> tick
       <* char ']'
-      <* (hspace1 <|> lookAhead (void newline'))
+      <* (hspace1 <|> lookAhead newline')
   where
     tick =
       char ' ' $> BoolBox False
@@ -161,16 +168,12 @@ checkbox =
         <|> char '-' $> PartialBox
 
 itemTag :: OrgParser OrgObjects
-itemTag = try do
-  clearLastChar
-  st <- getFullState
-  (contents, found) <- findSkipping (not . isSpace) end
-  guard found
-  parseFromText st contents (plainMarkupContext standardSet)
+itemTag = withMContext (/= '\n') (not . isSpace) end (plainMarkupContext standardSet)
   where
-    end =
-      try (hspace1 *> string "::" *> hspace1 $> True)
-        <|> newline' $> False
+    end = try do
+      hspace1
+      _ <- string "::"
+      hspace1 <|> lookAhead newline'
 
 -- * Lesser blocks
 
@@ -403,13 +406,10 @@ keywordData = try do
   -- regexes: "#+abc:d:e :f" is a valid keyword of key "abc:d" and value "e :f".
   name <-
     T.toLower . fst <$> fix \me -> do
-      res@(name, ended) <-
-        findSkipping (\c -> c /= ':' && not (isSpace c)) $
-          try $
-            (newline' <|> void (satisfy isSpace)) $> False
-              <|> char ':' *> notFollowedBy me $> True
+      res@(name, _) <-
+        skipManyTill' (satisfy (not . isSpace)) $
+          try $ char ':' *> notFollowedBy me
       guard (not $ T.null name)
-      guard ended <?> "keyword end"
       pure res
   hspace
   if "attr_" `T.isPrefixOf` name
@@ -507,6 +507,7 @@ table = try do
           hspace
           char '|' $> mempty
             <|> withMContext
+              (const True)
               (\c -> not $ isSpace c || c == '|')
               end
               (plainMarkupContext standardSet)
