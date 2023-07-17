@@ -1,5 +1,7 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Org.Parser.Definitions
   ( module Org.Parser.Definitions
@@ -26,7 +28,18 @@ type Parser = Parsec Void Text
 
 type MonadParser m = MonadParsec Void Text m
 
-type OrgParser = ReaderT OrgParserEnv (StateT OrgParserState Parser)
+newtype OrgParser a = OrgParser (ReaderT OrgParserEnv (StateT OrgParserState Parser) a)
+  deriving newtype
+    ( Functor
+    , Applicative
+    , Monad
+    , Alternative
+    , MonadState OrgParserState
+    , MonadReader OrgParserEnv
+    , MonadPlus
+    , MonadFail
+    , MonadParsec Void Text
+    )
 
 type OrgParseError = ParseErrorBundle Text Void
 
