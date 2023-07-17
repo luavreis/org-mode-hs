@@ -2,7 +2,7 @@ module Org.Exporters.Processing.Prune where
 
 import Data.Set qualified as Set
 import Org.Exporters.Processing.OrgData
-import Org.Parser.Definitions
+import Org.Types (OrgSection (..), OrgDocument (..))
 
 -- | Prunes COMMENT, :ARCHIVE: and noexport-tagged sections
 pruneSections :: Set Text -> Set Text -> [OrgSection] -> ([OrgSection], Bool)
