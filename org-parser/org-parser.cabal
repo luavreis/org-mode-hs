@@ -1,8 +1,8 @@
-cabal-version: 3.0
-name:          org-parser
-version:       0.1.0.0
-license:       GPL-3.0-only
-synopsis:      Parser for Org Mode documents.
+cabal-version:   3.0
+name:            org-parser
+version:         0.1.0.0
+license:         GPL-3.0-only
+synopsis:        Parser for Org Mode documents.
 description:
   org-parser provides a parser for Org Mode documents.
   The Org document is parsed into an AST similar to org-element's, and
@@ -11,12 +11,16 @@ description:
   as ordering the AST semantically by its leaf text. It also features a
   test suite comparing it with org-element against many corner cases.
 
-maintainer:    @lucasvreis
-bug-reports:   https://github.com/lucasvreis/org-mode-hs/issues
-copyright:     (c) 2022 lucasvreis
-category:      Text
-build-type:    Simple
-tested-with:   GHC ==9.2.7 || ==9.4.4
+maintainer:      @lucasvr:matrix.org
+author:          Lucas V. R.
+bug-reports:     https://github.com/lucasvreis/org-mode-hs/issues
+copyright:       (c) 2022 lucasvreis
+category:        Text
+build-type:      Simple
+tested-with:     GHC ==9.2.7 || ==9.4.4
+
+-- Extra doc files to be distributed with the package, such as a CHANGELOG or a README.
+extra-doc-files: CHANGELOG.md
 
 source-repository head
   type:     git
