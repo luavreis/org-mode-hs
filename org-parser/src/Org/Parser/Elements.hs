@@ -1,4 +1,25 @@
-module Org.Parser.Elements where
+-- | Parsers for Org elements.
+module Org.Parser.Elements
+  ( -- * General
+    elements
+
+    -- * Greater elements
+  , plainList
+  , greaterBlock
+  , drawer
+  , footnoteDef
+  , table
+
+    -- * Lesser elements
+  , exampleBlock
+  , fixedWidth
+  , srcBlock
+  , exportBlock
+  , latexEnvironment
+  , keyword
+  , horizontalRule
+  , commentLine
+  ) where
 
 import Data.Text qualified as T
 import Org.Builder qualified as B
@@ -10,20 +31,9 @@ import Relude.Extra hiding (elems, next)
 import Replace.Megaparsec
 import Prelude hiding (many, some)
 
--- | Read the start of a header line, return the header level
-headingStart :: OrgParser Int
-headingStart =
-  try $
-    (T.length <$> takeWhile1P (Just "heading bullets") (== '*'))
-      <* char ' '
-      <* skipSpaces
+-- * General
 
-commentLine :: OrgParser OrgElementData
-commentLine = try do
-  _ <- char '#'
-  blankline' <|> (char ' ' <|> fail "If this was meant as a comment, a space is missing here.") *> void anyLine'
-  pure Comment
-
+-- | Parse zero or more Org elements.
 elements :: OrgParser OrgElements
 elements = mconcat <$> many e
   where
@@ -107,8 +117,11 @@ paraIndented minI kws =
 --     bundle = ParseErrorBundle (err :| []) (statePosState s)
 --   traceM $ errorBundlePretty bundle
 
--- * Plain lists
+-- * Greater elements
 
+-- ** Lists
+
+-- | Parse a plain list.
 plainList :: OrgParser OrgElementData
 plainList = try do
   fstItem <- listItem
@@ -175,8 +188,128 @@ itemTag = withMContext (/= '\n') (not . isSpace) end (plainMarkupContext standar
       _ <- string "::"
       hspace1 <|> lookAhead newline'
 
--- * Lesser blocks
+-- ** Greater blocks
 
+-- | Parse a greater block.
+greaterBlock :: OrgParser OrgElementData
+greaterBlock = try do
+  _ <- string'' "#+begin_"
+  bname <- someNonSpace <* anyLine
+  els <- withContext anyLine (end bname) elements
+  return $ B.greaterBlock (blockType bname) els
+  where
+    blockType = \case
+      (T.toLower -> "center") -> Center
+      (T.toLower -> "quote") -> Quote
+      other -> Special other
+    end :: Text -> OrgParser Text
+    end name = try $ hspace *> string'' "#+end_" *> string'' name <* blankline'
+
+-- verseBlock :: OrgParser OrgElements
+-- verseBlock = try do
+--   hspace
+--   _ <- string'' "#+begin_verse"
+--   undefined
+--   where
+-- end = try $ hspace *> string'' "#+end_export" <* blankline'
+
+-- ** Drawers
+
+-- | Parse a drawer.
+drawer :: OrgParser OrgElementData
+drawer = try do
+  _ <- char ':'
+  dname <- takeWhile1P (Just "drawer name") (\c -> c /= ':' && c /= '\n')
+  char ':' >> blankline
+  els <- withContext anyLine end elements
+  return $ B.drawer dname els
+  where
+    end :: OrgParser ()
+    end = try $ hspace <* string'' ":end:" <* blankline'
+
+-- ** Footnote definitions
+
+-- | Parse a footnote definition.
+footnoteDef :: OrgParser OrgElementData
+footnoteDef = try do
+  guard . (== 0) =<< asks orgEnvIndentLevel
+  lbl <- start
+  _ <- optional blankline'
+  def <-
+    withContext
+      anyLine
+      ( lookAhead $
+          void headingStart
+            <|> try (blankline' *> blankline')
+            <|> void (try start)
+      )
+      elements
+  return $ B.footnoteDef lbl def
+  where
+    start =
+      string "[fn:"
+        *> takeWhile1P
+          (Just "footnote def label")
+          (\c -> isAlphaNum c || c == '-' || c == '_')
+        <* char ']'
+
+-- ** Tables
+
+-- | Parse a table.
+table :: OrgParser OrgElementData
+table = try do
+  _ <- lookAhead $ char '|'
+  rows <- some tableRow
+  return $ B.table rows
+  where
+    tableRow :: OrgParser TableRow
+    tableRow = ruleRow <|> columnPropRow <|> standardRow
+
+    ruleRow = try $ RuleRow <$ (hspace >> string "|-" >> anyLine')
+
+    columnPropRow = try do
+      hspace
+      _ <- char '|'
+      ColumnPropsRow
+        <$> some cell
+        <* blankline'
+      where
+        cell = do
+          hspace
+          Just <$> cookie <|> Nothing <$ void (char '|')
+        cookie = try do
+          a <-
+            string "<l" $> AlignLeft
+              <|> string "<c" $> AlignCenter
+              <|> string "<r" $> AlignRight
+          _ <- digits
+          _ <- char '>'
+          hspace
+          void (char '|') <|> lookAhead newline'
+          pure a
+
+    standardRow = try do
+      hspace
+      _ <- char '|'
+      B.standardRow
+        <$> some cell
+        <* blankline'
+      where
+        cell = do
+          hspace
+          char '|' $> mempty
+            <|> withMContext
+              (const True)
+              (\c -> not $ isSpace c || c == '|')
+              end
+              (plainMarkupContext standardSet)
+        end = try $ hspace >> void (char '|') <|> lookAhead newline'
+
+-- * Lesser elements
+
+-- ** Code
+
+-- | Parse an example block.
 exampleBlock :: OrgParser OrgElementData
 exampleBlock = try do
   _ <- string'' "#+begin_example"
@@ -187,6 +320,7 @@ exampleBlock = try do
   where
     end = try $ hspace *> string'' "#+end_example" <* blankline'
 
+-- | Parse a fixed width block.
 fixedWidth :: OrgParser OrgElementData
 fixedWidth = try do
   contents <- SrcLine <<$>> some (hspace *> string ": " *> anyLine')
@@ -198,6 +332,7 @@ fixedWidth = try do
           else indentContents tabWidth contents
   pure $ B.example mempty lines'
 
+-- | Parse a source block.
 srcBlock :: OrgParser OrgElementData
 srcBlock = try do
   _ <- string'' "#+begin_src"
@@ -232,6 +367,7 @@ headerArgs = do
               )
         )
 
+-- | Parse an export block.
 exportBlock :: OrgParser OrgElementData
 exportBlock = try do
   _ <- string'' "#+begin_export"
@@ -241,14 +377,6 @@ exportBlock = try do
   return $ B.export format contents
   where
     end = try $ hspace *> string'' "#+end_export" <* blankline'
-
--- verseBlock :: OrgParser OrgElements
--- verseBlock = try do
---   hspace
---   _ <- string'' "#+begin_verse"
---   undefined
---   where
--- end = try $ hspace *> string'' "#+end_export" <* blankline'
 
 indentContents :: Int -> [SrcLine] -> [SrcLine]
 indentContents tabWidth (map (srcLineMap $ tabsToSpaces tabWidth) -> lins) =
@@ -340,37 +468,9 @@ blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
       _ <- lookAhead spaceChar
       pure (s, "")
 
--- * Greater Blocks
+-- ** LaTeX
 
-greaterBlock :: OrgParser OrgElementData
-greaterBlock = try do
-  _ <- string'' "#+begin_"
-  bname <- someNonSpace <* anyLine
-  els <- withContext anyLine (end bname) elements
-  return $ B.greaterBlock (blockType bname) els
-  where
-    blockType = \case
-      (T.toLower -> "center") -> Center
-      (T.toLower -> "quote") -> Quote
-      other -> Special other
-    end :: Text -> OrgParser Text
-    end name = try $ hspace *> string'' "#+end_" *> string'' name <* blankline'
-
--- * Drawers
-
-drawer :: OrgParser OrgElementData
-drawer = try do
-  _ <- char ':'
-  dname <- takeWhile1P (Just "drawer name") (\c -> c /= ':' && c /= '\n')
-  char ':' >> blankline
-  els <- withContext anyLine end elements
-  return $ B.drawer dname els
-  where
-    end :: OrgParser ()
-    end = try $ hspace <* string'' ":end:" <* blankline'
-
--- * LaTeX Environments
-
+-- | Parse a LaTeX environment.
 latexEnvironment :: OrgParser OrgElementData
 latexEnvironment = try do
   _ <- string "\\begin{"
@@ -385,7 +485,7 @@ latexEnvironment = try do
     end :: Text -> OrgParser ()
     end name = try $ string ("\\end{" <> name <> "}") *> blankline'
 
--- * Keywords and affiliated keywords
+-- ** Keywords
 
 affiliatedKeyword :: OrgParser (Text, KeywordValue)
 affiliatedKeyword = try do
@@ -396,6 +496,7 @@ affiliatedKeyword = try do
     guard $ name `member` akws
   return v
 
+-- | Parse a keyword.
 keyword :: OrgParser OrgElementData
 keyword = uncurry B.keyword <$> keywordData
 
@@ -408,7 +509,8 @@ keywordData = try do
     T.toLower . fst <$> fix \me -> do
       res@(name, _) <-
         skipManyTill' (satisfy (not . isSpace)) $
-          try $ char ':' *> notFollowedBy me
+          try $
+            char ':' *> notFollowedBy me
       guard (not $ T.null name)
       pure res
   hspace
@@ -428,33 +530,9 @@ keywordData = try do
           else return $ ValueKeyword text
       return (name, value)
 
--- * Footnote definitions
+-- ** Horizontal Rules
 
-footnoteDef :: OrgParser OrgElementData
-footnoteDef = try do
-  guard . (== 0) =<< asks orgEnvIndentLevel
-  lbl <- start
-  _ <- optional blankline'
-  def <-
-    withContext
-      anyLine
-      ( lookAhead $
-          void headingStart
-            <|> try (blankline' *> blankline')
-            <|> void (try start)
-      )
-      elements
-  return $ B.footnoteDef lbl def
-  where
-    start =
-      string "[fn:"
-        *> takeWhile1P
-          (Just "footnote def label")
-          (\c -> isAlphaNum c || c == '-' || c == '_')
-        <* char ']'
-
--- * Horizontal Rules
-
+-- | Parse a horizontal rule.
 horizontalRule :: OrgParser OrgElementData
 horizontalRule = try do
   l <- T.length <$> takeWhile1P (Just "hrule dashes") (== '-')
@@ -462,53 +540,11 @@ horizontalRule = try do
   blankline'
   return B.horizontalRule
 
--- * Tables
+-- ** Comments
 
-table :: OrgParser OrgElementData
-table = try do
-  _ <- lookAhead $ char '|'
-  rows <- some tableRow
-  return $ B.table rows
-  where
-    tableRow :: OrgParser TableRow
-    tableRow = ruleRow <|> columnPropRow <|> standardRow
-
-    ruleRow = try $ RuleRow <$ (hspace >> string "|-" >> anyLine')
-
-    columnPropRow = try do
-      hspace
-      _ <- char '|'
-      ColumnPropsRow
-        <$> some cell
-        <* blankline'
-      where
-        cell = do
-          hspace
-          Just <$> cookie <|> Nothing <$ void (char '|')
-        cookie = try do
-          a <-
-            string "<l" $> AlignLeft
-              <|> string "<c" $> AlignCenter
-              <|> string "<r" $> AlignRight
-          _ <- digits
-          _ <- char '>'
-          hspace
-          void (char '|') <|> lookAhead newline'
-          pure a
-
-    standardRow = try do
-      hspace
-      _ <- char '|'
-      B.standardRow
-        <$> some cell
-        <* blankline'
-      where
-        cell = do
-          hspace
-          char '|' $> mempty
-            <|> withMContext
-              (const True)
-              (\c -> not $ isSpace c || c == '|')
-              end
-              (plainMarkupContext standardSet)
-        end = try $ hspace >> void (char '|') <|> lookAhead newline'
+-- | Parse a comment.
+commentLine :: OrgParser OrgElementData
+commentLine = try do
+  _ <- char '#'
+  blankline' <|> (char ' ' <|> fail "If this was meant as a comment, a space is missing here.") *> void anyLine'
+  pure Comment

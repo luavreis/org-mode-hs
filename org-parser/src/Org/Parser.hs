@@ -1,23 +1,34 @@
 module Org.Parser
-  ( defaultOrgOptions,
-    OrgOptions (..),
-    parseOrgMaybe,
-    parseOrg,
-    parseOrgDoc,
-    parseOrgDocIO,
+  ( OrgParser
+  , OrgParseError
+  , OrgOptions (..)
+  , TodoSequence
+  , defaultOrgOptions
+  , parseOrgMaybe
+  , parseOrg
+  , parseOrgDoc
+  , parseOrgDocIO
   )
 where
 
 import Org.Parser.Definitions
 import Org.Parser.Document
 
--- | Wrapper around 'parseMaybe' that evaluates the Org Parser state with the
--- desired options.
+{- | Evaluate the Org Parser state with the desired options. Returns 'Nothing' in
+   case of parse failure.
+-}
 parseOrgMaybe :: OrgOptions -> OrgParser a -> Text -> Maybe a
 parseOrgMaybe opt p = rightToMaybe . parseOrg opt p ""
 
+{- | Wrapper around 'parse' that evaluates the Org Parser state with the desired
+   options.
+-}
 parseOrg :: OrgOptions -> OrgParser a -> FilePath -> Text -> Either OrgParseError a
-parseOrg opt = parse . (`evalStateT` defaultState) . (`runReaderT` defaultEnv {orgEnvOptions = opt})
+parseOrg opt (OrgParser x) =
+  parse $
+    x
+      `runReaderT` defaultEnv {orgEnvOptions = opt}
+      `evalStateT` defaultState
 
 -- | Parse an Org document fully, with given options, and a filepath for error messages.
 parseOrgDoc :: OrgOptions -> FilePath -> Text -> Either OrgParseError OrgDocument

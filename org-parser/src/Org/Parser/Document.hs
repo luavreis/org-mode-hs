@@ -1,7 +1,12 @@
--- | This was one of the first files that I wrote and is adapted from
--- https://github.com/jgm/pandoc/blob/master/src/Text/Pandoc/Readers/Org/DocumentTree.hs
--- So all credit where credit is due to Albert Krewinkel and John MacFarlane.
-module Org.Parser.Document where
+-- | Parsers for Org documents.
+module Org.Parser.Document
+  ( -- Document and sections
+    orgDocument
+  , section
+
+    -- * Components
+  , propertyDrawer
+  ) where
 
 import Data.Text qualified as T
 import Org.Parser.Common
@@ -11,7 +16,7 @@ import Org.Parser.MarkupContexts
 import Org.Parser.Objects
 import Prelude hiding (many, some)
 
--- | Parse input as org document tree.
+-- | Parse an Org document.
 orgDocument :: OrgParser OrgDocument
 orgDocument = do
   skipMany commentLine
@@ -21,13 +26,14 @@ orgDocument = do
   eof
   return $
     OrgDocument
-      { documentProperties = properties,
-        documentChildren = toList topLevel,
-        documentSections = sections
+      { documentProperties = properties
+      , documentChildren = toList topLevel
+      , documentSections = sections
       }
 
--- | Read an Org mode section and its contents. @lvl@
--- gives the minimum acceptable level of the heading.
+{- | Parse an Org section and its contents. @lvl@ gives the minimum acceptable
+   level of the heading.
+-}
 section :: Int -> OrgParser OrgSection
 section lvl = try $ do
   level <- headingStart
@@ -42,18 +48,18 @@ section lvl = try $ do
   children <- many (section (level + 1))
   return
     OrgSection
-      { sectionLevel = level,
-        sectionProperties = properties,
-        sectionTodo = todoKw,
-        sectionIsComment = isComment,
-        sectionPriority = priority,
-        sectionTitle = toList title,
-        sectionRawTitle = titleTxt,
-        sectionAnchor = "", -- Dealt with later
-        sectionTags = tags,
-        sectionPlanning = planning,
-        sectionChildren = toList contents,
-        sectionSubsections = children
+      { sectionLevel = level
+      , sectionProperties = properties
+      , sectionTodo = todoKw
+      , sectionIsComment = isComment
+      , sectionPriority = priority
+      , sectionTitle = toList title
+      , sectionRawTitle = titleTxt
+      , sectionAnchor = "" -- Dealt with later
+      , sectionTags = tags
+      , sectionPlanning = planning
+      , sectionChildren = toList contents
+      , sectionSubsections = children
       }
   where
     titleObjects :: OrgParser (OrgObjects, Tags, Text)
@@ -75,8 +81,6 @@ section lvl = try $ do
     headerTags = try $ do
       _ <- char ':'
       endBy1 orgTagWord (char ':')
-
--- * Heading and document "subelements"
 
 -- | Parse a to-do keyword that is registered in the state.
 todoKeyword :: OrgParser TodoKeyword
@@ -112,7 +116,7 @@ orgTagWord =
 emptyPlanning :: PlanningInfo
 emptyPlanning = PlanningInfo Nothing Nothing Nothing
 
--- | Read a single planning-related and timestamped line. TODO
+-- | Parse a single planning-related and timestamped line.
 planningInfo :: OrgParser PlanningInfo
 planningInfo = try $ do
   updaters <- some planningDatum <* skipSpaces <* newline
@@ -121,14 +125,13 @@ planningInfo = try $ do
     planningDatum =
       skipSpaces
         *> choice
-          [ updateWith (\s p -> p {planningScheduled = Just s}) "SCHEDULED",
-            updateWith (\d p -> p {planningDeadline = Just d}) "DEADLINE",
-            updateWith (\c p -> p {planningClosed = Just c}) "CLOSED"
+          [ updateWith (\s p -> p {planningScheduled = Just s}) "SCHEDULED"
+          , updateWith (\d p -> p {planningDeadline = Just d}) "DEADLINE"
+          , updateWith (\c p -> p {planningClosed = Just c}) "CLOSED"
           ]
     updateWith fn cs = fn <$> (string cs *> char ':' *> skipSpaces *> parseTimestamp)
 
--- | Read a :PROPERTIES: drawer and return the key/value pairs contained
--- within.
+-- | Parse a :PROPERTIES: drawer and return the key/value pairs contained within.
 propertyDrawer :: OrgParser Properties
 propertyDrawer = try $ do
   _ <- skipSpaces
@@ -158,6 +161,6 @@ propertyDrawer = try $ do
     value =
       skipSpaces
         *> ( takeWhileP (Just "node property value") (/= '\n')
-               <&> T.stripEnd
+              <&> T.stripEnd
            )
         <* newline

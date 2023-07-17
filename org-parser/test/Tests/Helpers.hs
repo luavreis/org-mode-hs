@@ -4,25 +4,28 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- |
 module Tests.Helpers
-  ( module Tests.Helpers,
-    module Test.Tasty,
+  ( module Tests.Helpers
+  , module Test.Tasty
   )
 where
 
 import Data.Algorithm.DiffContext (getContextDiff, prettyContextDiff)
 import Org.Builder (Many)
-import Org.Parser.Definitions
+import Org.Parser
+import Org.Parser.Objects (Marked (..))
+import Org.Types (OrgDocument, OrgElementData, Properties)
 import Test.Tasty
 import Test.Tasty.HUnit
+import Text.Megaparsec (eof)
+import Text.Megaparsec.Error (errorBundlePretty)
 import Text.Pretty.Simple
 import Text.PrettyPrint (render, text)
-import Org.Parser (parseOrg)
 
--- | This class is mainly used for the tests cases.
--- @Parsed m a@ is the "monad-stripped" version of parse
--- tree with which we can compare in the test cases.
+{- | This class is mainly used for the tests cases.
+@Parsed m a@ is the "monad-stripped" version of parse
+tree with which we can compare in the test cases.
+-}
 class Parsable m a where
   type Parsed m a
   parse' :: m a -> Text -> Either OrgParseError (Parsed m a)
@@ -99,12 +102,12 @@ infix 4 ~:
             | otherwise -> pure ()
           Right x
             | Right ref' <- ref ->
-              unless (x == ref') do
-                let reflines = map toString $ lines (toStrict $ pShow ref')
-                    gotlines = map toString $ lines (toStrict $ pShow x)
-                    diff = getContextDiff 3 reflines gotlines
-                    pdiff = prettyContextDiff (text "Test reference") (text "Parsed") text diff
-                assertFailure (render pdiff)
+                unless (x == ref') do
+                  let reflines = map toString $ lines (toStrict $ pShow ref')
+                      gotlines = map toString $ lines (toStrict $ pShow x)
+                      diff = getContextDiff 3 reflines gotlines
+                      pdiff = prettyContextDiff (text "Test reference") (text "Parsed") text diff
+                  assertFailure (render pdiff)
             | otherwise ->
-              assertFailure $
-                "Should not parse, but parsed as:\n" <> show x
+                assertFailure $
+                  "Should not parse, but parsed as:\n" <> show x

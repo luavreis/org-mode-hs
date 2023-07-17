@@ -1,4 +1,49 @@
-module Org.Parser.Objects where
+-- | Parsers for Org objects.
+module Org.Parser.Objects
+  ( -- * Sets of markup
+    minimalSet
+  , standardSet
+
+    -- * Marked parsers
+  , Marked (..)
+  , markupContext
+  , plainMarkupContext
+
+    -- * General purpose parsers
+  , markup
+  , rawMarkup
+
+    -- * Objects
+  , code
+  , verbatim
+  , italic
+  , underline
+  , bold
+  , strikethrough
+  , singleQuoted
+  , doubleQuoted
+  , entity
+  , latexFragment
+  , texMathFragment
+  , exportSnippet
+  , citation
+  , inlBabel
+  , inlSrc
+  , linebreak
+  , angleLink
+  , regularLink
+  , target
+  , suscript
+  , macro
+  , footnoteReference
+  , timestamp
+  , statisticCookie
+
+    -- * Auxiliary
+  , linkToTarget
+  , parseTimestamp
+  )
+where
 
 import Data.Set qualified as Set
 import Data.Text qualified as T
@@ -20,10 +65,10 @@ minimalSet =
     , italic
     , underline
     , bold
-    , striketrough
-    , mathFragment
+    , strikethrough
+    , latexFragment
     , texMathFragment
-    , entityOrFragment
+    , entity
     , singleQuoted
     , doubleQuoted
     , suscript
@@ -35,7 +80,7 @@ standardSet :: Marked OrgParser OrgObjects
 standardSet =
   mconcat
     [ minimalSet
-    , regularLinkOrImage
+    , regularLink
     , footnoteReference
     , timestamp
     , exportSnippet
@@ -47,14 +92,18 @@ standardSet =
     , citation
     ]
 
+{- | Parse inside a "plain context", i.e., plain text not matched by any parsers
+   gets converted to 'Plain' objects.
+
+@
+'plainMarkupContext' = 'markupContext' 'B.plain'
+@
+-}
 plainMarkupContext :: Marked OrgParser OrgObjects -> OrgParser OrgObjects
 plainMarkupContext = markupContext B.plain
 
 newlineAndClear :: OrgParser Char
 newlineAndClear = newline <* clearLastChar
-
-newlineAndClear' :: OrgParser ()
-newlineAndClear' = newline' <* clearLastChar
 
 emphasisPreChars :: Set Char
 emphasisPreChars = fromList "-('\"{"
@@ -110,27 +159,35 @@ rawMarkup f d = Marked [d] $
     emphasisPre d
     f . fst <$> skipManyTill' (emphasisSkip d) (emphasisPost d)
 
+-- | Parse a code object.
 code :: Marked OrgParser OrgObjects
 code = rawMarkup B.code '~'
 
+-- | Parse a verbatim object.
 verbatim :: Marked OrgParser OrgObjects
 verbatim = rawMarkup B.verbatim '='
 
+-- | Parse an italic object.
 italic :: Marked OrgParser OrgObjects
 italic = markup B.italic '/'
 
+-- | Parse an underline object.
 underline :: Marked OrgParser OrgObjects
 underline = markup B.underline '_'
 
+-- | Parse a bold object.
 bold :: Marked OrgParser OrgObjects
 bold = markup B.bold '*'
 
-striketrough :: Marked OrgParser OrgObjects
-striketrough = markup B.strikethrough '+'
+-- | Parse a strikethrough object.
+strikethrough :: Marked OrgParser OrgObjects
+strikethrough = markup B.strikethrough '+'
 
+-- | Parse a single-quoted object.
 singleQuoted :: Marked OrgParser OrgObjects
 singleQuoted = markup B.singleQuoted '\''
 
+-- | Parse a double-quoted object.
 doubleQuoted :: Marked OrgParser OrgObjects
 doubleQuoted = markup B.doubleQuoted '"'
 
@@ -145,20 +202,35 @@ endline =
 
 -- * Entities and LaTeX fragments
 
-entityOrFragment :: Marked OrgParser OrgObjects
-entityOrFragment = Marked "\\" $
-  try $ do
-    _ <- char '\\'
-    entity <|> fragment
-  where
-    entity :: MonadParser m => m OrgObjects
-    entity = try $ do
-      name <- choice (map string defaultEntitiesNames)
-      void (string "{}") <|> notFollowedBy asciiAlpha
-      pure $ B.entity name
+-- | Parse an entity object.
+entity :: Marked OrgParser OrgObjects
+entity = Marked "\\" $ try $ do
+  _ <- char '\\'
+  name <- choice (map string defaultEntitiesNames)
+  void (string "{}") <|> notFollowedBy asciiAlpha
+  pure $ B.entity name
 
-    fragment :: MonadParser m => m OrgObjects
-    fragment = try $ do
+-- | Parse a LaTeX fragment object.
+latexFragment :: Marked OrgParser OrgObjects
+latexFragment = Marked "\\" $ try do
+  _ <- char '\\'
+  mathFragment <|> rawFragment
+  where
+    mathFragment = try do
+      inline <-
+        char '(' $> True
+          <|> char '[' $> False
+      (str, _) <-
+        findSkipping
+          (/= '\\')
+          (try $ char '\\' *> char if inline then ')' else ']')
+      pure $
+        if inline
+          then B.inlMath str
+          else B.dispMath str
+
+    rawFragment :: MonadParser m => m OrgObjects
+    rawFragment = try $ do
       name <- someAsciiAlpha
       text <- (name <>) <$> option "" brackets
       pure $ B.fragment ("\\" <> text)
@@ -171,22 +243,7 @@ entityOrFragment = Marked "\\" $
       _ <- char close
       pure $ open `T.cons` str `T.snoc` close
 
-mathFragment :: Marked OrgParser OrgObjects
-mathFragment = Marked "\\" $
-  try $ do
-    _ <- char '\\'
-    inline <-
-      char '(' $> True
-        <|> char '[' $> False
-    (str, _) <-
-      findSkipping
-        (/= '\\')
-        (try $ char '\\' *> char if inline then ')' else ']')
-    pure $
-      if inline
-        then B.inlMath str
-        else B.dispMath str
-
+-- | Parse a TeX math fragment object.
 texMathFragment :: Marked OrgParser OrgObjects
 texMathFragment = Marked "$" $ try $ display <|> inline
   where
@@ -231,6 +288,7 @@ texMathFragment = Marked "$" $ try $ display <|> inline
 
 -- * Export snippets
 
+-- | Parse an export snippet object.
 exportSnippet :: Marked OrgParser OrgObjects
 exportSnippet = Marked "@" $
   try $ do
@@ -247,6 +305,7 @@ exportSnippet = Marked "@" $
 
 -- The following code for org-cite citations was adapted and improved upon pandoc's.
 
+-- | Parse a citation object.
 citation :: Marked OrgParser OrgObjects
 citation =
   Marked "[" $
@@ -334,6 +393,7 @@ orgCiteKeyChar c =
 
 -- * Inline Babel calls
 
+-- | Parse an inline babel call object.
 inlBabel :: Marked OrgParser OrgObjects
 inlBabel = Marked "c" . try $ do
   _ <- string "call_"
@@ -351,6 +411,7 @@ inlBabel = Marked "c" . try $ do
 
 -- * Inline source blocks
 
+-- | Parse an inline source object.
 inlSrc :: Marked OrgParser OrgObjects
 inlSrc = Marked "s" . try $ do
   _ <- string "src_"
@@ -366,6 +427,7 @@ inlSrc = Marked "s" . try $ do
 
 -- * Line breaks
 
+-- | Parse a linebreak object.
 linebreak :: Marked OrgParser OrgObjects
 linebreak =
   Marked "\\" . try $
@@ -373,6 +435,7 @@ linebreak =
 
 -- * Links
 
+-- | Parse a angle link object.
 angleLink :: Marked OrgParser OrgObjects
 angleLink = Marked "<" . try $ do
   _ <- char '<'
@@ -387,8 +450,9 @@ angleLink = Marked "<" . try $ do
       <|> newline *> hspace *> ((T.stripEnd partial <>) <$> search)
   return $ B.uriLink protocol tgt (B.plain $ protocol <> ":" <> tgt)
 
-regularLinkOrImage :: Marked OrgParser OrgObjects
-regularLinkOrImage =
+-- | Parse a regular link object.
+regularLink :: Marked OrgParser OrgObjects
+regularLink =
   Marked "[" . try $
     do
       _ <- string "[["
@@ -415,6 +479,9 @@ regularLinkOrImage =
       where
         skip = anySingle >> takeWhileP Nothing (/= ']')
 
+-- TODO this will probably be replaced by the AST annotations.
+
+-- | Transform the link text into a link target.
 linkToTarget :: Text -> LinkTarget
 linkToTarget link
   | any (`T.isPrefixOf` link) ["/", "./", "../"] =
@@ -427,6 +494,7 @@ linkToTarget link
 
 -- * Targets and radio targets
 
+-- | Parse a target object.
 target :: Marked OrgParser OrgObjects
 target = Marked "<" $ try do
   _ <- string "<<"
@@ -438,6 +506,7 @@ target = Marked "<" $ try do
 
 -- * Subscripts and superscripts
 
+-- | Parse a subscript or a superscript object.
 suscript :: Marked OrgParser OrgObjects
 suscript = Marked "_^" $ try do
   lchar <- gets orgStateLastChar
@@ -460,7 +529,7 @@ suscript = Marked "_^" $ try do
     plain =
       liftA2 (<>) sign $
         withMContext (const True) isAlphaNum plainEnd $
-          plainMarkupContext entityOrFragment
+          plainMarkupContext (entity <> latexFragment)
 
     plainEnd :: OrgParser ()
     plainEnd = try do
@@ -471,6 +540,7 @@ suscript = Marked "_^" $ try do
 
 -- * Macros
 
+-- | Parse a macro object.
 macro :: Marked OrgParser OrgObjects
 macro = Marked "{" $ try do
   _ <- string "{{{"
@@ -487,6 +557,7 @@ macro = Marked "{" $ try do
 
 -- * Footnote references
 
+-- | Parse a footnote reference object.
 footnoteReference :: Marked OrgParser OrgObjects
 footnoteReference = Marked "[" $
   withBalancedContext '[' ']' (const True) do
@@ -509,10 +580,11 @@ footnoteReference = Marked "[" $
 
 -- * Timestamps
 
+-- | Parse a timestamp object.
 timestamp :: Marked OrgParser OrgObjects
 timestamp = Marked "<[" $ B.timestamp <$> parseTimestamp
 
--- | Read a timestamp.
+-- | Parse a timestamp.
 parseTimestamp :: OrgParser TimestampData
 parseTimestamp = try $ do
   openChar <- lookAhead $ satisfy (\c -> c == '<' || c == '[')
@@ -571,6 +643,7 @@ parseTimestamp = try $ do
 
 -- * Statistic Cookies
 
+-- | Parse a statistic cookie object.
 statisticCookie :: Marked OrgParser OrgObjects
 statisticCookie = Marked "[" $ try do
   _ <- char '['

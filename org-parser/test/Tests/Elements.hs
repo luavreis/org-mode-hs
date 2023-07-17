@@ -14,7 +14,7 @@ testElements =
         [ "# this is a comment" =?> Comment
         , "#this line is not a comment" =!> ()
         ]
-    , "Paragraph" ~: paraIndented 0 [] $
+    , "Paragraph" ~: elements $
         [ --
           [text|
             foobar

@@ -1,12 +1,15 @@
-cabal-version: 3.6
+cabal-version: 3.0
 name:          org-parser
-version:       0.1
+version:       0.1.0.0
 license:       GPL-3.0-only
 synopsis:      Parser for Org Mode documents.
 description:
   org-parser provides a parser for Org Mode documents.
   The Org document is parsed into an AST similar to org-element's, and
-  aims to be accurate where possible.
+  aims to be accurate and performant where possible. The types have
+  'multiwalk' instances that allow traversing and querying the AST, as well
+  as ordering the AST semantically by its leaf text. It also features a
+  test suite comparing it with org-element against many corner cases.
 
 maintainer:    @lucasvreis
 bug-reports:   https://github.com/lucasvreis/org-mode-hs/issues
@@ -59,7 +62,6 @@ library
     Org.Compare
     Org.Data.Entities
     Org.Parser
-    Org.Parser.Definitions
     Org.Parser.Document
     Org.Parser.Elements
     Org.Parser.Objects
@@ -68,6 +70,7 @@ library
 
   other-modules:
     Org.Parser.Common
+    Org.Parser.Definitions
     Org.Parser.MarkupContexts
     Org.Parser.State
 

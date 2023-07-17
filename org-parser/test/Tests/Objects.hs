@@ -45,7 +45,7 @@ testObjects =
         , "<<this \n is not a target>>" =!> ()
         , "<<this > is not a target>>" =!> ()
         ]
-    , "Math fragment" ~: mathFragment $
+    , "Math fragment" ~: latexFragment $
         [ "\\(\\LaTeX + 2\\)" =?> B.inlMath "\\LaTeX + 2"
         , "\\[\\LaTeX + 2\\]" =?> B.dispMath "\\LaTeX + 2"
         ]
@@ -76,7 +76,7 @@ testObjects =
             <> "line break"
         , "also linebreak \\\\" =?> "also linebreak " <> B.linebreak
         ]
-    , "Image or links" ~: regularLinkOrImage $
+    , "Image or links" ~: regularLink $
         [ "[[http://blablebli.com]]" =?> B.link (URILink "http" "//blablebli.com") mempty
         , "[[http://blablebli.com][/uh/ duh! *foo*]]" =?> B.link (URILink "http" "//blablebli.com") (B.italic "uh" <> " duh! " <> B.bold "foo")
         ]
