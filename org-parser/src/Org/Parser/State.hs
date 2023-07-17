@@ -61,3 +61,9 @@ defaultEnv =
     { orgEnvOptions = defaultOrgOptions
     , orgEnvIndentLevel = 0
     }
+
+aesonOptions :: Aeson.Options
+aesonOptions =
+  Aeson.defaultOptions
+    { Aeson.fieldLabelModifier = Aeson.camelTo2 '-'
+    }
