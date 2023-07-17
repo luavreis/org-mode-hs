@@ -114,6 +114,9 @@ withBalancedContext lchar rchar allowed p = try do
   (str, _) <- evalStateT (skipManyTill' skip end) 1
   parseFromText st str p
 
+{- | Parse inside a "context": text that is not captured by the parser `elems`
+   gets converted to the type `k` via the function `f`.
+-}
 markupContext ::
   Monoid k =>
   (Text -> k) ->

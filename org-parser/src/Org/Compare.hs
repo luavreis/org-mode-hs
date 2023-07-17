@@ -5,7 +5,7 @@
  should use this instead of the default Ord instances when you want to compare
  Org content semantically.
 -}
-module Org.Compare (compareContent, compareContents, toAtoms) where
+module Org.Compare (compareContent, compareContents, toAtoms, Atom) where
 
 import Data.Text qualified as T
 import Org.Types

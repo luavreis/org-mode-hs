@@ -5,6 +5,14 @@ import Data.Text qualified as T
 import Org.Parser.Definitions
 import Prelude hiding (State, many, some)
 
+-- | Read the start of a header line, return the header level
+headingStart :: OrgParser Int
+headingStart =
+  try $
+    (T.length <$> takeWhile1P (Just "heading bullets") (== '*'))
+      <* char ' '
+      <* skipSpaces
+
 -- | The same as 'string'', but cheaper (?)
 string'' :: MonadParser m => Text -> m Text
 string'' = tokens ((==) `on` T.toLower)
