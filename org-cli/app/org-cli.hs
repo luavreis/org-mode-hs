@@ -20,7 +20,7 @@ import Org.Exporters.Processing (OrgData, gatherSettings, runPipeline, withCurre
 import Org.Exporters.Processing.InternalLinks (resolveLinks)
 import Org.Exporters.Processing.Prune (pruneDoc)
 import Org.Parser
-import Org.Parser.Definitions (OrgDocument)
+import Org.Types (OrgDocument)
 import Path (parseAbsDir, parseRelDir)
 import Path.IO (copyDirRecur', doesDirExist)
 import Text.Megaparsec (errorBundlePretty)

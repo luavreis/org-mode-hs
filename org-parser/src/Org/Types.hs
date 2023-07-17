@@ -4,10 +4,103 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Org.Types where
+module Org.Types
+  ( -- * Document
+    OrgDocument (..)
+  , Properties
+
+    -- ** Helpers
+  , lookupProperty
+
+    -- * Sections
+  , OrgSection (..)
+  , TodoKeyword (..)
+  , TodoState (..)
+  , Tag
+  , Priority (..)
+  , PlanningInfo (..)
+
+    -- ** Helpers
+  , lookupSectionProperty
+
+    -- * OrgContent
+  , OrgContent
+  , documentContent
+  , mapContentM
+  , mapContent
+  , sectionContent
+  , mapSectionContentM
+  , mapSectionContent
+
+    -- * Elements
+  , OrgElement (..)
+  , OrgElementData (..)
+
+    -- ** Greater blocks
+  , GreaterBlockType (..)
+
+    -- ** Source blocks
+  , SrcLine (..)
+  , srcLineContent
+  , srcLinesToText
+  , srcLineMap
+
+    -- ** Lists
+  , ListType (..)
+  , OrderedStyle (..)
+  , orderedStyle
+  , ListItem (..)
+  , Bullet (..)
+  , Checkbox (..)
+  , listItemType
+
+    -- ** Keywords
+  , Keywords
+  , KeywordValue (..)
+  , lookupValueKeyword
+  , lookupParsedKeyword
+  , lookupBackendKeyword
+  , keywordsFromList
+
+    -- ** Tables
+  , TableRow (..)
+  , TableCell
+  , ColumnAlignment (..)
+
+    -- * Objects
+  , OrgObject (..)
+
+    -- ** Links
+  , LinkTarget (..)
+  , Protocol
+  , Id
+  , linkTargetToText
+
+    -- ** LaTeX fragments
+  , FragmentType (..)
+
+    -- ** Citations
+  , Citation (..)
+  , CiteReference (..)
+
+    -- ** Footnote references
+  , FootnoteRefData (..)
+
+    -- ** Timestamps
+  , TimestampData (..)
+  , DateTime
+  , TimestampMark
+  , Date
+  , Time
+
+    -- * Quotes
+  , QuoteType (..)
+
+    -- * Babel
+  , BabelCall (..)
+  ) where
 
 import Data.Aeson
-import Data.Aeson qualified as Aeson
 import Data.Aeson.Encoding (text)
 import Data.Char (isDigit, toLower)
 import Data.Data (Data)
@@ -36,7 +129,10 @@ data OrgSection = OrgSection
   , sectionTitle :: [OrgObject]
   , sectionRawTitle :: Text
   , sectionAnchor :: Id
-  , sectionTags :: Tags
+  -- ^ Section custom ID (Warning: this field is not populated by the parser! in
+  -- the near future, fields like this one and the 'Id' type will be removed in
+  -- favor of AST extensibility). See also the documentation for 'LinkTarget'
+  , sectionTags :: [Tag]
   , sectionPlanning :: PlanningInfo
   , sectionChildren :: [OrgElement]
   , sectionSubsections :: [OrgSection]
@@ -72,8 +168,6 @@ mapSectionContent :: (OrgContent -> OrgContent) -> OrgSection -> OrgSection
 mapSectionContent f = runIdentity . mapSectionContentM (Identity . f)
 
 type Tag = Text
-
-type Tags = [Tag]
 
 -- | The states in which a todo item can be
 data TodoState = Todo | Done
@@ -359,22 +453,37 @@ data OrgObject
   | Code Text
   | Verbatim Text
   | Timestamp TimestampData
-  | -- | Replacement commands (e.g. @\alpha{}@)
+  | -- | Entity (e.g. @\\alpha{}@)
     Entity
       Text
-      -- ^ Entity name (e.g. @"alpha"@)
+      -- ^ Name (e.g. @alpha@)
   | LaTeXFragment FragmentType Text
-  | ExportSnippet Text Text
+  | -- | Inline export snippet (e.g. @\@\@html:\<br/\>\@\@@)
+    ExportSnippet
+      Text
+      -- ^ Back-end (e.g. @html@)
+      Text
+      -- ^ Value (e.g. @\<br/\>@)
   | -- | Footnote reference.
     FootnoteRef FootnoteRefData
   | Cite Citation
   | InlBabelCall BabelCall
-  | Src Text Text Text
+  | -- | Inline source (e.g. @src_html[:foo bar]{\<br/\>}@)
+    Src
+      Text
+      -- ^ Language (e.g. @html@)
+      Text
+      -- ^ Parameters (e.g. @:foo bar@)
+      Text
+      -- ^ Value (e.g. @\<br/\>@)
   | Link LinkTarget [OrgObject]
-  | -- | Inline target (e.g. @<<<foo>>>@)
+  | -- | Inline target (e.g. @\<\<\<foo\>\>\>@)
     Target
       Id
-      -- ^ Anchor
+      -- ^ Anchor (Warning: this field is not populated by the parser! --- in
+      -- the near future, fields like this one and the 'Id' type will be removed
+      -- in favor of AST extensibility). See also the documentation for
+      -- 'LinkTarget'
       Text
       -- ^ Name
   | -- | Org inline macro (e.g. @{{{poem(red,blue)}}}@)
@@ -386,13 +495,22 @@ data OrgObject
   | -- | Statistic cookies.
     StatisticCookie
       (Either (Int, Int) Int)
-      -- ^ Either [num1/num2] or [percent%].
+      -- ^ Either @[num1/num2]@ or @[percent%]@.
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
+-- | Data for a footnote reference.
 data FootnoteRefData
-  = FootnoteRefLabel Text
-  | FootnoteRefDef (Maybe Text) [OrgObject]
+  = -- | Label-only footnote reference (e.g. @[fn:foo]@)
+    FootnoteRefLabel
+      Text
+      -- ^ Label (e.g. @foo@)
+  | -- | Inline footnote definition (e.g. @[fn:foo::bar]@)
+    FootnoteRefDef
+      (Maybe Text)
+      -- ^ Label (if present, e.g. @foo@)
+      [OrgObject]
+      -- ^ Content (e.g. @bar@)
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
@@ -400,6 +518,12 @@ type Protocol = Text
 
 type Id = Text
 
+{- | Link target. Note that the parser does not resolve internal links. Instead,
+they should be resolved using the functions in [@org-exporters@
+package](https://github.com/lucasvreis/org-mode-hs). In the near future, the
+'InternalLink' constructor and 'Id' type will be removed in favor of AST
+extensibility. See also the documentation for 'Target'.
+-}
 data LinkTarget
   = URILink Protocol Text
   | InternalLink Id
@@ -437,9 +561,3 @@ data CiteReference = CiteReference
   }
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
   deriving anyclass (NFData)
-
-aesonOptions :: Aeson.Options
-aesonOptions =
-  Aeson.defaultOptions
-    { Aeson.fieldLabelModifier = Aeson.camelTo2 '-'
-    }

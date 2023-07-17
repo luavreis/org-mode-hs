@@ -62,7 +62,7 @@ section lvl = try $ do
       , sectionSubsections = children
       }
   where
-    titleObjects :: OrgParser (OrgObjects, Tags, Text)
+    titleObjects :: OrgParser (OrgObjects, [Tag], Text)
     titleObjects =
       option mempty $
         withContext__
@@ -70,14 +70,14 @@ section lvl = try $ do
           endOfTitle
           (plainMarkupContext standardSet)
 
-    endOfTitle :: OrgParser Tags
+    endOfTitle :: OrgParser [Tag]
     endOfTitle = try $ do
       hspace
       tags <- option [] (headerTags <* hspace)
       newline'
       return tags
 
-    headerTags :: OrgParser Tags
+    headerTags :: OrgParser [Tag]
     headerTags = try $ do
       _ <- char ':'
       endBy1 orgTagWord (char ':')

@@ -26,8 +26,7 @@ import Org.Data.Entities qualified as Data
 import Org.Exporters.Processing (resolveLinks, runPipeline)
 import Org.Exporters.Processing.OrgData
 import Org.Exporters.Processing.SpecialStrings (doSpecialStrings)
-import Org.Parser (parseOrgMaybe)
-import Org.Parser.Definitions (OrgOptions, OrgParser)
+import Org.Parser (OrgOptions, OrgParser, parseOrgMaybe)
 import Org.Parser.Elements (elements)
 import Org.Parser.Objects (plainMarkupContext, standardSet)
 import Org.Types
