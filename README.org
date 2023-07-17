@@ -1,4 +1,4 @@
-#+title: horg
+#+title: org-mode-hs
 
 This repository provides a parser and exporters for Org Mode documents. The Org document is parsed into an AST similar to =org-element='s, and the exporters are highly configurable using HTML or Markdown templates.
 
@@ -43,8 +43,7 @@ TODO: write this. It's completely possible, just not documented.
 ** Demo
 [[file:demo/demo.png]]
 
-The page on the right was rendered using this parser and its HTML exporter (plus CSS styling).
-You can see the org document source in [[demo/content.org][demo/content.org]] and the resulting AST in [[demo/AST output.txt][demo/AST output.txt]].
+The page on the right was rendered using this parser and its HTML exporter (plus CSS styling). You can see the org document source in [[demo/content.org][demo/content.org]] and the resulting AST in [[demo/AST output.txt][demo/AST output.txt]].
 
 ** How to test and play with it
 *** Testing the parser in =ghci=
@@ -61,7 +60,7 @@ You can write the contents to be parsed between =[text|= and =|]=. More generall
 
 : prettyParse [parser to parse] [string to parse]
 
-Where =[parser to parse]= can be basically any of the functions from =Org.Parse.Document=, =Org.Parser.Elements= or =Org.Parser.Objects= whose types are wrapped by the =OrgParser= monad. You don't need to import those modules yourself as they are already imported in the ~test~ namespace.
+Where =[parser to parse]= can be basically any of the functions from =Org.Parse.Document=, =Org.Parser.Elements= or =Org.Parser.Objects= whose types are wrapped by the =OrgParser= or =Marked OrgParser= monads. You don't need to import those modules yourself as they are already imported in the ~test~ namespace.
 
 *** Unit tests
 You can view the unit tests under [[org-parser/test][org-parser/test]]. They aim to touch as much corner cases as possible against org-element, so you can take a look there to see what already works, and how well it works.
