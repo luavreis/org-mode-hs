@@ -17,7 +17,7 @@ bug-reports:     https://github.com/lucasvreis/org-mode-hs/issues
 copyright:       (c) 2022 lucasvreis
 category:        Text
 build-type:      Simple
-tested-with:     GHC ==9.2.7 || ==9.4.4
+tested-with:     GHC ==9.2 || ==9.4
 
 -- Extra doc files to be distributed with the package, such as a CHANGELOG or a README.
 extra-doc-files:
