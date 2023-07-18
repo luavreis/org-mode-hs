@@ -1,0 +1,17 @@
+
+  <span class="headline">
+    <e:try>
+      <span class="todokw ${this.todo.state} ${this.todo.name}">
+        ${this.todo.name}
+      </span>
+    </e:try>
+    <e:try>
+      <span class="priority ${this.priority}">
+        [#${this.priority}]
+      </span>
+    </e:try>
+    <span class="title"><e:this.title/></span>
+    <e:this.tags:list as=tag>
+      <span class="meta-item tag tag-${tag}">${tag}</span>
+    </e:this.tags:list>
+  </span>

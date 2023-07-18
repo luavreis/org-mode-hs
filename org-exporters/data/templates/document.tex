@@ -6,10 +6,12 @@
 \usepackage{hyperref}
 \usepackage[normalem]{ulem}
 \usepackage{listings}
-\author{Lucas V. R.}
 \date{\today}
-\@[@try]{%!
-  \title{\@doc@kw@title@list[with=org.objects]}%!
+\@try{%!
+  \title{\@doc@kw@title}%!
+}
+\@try{%!
+  \author{\@doc@kw@author}%!
 }
 
 \lstset{
@@ -18,7 +20,7 @@
 
 \begin{document}
 
-\@doc@children@list[with=org.elements]
-\@doc@sections@list[with=org.sections]
+\@doc@children%!
+\@doc@sections%!
 
 \end{document}

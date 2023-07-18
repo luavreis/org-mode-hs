@@ -1,33 +1,3 @@
-\@bind[obj-content]{\@this@content@list[with=org.objects]}%!
-
-\@match[this.tag]{
-  
-  % Markup
-  \@case[plain]{\@escaped[text={\@this@content}]}
-  \@case[bold]{\textbf{\@objContent}}
-  \@case[italic]{\textit{\@objContent}}
-  \@case[underline]{\uline{\@objContent}}
-  \@case[strikethrough]{\sout{\@objContent}}
-  \@case[verbatim]{\texttt{\@this@content}}
-  \@case[subscript]{\textsubscript{\@objContent}}
-  \@case[superscript]{\textsuperscript{\@objContent}}
-  \@case[code]{\lstinline|\@this@content|}
-  \@case[quoted]{%!
-    \@match[this.type]{
-      \@case[single]{`\@objContent'}
-      \@case[double]{``\@objContent''}
-    }%!
-  }
-  
-  \@case[link]{\@org@object@link}
-
-  \@case[latex-fragment]{%!
-    \@match[this.type]{
-      \@case[inline]{\(\@this@content\)}
-      \@case[display]{\[\@this@content\]}
-      \@case[raw]{\@this@content}
-    }%!
-  }
-
-  \@default{!!!\@this@tag!!!}
-}
+\@if[this.tag]{%!
+  \@call[{org.object.\@this@tag}]%!
+}%!

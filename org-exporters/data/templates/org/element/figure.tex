@@ -1,0 +1,75 @@
+\@bind[place]{\@try{\@this@akw@latex@placement}}%!
+
+\@bind[centering]{%!
+  \@match[this.akw.latex.center]{
+    \@case[nil]{}
+    \@case[default]{\centering}
+  }%!
+}%!
+
+\@bind[graphics]{%!
+  \includegraphics{\@this@target}%!
+}%!
+
+\@bind[caption]{%!
+  \@try{\caption{\@this@akw@caption}}%!
+}%!
+
+\@bind[float-fig]{
+  \begin{figure}\@place
+    \@centering
+    \@graphics
+    \@caption
+  \end{figure}%!
+}%!
+
+\@bind[def-fig]{
+  \@match[this.akw.latex.center]{
+    \@case[nil]{\@graphics}
+    \@default{
+      \begin{center}
+        \@graphics
+        \@caption
+      \end{center}%!
+    }
+  }
+}%!
+
+\@sep%!
+\@match[akw:latex:float]{
+  \@case[t]{\@floatFig}
+
+  \@case[multicolumn]{
+    \begin{figure*}\@place
+      \@centering
+      \@graphics
+      \@caption
+    \end{figure*}%!
+  }
+
+  \@case[wrap]{
+    \begin{wrapfigure}\@place
+      \@centering
+      \@graphics
+      \@caption
+    \end{wrapfigure}%!
+  }
+
+  \@case[sideways]{
+    \begin{sidewaysfigure}
+      \@centering
+      \@graphics
+      \@caption
+    \end{sidewaysfigure}%!
+  }
+
+  \@case[nil]{\@defFig}
+
+  \@default{%!
+    \@if[this.akw.caption]{%!
+      \@floatFig%!
+      \@else{\@defFig}%!
+    }%!
+  }
+}%!
+\@sep%!

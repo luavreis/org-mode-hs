@@ -1,4 +1,4 @@
-<<#this:if-math~>>
-  \(<<this.latex>>\)
-  <<~#o:else>><<this.latex>><</o:else>>
-<<~/this:if-math>>
+\@this@ifMath{%!
+  \\(\@this@latex\\)%!
+  \@else{\@this@latex}%!
+}%!

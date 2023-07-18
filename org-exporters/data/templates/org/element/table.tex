@@ -1,5 +1,5 @@
 \@bind[opt]{%!
-  \@bodies@head@head@list{%!
+  \@this@bodies@head@head@list{%!
     \@match[this.alignment]{
       \@case[left]{l}
       \@case[right]{r}
@@ -8,27 +8,24 @@
     }%!
   }%!
 }%!
-\@bind[head]{%!
-  \@this@head@nonempty{
-    \@this@head@list[with=rows]
-    \hline
+\@bind[thead]{%!
+  \@if[this.head.nonempty]{%!
+    \@this@head@list[as=row, with=lrow]\\\\
+        \hline%!
   }%!
 }%!
-\@bind[bodies]{\@this@bodies@list[with=rows, intercalate={\hline
-}]}%!
-\@bind[rows]{\@this@list[with=row, intercalate={\\[0pt]
-}]}%!
-\@bind[row]{%!
-  \@if[this.list]{%!
-    \@this@list[as=cell, with=cell, intercalate={ & }]%!
-    \@else{OHNOO!!!}%!
-  }%!
+\@bind[tbodies]{\@this@bodies@list[as=body, with=lbody, intercalate={    \hline}]}%!
+\@bind[lbody]{\@body@list[as=row, with=lrow, intercalate={\\\\}]}%!
+\@bind[lrow]{
+      \@row@list[as=cell, with=lcell, intercalate={ & }]%!
 }%!
-\@bind[cell]{\@this@content@list[@try, with=org.objects]}%!
+\@bind[lcell]{\@cell@content}%!
 
+\@sep%!
 \begin{center}
-  \begin{tabular}
-    \@head
-    \@bodies
+  \begin{tabular}{\@opt}%!
+    \@thead%!
+    \@tbodies
   \end{tabular}
-\end{center}
+\end{center}%!
+\@sep%!
