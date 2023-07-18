@@ -13,6 +13,7 @@ import Org.Parser.Objects (linkToTarget)
 import Org.Types
 import Org.Walk
 import Text.Slugify (slugify)
+import Data.Char (isAlpha)
 
 popUniqueId :: M Text
 popUniqueId = do
@@ -80,7 +81,7 @@ resolveSection r s@OrgSection {..} = Compose $ do
       registerAnchorTarget ("*" <> sectionRawTitle) a title
       pure a
     Nothing -> do
-      a <- makeAnchorUnique $ "h-" <> slugify sectionRawTitle
+      a <- makeAnchorUnique $ T.dropWhile (not . isAlpha) $ slugify sectionRawTitle
       registerAnchorTarget ("*" <> sectionRawTitle) a title
       pure a
   return do
