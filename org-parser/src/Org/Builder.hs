@@ -163,6 +163,9 @@ keyword ::
   OrgElementData
 keyword = Keyword
 
+clock :: TimestampData -> Maybe Time -> OrgElementData
+clock = Clock
+
 footnoteDef :: Text -> OrgElements -> OrgElementData
 footnoteDef l = FootnoteDef l . toList
 

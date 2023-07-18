@@ -67,61 +67,62 @@ You can view the unit tests under [[org-parser/test][org-parser/test]]. They aim
 
 ** Progress
 In the spec terms (see below the table for other features), the following components are implemented:
-| Component           | Type             | Parse |
-|---------------------+------------------+-------|
-| Heading             | X                | X     |
-| Section             | X                | X     |
-|---------------------+------------------+-------|
-| Affiliated Keywords | X                | X     |
-|---------------------+------------------+-------|
-| GreaterBlock        | X                | X     |
-| Drawer              | X                | X     |
-| FootnoteDefinition  | X                | X     |
-| Item                | X                | X     |
-| List                | X                | X     |
-| PropertyDrawer      | X                | X     |
-| Table               | X                | X     |
-|---------------------+------------------+-------|
-| BabelCall           |                  |       |
-| Comment Block       | X                | X     |
-| Example Block       | X                | X     |
-| Export Block        | X                | X     |
-| Src Block           | X                | X     |
-| Verse Block         | X                |       |
-| Planning            | X                | X     |
-| Comment             | X                | X     |
-| FixedWidth          | X (ExampleBlock) | X     |
-| HorizontalRule      | X                | X     |
-| Keyword             | X                | X     |
-| LaTeXEnvironment    | X                | X     |
-| NodeProperty        | X                | X     |
-| Paragraph           | X                | X     |
-| TableRow            | X                | X     |
-| TableHRule          | X                | X     |
-|---------------------+------------------+-------|
-| OrgEntity           | X                | X     |
-| LaTeXFragment       | X                | X     |
-| ExportSnippet       | X                | X     |
-| FootnoteReference   | X                | X     |
-| InlineBabelCall     | X                | X     |
-| InlineSrcBlock      | X                | X     |
-| RadioLink           | X (Link)         |       |
-| PlainLink           | X (Link)         |       |
-| AngleLink           | X (Link)         | X     |
-| RegularLink         | X (Link)         | X     |
-| Image               | X                | X     |
-| LineBreak           | X                | X     |
-| Macro               | X                | X     |
-| Citation            | X                | X     |
-| RadioTarget         |                  |       |
-| Target              | X                | X     |
-| StatisticsCookie    | X                | X     |
-| Subscript           | X                | X     |
-| Superscript         | X                | X     |
-| TableCell           | X                | X     |
-| Timestamp           | X                | X     |
-| Plain               | X                | X     |
-| Markup              | X                | X     |
+| Component           | Type              | Parse |
+|---------------------+-------------------+-------|
+| Heading             | X                 | X     |
+| Section             | X                 | X     |
+|---------------------+-------------------+-------|
+| Affiliated Keywords | X                 | X     |
+|---------------------+-------------------+-------|
+| GreaterBlock        | X                 | X     |
+| Drawer              | X                 | X     |
+| FootnoteDefinition  | X                 | X     |
+| Item                | X                 | X     |
+| List                | X                 | X     |
+| PropertyDrawer      | X                 | X     |
+| Table               | X                 | X     |
+|---------------------+-------------------+-------|
+| BabelCall           | parsed as keyword |       |
+| Comment Block       | X                 | X     |
+| Clock               | X                 | X     |
+| Example Block       | X                 | X     |
+| Export Block        | X                 | X     |
+| Src Block           | X                 | X     |
+| Verse Block         | X                 |       |
+| Planning            | X                 | X     |
+| Comment             | X                 | X     |
+| FixedWidth          | X (ExampleBlock)  | X     |
+| HorizontalRule      | X                 | X     |
+| Keyword             | X                 | X     |
+| LaTeXEnvironment    | X                 | X     |
+| NodeProperty        | X                 | X     |
+| Paragraph           | X                 | X     |
+| TableRow            | X                 | X     |
+| TableHRule          | X                 | X     |
+|---------------------+-------------------+-------|
+| OrgEntity           | X                 | X     |
+| LaTeXFragment       | X                 | X     |
+| ExportSnippet       | X                 | X     |
+| FootnoteReference   | X                 | X     |
+| InlineBabelCall     | X                 | X     |
+| InlineSrcBlock      | X                 | X     |
+| RadioLink           | wontfix           |       |
+| PlainLink           | wontfix           |       |
+| AngleLink           | X (Link)          | X     |
+| RegularLink         | X (Link)          | X     |
+| Image               | X                 | X     |
+| LineBreak           | X                 | X     |
+| Macro               | X                 | X     |
+| Citation            | X                 | X     |
+| RadioTarget         | wontfix           |       |
+| Target              | X                 | X     |
+| StatisticsCookie    | X                 | X     |
+| Subscript           | X                 | X     |
+| Superscript         | X                 | X     |
+| TableCell           | X                 | X     |
+| Timestamp           | X                 | X     |
+| Plain               | X                 | X     |
+| Markup              | X                 | X     |
 (Thanks @tecosaur for the table)
 
 *** Going beyond what is listed in the spec

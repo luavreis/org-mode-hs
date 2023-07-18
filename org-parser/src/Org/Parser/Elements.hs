@@ -11,6 +11,7 @@ module Org.Parser.Elements
   , table
 
     -- * Lesser elements
+  , clock
   , exampleBlock
   , fixedWidth
   , srcBlock
@@ -19,6 +20,7 @@ module Org.Parser.Elements
   , keyword
   , horizontalRule
   , commentLine
+  , commentBlock
   ) where
 
 import Data.Text qualified as T
@@ -76,10 +78,12 @@ elementIndented minI paraEnd = try (goKws [])
 
     nonParaElement =
       choice
-        [ commentLine
+        [ clock
+        , commentLine
         , exampleBlock
         , srcBlock
         , exportBlock
+        , commentBlock
         , greaterBlock
         , plainList
         , latexEnvironment
@@ -548,3 +552,32 @@ commentLine = try do
   _ <- char '#'
   blankline' <|> (char ' ' <|> fail "If this was meant as a comment, a space is missing here.") *> void anyLine'
   pure Comment
+
+-- | Parse a comment block.
+commentBlock :: OrgParser OrgElementData
+commentBlock = try do
+  _ <- string'' "#+begin_comment"
+  _ <- anyLine
+  _ <- skipManyTill anyLine end
+  pure Comment
+  where
+    end = try $ hspace *> string'' "#+end_comment" <* blankline'
+
+clock :: OrgParser OrgElementData
+clock = try do
+  _ <- string'' "clock: "
+  ts <- parseTimestamp
+  case ts of
+    TimestampData False _ -> do
+      blankline'
+      return $ B.clock ts Nothing
+    TimestampRange False _ _ -> do
+      t <- optional $ do
+        _ <- try $ do
+          hspace1
+          string "=>"
+        hspace1
+        parseTime
+      blankline'
+      return $ B.clock ts t
+    _ -> fail "Clock timestamp must be inactive."

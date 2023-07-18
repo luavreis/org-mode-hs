@@ -32,7 +32,7 @@ defaultOrgOptions =
   OrgOptions
     { orgSrcPreserveIndentation = False
     , orgSrcTabWidth = 4
-    , orgTodoKeywords = [TodoKeyword Todo "TODO", TodoKeyword Todo "DONE"]
+    , orgTodoKeywords = [TodoKeyword Todo "TODO", TodoKeyword Done "DONE"]
     , orgElementParsedKeywords = ["caption", "title", "date", "author"]
     , orgElementDualKeywords = ["caption", "results"]
     , orgElementAffiliatedKeywords = ["caption", "data", "header", "headers", "label", "name", "plot", "resname", "result", "source", "srcname", "tblname"]
