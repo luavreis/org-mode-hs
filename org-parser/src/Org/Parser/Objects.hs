@@ -66,9 +66,9 @@ minimalSet =
     , underline
     , bold
     , strikethrough
+    , entity
     , latexFragment
     , texMathFragment
-    , entity
     , singleQuoted
     , doubleQuoted
     , suscript
@@ -625,12 +625,6 @@ parseTimestamp = try $ do
         hspace1
         takeWhile1P (Just "dayname characters") isLetter
       pure (year, month, day, dayName)
-
-    parseTime :: OrgParser Time
-    parseTime = do
-      hour <- (number 2 <|> number 1) <* char ':'
-      minute <- number 2
-      pure (hour, minute)
 
     repeaterMark = tsmark ["++", ".+", "+"]
 

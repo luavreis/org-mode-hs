@@ -13,6 +13,12 @@ headingStart =
       <* char ' '
       <* skipSpaces
 
+parseTime :: OrgParser Time
+parseTime = do
+  hour <- (number 2 <|> number 1) <* char ':'
+  minute <- number 2
+  pure (hour, minute)
+
 -- | The same as 'string'', but cheaper (?)
 string'' :: MonadParser m => Text -> m Text
 string'' = tokens ((==) `on` T.toLower)

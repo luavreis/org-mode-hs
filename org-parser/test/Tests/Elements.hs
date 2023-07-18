@@ -10,7 +10,25 @@ testElements :: TestTree
 testElements =
   testGroup
     "Elements"
-    [ "Comment line" ~: commentLine $
+    [ "Clock" ~: clock $
+        [ "CLOCK: [2012-11-18 Sun 19:26]--[2012-11-18 Sun 19:33] =>  0:07\n"
+            =?> let dt1 = ((2012, 11, 18, Just "Sun"), Just (19, 26), Nothing, Nothing)
+                    dt2 = ((2012, 11, 18, Just "Sun"), Just (19, 33), Nothing, Nothing)
+                 in B.clock (TimestampRange False dt1 dt2) (Just (0, 7))
+        ]
+    , "Clocks in context" ~: elements $
+        [ [text|
+            foo
+            CLOCK: [2012-11-18 Sun 19:26]--[2012-11-18 Sun 19:33] =>  0:07
+            bar
+          |]
+            =?> let dt1 = ((2012, 11, 18, Just "Sun"), Just (19, 26), Nothing, Nothing)
+                    dt2 = ((2012, 11, 18, Just "Sun"), Just (19, 33), Nothing, Nothing)
+                 in "foo"
+                      <> B.element (B.clock (TimestampRange False dt1 dt2) (Just (0, 7)))
+                      <> "bar"
+        ]
+    , "Comment line" ~: commentLine $
         [ "# this is a comment" =?> Comment
         , "#this line is not a comment" =!> ()
         ]
