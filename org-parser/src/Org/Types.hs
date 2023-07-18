@@ -243,7 +243,13 @@ data OrgElement = OrgElement {affiliatedKeywords :: Keywords, elementData :: Org
   deriving anyclass (NFData)
 
 data OrgElementData
-  = -- | Greater block
+  = -- | Clock
+    Clock
+      TimestampData
+      -- ^ Clock timestamp
+      (Maybe Time)
+      -- ^ Duration
+  | -- | Greater block
     GreaterBlock
       { blkType :: GreaterBlockType
       -- ^ Greater block type

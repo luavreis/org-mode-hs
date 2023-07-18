@@ -19,7 +19,7 @@ where
 
 import Data.Map qualified as Map
 import Data.Text qualified as T
-import Data.Time (Day, TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
+import Data.Time (TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
 import Ondim
 import Ondim.Extra.Expansions (assocsExp, ifElse, listExp, lookupAttr', mapExp)
 import Org.Data.Entities qualified as Data
@@ -286,10 +286,15 @@ elementDataExp ::
   OrgElementData ->
   ExpansionMap m
 elementDataExp bk odata@OrgData {..} = \case
+  (Clock td t) -> do
+    tag #@ "clock"
+    "timestamp" #. timestamp td
+    whenJust t \t' ->
+      "duration" #* tsTime t'
   (Paragraph [l@(Link tgt [])])
     | isImgTarget (orgInlineImageRules exporterSettings) tgt -> do
-        tag #@ "figure"
         objectExp bk odata l
+        tag #@ "figure"
   (Paragraph c) -> do
     tag #@ "paragraph"
     content #. objectsExp bk odata c
@@ -555,26 +560,25 @@ timestamp ::
   ExpansionMap m
 timestamp ts =
   case ts of
-    TimestampData a (dateToDay -> d, fmap toTime -> t, r, w) -> do
-      dtExps d t r w
+    TimestampData a dt -> do
+      dtExps dt
       "type" #@ active a
       "span" #@ "single"
-    TimestampRange
-      a
-      (dateToDay -> d1, fmap toTime -> t1, r1, w1)
-      (dateToDay -> d2, fmap toTime -> t2, r2, w2) -> do
-        "from" #. dtExps d1 t1 r1 w1
-        "to" #. dtExps d2 t2 r2 w2
-        "type" #@ active a
-        "span" #@ "range"
+    TimestampRange a dt1 dt2 -> do
+      "from" #. dtExps dt1
+      "to" #. dtExps dt2
+      "type" #@ active a
+      "span" #@ "range"
   where
-    dtExps d t r w = do
+    dtExps :: DateTime -> ExpansionMap m
+    dtExps (d, t, r, w) = do
       whenJust r \r' ->
         "repeater" #. tsMark r'
       whenJust w \w' ->
         "warning-period" #. tsMark w'
       "date" #* tsDate d
-      "time" #* tsTime t
+      whenJust t \t' ->
+        "time" #* tsTime t'
 
     active True = "active"
     active False = "inactive"
@@ -584,23 +588,24 @@ timestamp ts =
       "value" #@ show v
       "unit" #@ one c
 
-    dateToDay (y, m, d, _) = fromGregorian (toInteger y) m d
-    toTime (h, m) = TimeOfDay h m 0
-
-    tsDate :: Day -> GlobalExpansion m
-    tsDate day input = do
+    tsDate :: Date -> GlobalExpansion m
+    tsDate (y, m, d, _) input = do
       format <- toString <$> lookupAttr' "format" input
-      let locale = defaultTimeLocale -- TODO
       return $
         case ondimCast of
           Just fT -> fT $ toText $ formatTime locale format day
           Nothing -> []
+      where
+        locale = defaultTimeLocale -- TODO
+        day = fromGregorian (toInteger y) m d
 
-    tsTime :: Maybe TimeOfDay -> GlobalExpansion m
-    tsTime time input = do
-      format <- toString <$> lookupAttr' "format" input
-      let locale = defaultTimeLocale -- TODO
-      return $
-        case (ondimCast, time) of
-          (Just fT, Just t) -> fT $ toText $ formatTime locale format t
-          _ -> []
+tsTime :: Time -> GlobalExpansion m
+tsTime (h, m) input = do
+  format <- toString <$> lookupAttr' "format" input
+  return $
+    case ondimCast of
+      Just fT -> fT $ toText $ formatTime locale format time
+      _ -> []
+  where
+    locale = defaultTimeLocale -- TODO
+    time = TimeOfDay h m 0
