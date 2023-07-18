@@ -4,8 +4,8 @@
     \@case[false]{[{$\square$}]}
     \@case[partial]{[{$\boxminus$}]}
     \@default{%!
-      \@item@descriptiveTag@nonempty{%!
-        [{\@item@descriptiveTag[with=org.objects]}]%!
+      \@if[item.descriptive-tag.nonempty]{%!
+        [{\@item@descriptiveTag}]%!
       }%!
     }
   }%!
@@ -20,8 +20,10 @@
   }%!
 }%!
 
+\@sep%!
 \begin{\@my@listEnv}%!
   \@this@items@list[as=item]{
-    \item\@my@itemParams \@item@content@list[with=org.elements]%!
+    \item\@my@itemParams \@item@content%!
   }
-\end{\@my@listEnv}
+\end{\@my@listEnv}%!
+\@sep%!

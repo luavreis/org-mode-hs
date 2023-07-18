@@ -1,0 +1,16 @@
+<!-- You can also define custom templates for *specific* special blocks
+     by using a Switch tag:
+
+       <e:match this.name>
+         <e:case proof>
+           Your custom proof environment
+         </e:case>
+         <e:default>
+           Default case
+         </e:default>
+       </e:match>
+
+-->
+<div class="!(this.name)" e:this.affiliated>
+  <e:this.content />
+</div>

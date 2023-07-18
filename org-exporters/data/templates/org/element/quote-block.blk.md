@@ -1,4 +1,0 @@
-::: {affiliated=""}
-> ::: e:content
-> :::
-:::

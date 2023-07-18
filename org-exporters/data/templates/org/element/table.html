@@ -1,0 +1,32 @@
+<e:bind thead>
+  <e:if this:head:nonempty>
+    <thead>
+      <e:scope>
+        <e:bind headp />
+        <e:this:head:list as='row' with='lrow'/>
+      </e:scope>
+    </thead>
+  </e:if>
+</e:bind>
+<e:bind tbodies>
+  <e:this:bodies:list as='body' with='lbody'/>
+</e:bind>
+<e:bind lbody>
+  <tbody>
+    <e:body:list as='row' with='lrow'/>
+  </tbody>
+</e:bind>
+<e:bind lrow><tr><e:row:list as='cell' with='lcell'/></tr></e:bind>
+<e:bind lcell>
+  <e:if headp>
+    <th style?='text-align: ${cell:aligment};'><e:cell:content/></th>
+    <e:else>
+      <td style?='text-align: ${cell:aligment};'><e:cell:content/></td>
+    </e:else>
+  </e:if>
+</e:bind>
+
+<table rules="groups" frame="hsides" cellspacing="0" cellpadding="6" border="2">
+  <e:thead/>
+  <e:tbodies/>
+</table>

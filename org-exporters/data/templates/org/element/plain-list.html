@@ -1,0 +1,68 @@
+<e:bind my:checkbox>
+  <e:match this.checkbox>
+    <e:case true><input type="checkbox" checked disabled/> </e:case>
+    <e:case false><input type="checkbox" disabled/> </e:case>
+    <e:case partial><input type="checkbox" disabled/> </e:case>
+  </e:match>
+</e:bind>
+
+<e:bind my:content>
+  <e:if this.plain>
+    <e:this:plain/>
+    <e:else>
+      <e:this:content/>
+    </e:else>
+  </e:if>
+</e:bind>
+
+<e:match this.type>
+  <e:case unordered>
+    <e:bind my:bullet>
+      <e:match this.bullet>
+        <e:case tag="-">disc</e:case>
+        <e:case tag="+">square</e:case>
+        <e:case tag="*">circle</e:case>
+      </e:match>
+    </e:bind>
+
+    <ul e:this.affiliated style="list-style-type: ${my:bullet};">
+      <e:this.items:list>
+        <li>
+          <e:my:checkbox/> <e:my:content/>
+        </li>
+      </e:this.items:list>
+    </ul>
+  </e:case>
+
+  <e:case ordered-num>
+    <ol e:this.affiliated style="list-style-type: decimal;">
+      <e:this.items:list>
+        <li value?="!(this.counter-set)">
+          <e:my:checkbox/> <e:my:content/>
+        </li>
+      </e:this.items:list>
+    </ol>
+  </e:case>
+
+  <e:case ordered-alpha>
+    <ol e:this.affiliated style="list-style-type: lower-alpha;">
+      <e:this.items:list>
+        <li value?="${this.counter-set}">
+          <e:my:checkbox/> <e:my:content/>
+        </li>
+      </e:this.items:list>
+    </ol>
+  </e:case>
+
+  <e:case descriptive>
+    <dl e:this.affiliated>
+      <e:this.items:list>
+        <dt>
+          <e:my:checkbox/>
+          <e:this:descriptive-tag/>
+        </dt>
+        <dd><e:my:content/></dd>
+      </e:this.items:list>
+    </dl>
+  </e:case>
+</e:match>

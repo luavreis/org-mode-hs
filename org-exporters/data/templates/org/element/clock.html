@@ -1,0 +1,12 @@
+
+  <div class="timestamp-wrapper">
+    <span class="timestamp-kwd">CLOCK: </span>
+    <span class="timestamp">
+      <e:with this=this.timestamp>
+        <e:org.object.timestamp/>
+      </e:with>
+      <e:if this.duration>
+        (duration: <e:this.duration format="%R"/>)
+      </e:if>
+    </span>
+  </div>

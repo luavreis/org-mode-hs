@@ -1,18 +1,3 @@
-\@bind[obj-content]{\@this@content@list[with=org.objects]}%!
-\@bind[el-content]{\@this@content@list[with=org.elements]}%!
-\@bind[raw-content]{\@raw[name=this.content]}%!
-
-\@match[this.tag]{
-  
-  \@case[paragraph]{\@sep\@objContent\@sep}
-  
-  \@case[plain-list]{\@sep\@org@element@plainList\@sep}
-
-  \@case[src-block]{\@sep\@org@element@srcBlock\@sep}
-
-  \@case[table]{\@sep\@org@element@table\@sep}
-
-  \@case[keyword]{}
-
-  \@default{\@this@tag[@try]}
-}
+\@if[this.tag]{%!
+  \@call[{org.element.\@this@tag}]%!
+}%!
