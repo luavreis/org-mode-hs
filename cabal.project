@@ -23,4 +23,4 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/lucasvreis/ondim.git
-  tag: 9e7034d55e1aeb357b29a52d59df6dfc384ce59f
+  tag: dc7022350cbe70373b3a295b1f862101db8fcbe8
