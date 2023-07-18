@@ -1,8 +1,6 @@
 #+title: org-mode-hs
 
-This repository provides a parser and exporters for Org Mode documents. The Org document is parsed into an AST similar to =org-element='s, and the exporters are highly configurable using HTML or Markdown templates.
-
-IMPORTANT: recently, I've been changing the code that runs the templates without updating the templates themselves. So, while everything compiles, most likely the exporters won't work. Please wait while things get more stable (or keep up with the template updates yourself).
+This repository provides a parser and exporters for Org Mode documents. The Org document is parsed into an AST similar to =org-element='s, and the exporters are highly configurable using HTML, Markdown or LaTeX templates.
   
 * Table of contents :TOC:
 - [[#org-cli-horg][org-cli (horg)]]
@@ -10,7 +8,6 @@ IMPORTANT: recently, I've been changing the code that runs the templates without
   - [[#usage][Usage]]
   - [[#customizing-templates][Customizing templates]]
 - [[#org-parser-library][org-parser library]]
-  - [[#demo][Demo]]
   - [[#how-to-test-and-play-with-it][How to test and play with it]]
   - [[#progress][Progress]]
   - [[#comparasion-to-pandoc][Comparasion to Pandoc]]
@@ -21,8 +18,8 @@ IMPORTANT: recently, I've been changing the code that runs the templates without
 ** Installation
 *** Using =cabal=
 #+begin_src bash
-git clone https://github.com/lucasvreis/org-hs.git
-cd org-hs
+git clone https://github.com/lucasvreis/org-mode-hs.git
+cd org-mode-hs
 cabal install horg
 #+end_src
 
@@ -37,14 +34,11 @@ horg -h
 horg export -h
 #+end_src
 ** Customizing templates
-TODO: write this. It's completely possible, just not documented.
+You can use the =horg init-templates= command to populate a =.horg= directory in the current directory with the default templates, which you can then modify.
+
+Detailed documentation on how the templates work is TODO.
 
 * org-parser library
-** Demo
-[[file:demo/demo.png]]
-
-The page on the right was rendered using this parser and its HTML exporter (plus CSS styling). You can see the org document source in [[demo/content.org][demo/content.org]] and the resulting AST in [[demo/AST output.txt][demo/AST output.txt]].
-
 ** How to test and play with it
 *** Testing the parser in =ghci=
 
@@ -159,6 +153,8 @@ This single paragraph is broken into three by Pandoc, because it looks for a new
 Another noteworthy difference is that =haskell-org-parser= uses a different parsing library, ~megaparsec~. Pandoc uses the older ~parsec~, but also bundles many features on its own library.
 
 * org-exporters library
+This library provides functions for post-processing of the Org AST and exporting to various formats with =ondim=.
+
 ** Defining a new export backend
 Basically:
  - Use the [[https://github.com/lucasvreis/ondim][~ondim~ library]] to create a Ondim template system for the desired format, if it does not already exist.
