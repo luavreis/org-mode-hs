@@ -233,9 +233,8 @@ objectExp bk@ExportBackend {..} odata@OrgData {..} obj =
       (FootnoteRef (FootnoteRefLabel name)) -> do
         tag #@ "footnote-ref"
         let def = footnotes Map.!? name
-        whenJust def \thing ->
-          whenLeft () thing \objs ->
-            content #. expObjs objs
+        whenJust def \thing -> do
+          content #. either expObjs expEls thing
         "key" #@ name
       (FootnoteRef _) -> pass
       (Cite _) -> pass -- TODO
@@ -263,6 +262,7 @@ objectExp bk@ExportBackend {..} odata@OrgData {..} obj =
     tag = "tag"
     content = "content"
     expObjs = objectsExp bk odata
+    expEls = elementsExp bk odata
 
 elementsExp ::
   Monad m =>
