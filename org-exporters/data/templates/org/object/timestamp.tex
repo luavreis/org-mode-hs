@@ -1,0 +1,26 @@
+\@bind[repeater]{%!
+  \@try{%!
+    \@open[this.repeater]{, repeating every \@value\@unit}%!
+  }%!
+}%!
+
+\@bind[warning]{%!
+  \@try{%!
+    \@open[this.warning-period]{, warning for \@value\@unit}%!
+  }%!
+}%!
+
+\@bind[datetime]{%!
+  \@this@date[format={\%a, \%b \%e, \%Y}]\@try{ at \@this@time[format={\%R\%P}]}%!
+}%!
+
+\@bind[timestamp]{%!
+  \@with[this={\@caller@attrs@ts}]{%!
+    \@datetime\@repeater\@warning%!
+  }%!
+}%!
+
+\@match[this.span]{
+  \@case[single]{\@timestamp[ts=this]}
+  \@case[range]{from \@timestamp[ts=this.from] to \@timestamp[ts=this.to]}
+}%!

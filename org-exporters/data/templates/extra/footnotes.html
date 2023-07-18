@@ -1,0 +1,25 @@
+<e:bind footnote-els>
+  <e:match this.tag>
+    <e:case paragraph>
+      <p class="footpara"><e:this.content/></p>
+    </e:case>
+    <e:default>
+      <e:org.elements/>
+    </e:default>
+  </e:match>
+</e:bind>
+
+<e:if doc.footnotes.nonempty>
+  <br/>
+  <div id="footnotes">
+    <h2>Footnotes:</h2>
+    <e:doc.footnotes.list as=footnote>
+      <div class="footdef">
+        <sup>
+          <a id="fn-${footnote.key}" href="#fnr-${footnote.key}">${footnote.key}</a>
+        </sup>
+        <e:footnote.value:list with="footnote-els"/>
+      </div>
+    </e:doc.footnotes.list>
+  </div>
+</e:if>

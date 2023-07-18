@@ -1,74 +1,57 @@
-<e:bind my_headline>
-  <span class="headline">
-    <e:try>
-      <span class="todokw ${section.todo.state} ${section.todo.name}">
-        ${section.todo.name}
-      </span>
-    </e:try>
-    <e:try>
-      <span class="priority ${section:priority}">
-        Priority: ${section:priority}
-      </span>
-    </e:try>
-    <span class="title"><e:section:title/></span>
-    <e:section.tags:list as=tag>
-      <span class="meta-item tag tag-${tag}">${tag}</span>
-    </e:section.tags:list>
-  </span>
-</e:bind>
-
 <e:bind my_planning>
-  <e:if section.planning.nonempty>
+  <e:if this.planning.nonempty>
     <ul class="planning">
       <e:try>
         <li class="scheduled">
-          Scheduled: <e:section:planning:scheduled/>
+          Scheduled: <e:this:planning:scheduled/>
         </li>
       </e:try>
       <e:try>
         <li class="deadline">
-          Deadline: <e:section:planning:deadline/>
+          Deadline: <e:this:planning:deadline/>
         </li>
       </e:try>
       <e:try>
         <li class="closed">
-          Closed: <e:section:planning:closed/>
+          Closed: <e:this:planning:closed/>
         </li>
       </e:try>
     </ul>
   </e:if>
 </e:bind>
 
-<e:bind my_hlevel>
-  <e:match this.level>
-    <e:case 1><h2><e:caller.children/></h2></e:case>
-    <e:case 2><h3><e:caller.children/></h3></e:case>
-    <e:case 3><h4><e:caller.children/></h4></e:case>
-    <e:case 4><h5><e:caller.children/></h5></e:case>
+<e:with sections='this'>
+  <e:bind my_hlevel>
+    <e:match sections.level>
+      <e:case 1><h2><e:caller.children/></h2></e:case>
+      <e:case 2><h3><e:caller.children/></h3></e:case>
+      <e:case 3><h4><e:caller.children/></h4></e:case>
+      <e:case 4><h5><e:caller.children/></h5></e:case>
+    </e:match>
+  </e:bind>
+
+  <e:match sections.type>
+    <e:case normal>
+      <e:sections:list>
+        <section id="${this.anchor}">
+          <e:my_hlevel><e:org.element.headline/></e:my_hlevel>
+          <e:my_planning/>
+          <e:this:children/>
+          <e:this:subsections/>
+        </section>
+      </e:sections:list>
+    </e:case>
+
+    <e:case over-level>
+      <ol>
+        <e:sections:list>
+          <li id="${this.anchor}">
+            <p><b><e:org.element.headline/></b></p>
+            <e:this:children/>
+            <e:this:subsections/>
+          </li>
+        </e:sections:list>
+      </ol>
+    </e:case>
   </e:match>
-</e:bind>
-
-<e:match this.type>
-  <e:case normal>
-    <e:this:list as="section">
-      <section id="${section.anchor}">
-        <e:my_hlevel><e:my_headline /></e:my_hlevel>
-        <e:my_planning/>
-        <e:section:children/>
-        <e:section:subsections/>
-      </section>
-    </e:this:list>
-  </e:case>
-
-  <e:case over-level>
-    <ol>
-      <e:this:list as="section">
-        <li id="${section.anchor}">
-          <p><b><e:my_headline /></b></p>
-          <e:section:children/>
-          <e:section:subsections/>
-        </li>
-      </e:this:list>
-    </ol>
-  </e:case>
-</e:match>
+</e:with>

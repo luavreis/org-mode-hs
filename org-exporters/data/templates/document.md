@@ -1,10 +1,8 @@
----
-# TODO
-# 'title{kw:title}': '[]{.e:doc:kw:title}'
-# 'date{kw:date}': '[]{.e:doc:kw:date}'
-# 'date{kw:author}': '[]{.e:doc:kw:author}'
-# 'props:all':
----
+<!-- --- -->
+<!-- title: '[]{.e:doc:kw:title}' -->
+<!-- date: '[]{.e:doc:kw:date}' -->
+<!-- author: '[]{.e:doc:kw:author}' -->
+<!-- --- -->
 
 ::: e:doc:children
 :::

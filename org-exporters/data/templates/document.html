@@ -4,25 +4,21 @@
     <meta charset="utf-8"/>
     <e:try><title><e:doc.kw.title/></title></e:try>
     <e:extra.style/>
+    <e:extra.mathjax/>
   </head>
   <body>
-    <e:extra.toc>
-      <h2>Table of Contents</h2>
-    </e:extra.toc>
-
-    <e:doc.children/>
-    <e:doc.sections/>
-
-    <e:if doc.footnotes.nonempty>
-      <br/>
-      <div id="footnotes">
-        <e:doc.footnotes.list as=footnote>
-          <div class="footdef">
-            <a id="fn-${footnote.key}" href="#fnr-${footnote.key}">[<e:footnote.key />]</a>
-            <e:footnote.value/>
-          </div>
-        </e:doc.footnotes.list>
-      </div>
-    </e:if>
+    <div id="content" class="content">
+      <e:try><h1 class="title"><e:doc.kw.title/></h1></e:try>
+      <e:extra.toc>
+        <h2>Table of Contents</h2>
+      </e:extra.toc>
+      <e:doc.children/>
+      <e:doc.sections/>
+      <e:extra.footnotes/>
+    </div>
+    <div id="postamble" class="status">
+      <e:try><p class="author">Author: <e:doc.kw.author/></p></e:try>
+      <e:try><p class="email">Email: <a href="mailto:${doc.kw.email}">${doc.kw.email}</a></p></e:try>
+    </div>
   </body>
 </html>

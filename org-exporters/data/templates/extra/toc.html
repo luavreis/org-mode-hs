@@ -2,14 +2,18 @@
   <e:caller.children/>
   <e:scope>
     <e:bind org.sections>
-      <ul>
-        <e:this.list section>
-          <li>
-            <a href="#${this.anchor}"><e:this.title/></a>
-            <e:this.subsections/>
-          </li>
-        </e:this.list>
-      </ul>
+      <e:match this.type>
+        <e:case normal>
+          <ul>
+            <e:this.list section>
+              <li>
+                <a href="#${this.anchor}"><e:org.element.headline/></a>
+                <e:this.subsections/>
+              </li>
+            </e:this.list>
+          </ul>
+        </e:case>
+      </e:match>
     </e:bind>
     <e:doc.sections/>
   </e:scope>

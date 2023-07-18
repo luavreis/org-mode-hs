@@ -1,0 +1,13 @@
+<e:bind repeater><e:if this.repeater><e:open this.repeater>, repeating every ${value} ${unit}</e:open></e:if></e:bind>
+<e:bind warning><e:if this.warning-period><e:open this.warning-period>, warning for ${value} ${unit}</e:open></e:if></e:bind>
+<e:bind datetime><time><e:this:date format="%a, %b %e, %Y"/> <e:if this.time><e:this:time format="at %R%P"/></e:if></time></e:bind>
+<e:bind timestamp-inner><e:with this=${caller.attrs.ts}><e:datetime/><e:repeater/><e:warning/></e:with></e:bind>
+
+<e:bind timestamp>
+  <span class="timestamp ${this.type}"><e:timestamp-inner ts=${caller.attrs.ts} /></span>
+</e:bind>
+
+<e:match this.span>
+  <e:case single><e:timestamp ts=this /></e:case>
+  <e:case range>From <e:timestamp ts=this.from /> to <e:timestamp ts=this.to /></e:case>
+</e:match>
