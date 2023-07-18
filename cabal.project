@@ -7,11 +7,6 @@ package *
 
 source-repository-package
   type: git
-  location: https://github.com/lucasvreis/multiwalk.git
-  tag: v0.3.0.0
-
-source-repository-package
-  type: git
   location: https://github.com/lucasvreis/lvar.git
   tag: b5c16f1f48a784bdb0578a663c3bb0d355fe0fc6
 
