@@ -23,9 +23,9 @@ import Org.Exporters.Processing.Prune (pruneDoc)
 import Org.Parser
 import Org.Types (OrgDocument)
 import System.Directory qualified as D
+import System.FilePath (isDrive, takeDirectory, (</>))
 import Text.Megaparsec (errorBundlePretty)
 import Text.Pretty.Simple
-import System.FilePath ((</>), takeDirectory)
 
 pandocState :: Monad m => OndimState m
 pandocState = templatesEmbed [P.loadPandocMd] <> P.defaultState
@@ -37,13 +37,13 @@ latexState :: Monad m => OndimState m
 latexState = templatesEmbed [L.loadLaTeX] <> L.defaultState
 
 renderDoc ::
-  Maybe FilePath ->
+  [FilePath] ->
   O.OndimOptions ->
   OrgData ->
   OrgDocument ->
   IO (Either OndimException LByteString)
-renderDoc localDir oo datum doc = do
-  let dirs = catMaybes [O.templateDir oo, localDir]
+renderDoc udirs oo datum doc = do
+  let dirs = maybeToList (O.templateDir oo) ++ udirs
   let (cfgs, st, bk) = case O.format oo of
         O.HTML -> ([H.loadHtml], htmlState, H.defBackend)
         O.Pandoc -> ([P.loadPandocMd], pandocState, P.defBackend)
@@ -59,10 +59,22 @@ renderDoc localDir oo datum doc = do
 main :: IO ()
 main = do
   let tdir = ".horg"
-  exists <- D.doesDirectoryExist tdir
-  let ldir = bool Nothing (Just tdir) exists
+  cdir <- D.getCurrentDirectory
+  let go dir st
+        | isDrive dir = return st
+        | otherwise = do
+            let hdir = dir </> tdir
+                continue = go (takeDirectory dir) st
+            exists <- D.doesDirectoryExist hdir
+            if exists
+              then (hdir :) <$> continue
+              else continue
+  cfgdir <- D.getXdgDirectory D.XdgConfig "horg"
+  cfgDirExists <- D.doesDirectoryExist cfgdir
+  udirs <- go cdir $ bool [] [cfgdir] cfgDirExists
   execParser O.appCmd >>= \case
     O.CmdInitTemplates -> do
+      exists <- D.doesDirectoryExist tdir
       if exists
         then putStrLn "'.horg' directory already exists."
         else forM_ templateDirEmbeded \(fp, bs) -> do
@@ -91,7 +103,7 @@ main = do
         case O.backend opts of
           O.AST False -> return $ Right $ show processed
           O.AST True -> return $ Right $ encodeUtf8 $ pShowNoColor processed
-          O.Ondim oo -> renderDoc ldir oo datum processed
+          O.Ondim oo -> renderDoc udirs oo datum processed
       case out of
         Right (Right out') -> case O.output opts of
           O.StdOutput -> putBSLn $ toStrict out'
