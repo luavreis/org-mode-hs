@@ -73,7 +73,7 @@ jobs:
 
       - name: Output executable
         run: |
-          cabal install all:exes --install-method=copy --installdir=target
+          cabal install all:exes --install-method=copy --installdir=target --program-suffix='${{ matrix.os }}-${{ github.ref_name }}'
         if: ${{ matrix.executable }}
 
       - name: Compress binaries
@@ -86,6 +86,6 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ runner.os }}-${{ github.ref_name }}
+          name: ${{ matrix.os }}-${{ github.ref_name }}
           path: target/
         if: ${{ matrix.executable }}
