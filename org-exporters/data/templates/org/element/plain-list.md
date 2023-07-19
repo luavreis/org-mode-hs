@@ -1,23 +1,31 @@
-::: {.e:bind #content}
+::: {.e:bind #bind-contents}
 :::: {.e:if #this.plain}
-# {.e:this.plain}
+
+[[]{.e:this.plain}]{.e:bind #item-contents}
+
 ::::: {.e:else}
+
+:::::: {.e:bind #item-contents}
 # {.e:this.content}
+::::::
+
 :::::
 ::::
 :::
 
 ::: {.e:bind #item}
+# {.e:bind-contents}
 :::: {#list.item}
-# {.e:content}
+# {.e:item-contents}
 ::::
 :::
 
 ::: {.e:bind #desc-item}
+# {.e:bind-contents}
 :::: {#list.item}
 # []{.e:this.descriptive-tag} {#list.item.term}
 ::::: {#list.item.definition}
-# {.e:content}
+# {.e:item-contents}
 :::::
 ::::
 :::
