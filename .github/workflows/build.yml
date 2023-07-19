@@ -16,7 +16,7 @@ jobs:
         ghc: ['9.2', '9.4']
         cabal: ['3.6']
         include:
-          - ghc: '9.2'
+          - ghc: '9.4'
             executable: true
     steps:
       - uses: actions/checkout@v3
@@ -38,7 +38,7 @@ jobs:
 
       - name: Configure the build
         run: |
-          cabal configure --enable-tests --enable-benchmarks --enable-documentation
+          cabal configure --enable-tests --enable-benchmarks
           cabal build all --dry-run
 
       - name: Restore cached dependencies
@@ -67,9 +67,6 @@ jobs:
 
       - name: Run tests
         run: cabal test all
-
-      - name: Build documentation
-        run: cabal haddock all
 
       - name: Output executable
         run: |
