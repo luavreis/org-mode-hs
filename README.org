@@ -43,7 +43,7 @@ The Pandoc exporter does not output Pandoc formats directly, but rather, it gene
 horg export pandoc -i myfile.org --stdout | pandoc --from json --to markdown
 #+end_src
 
-It can happen that the JSON version is incompatible with your installed version of Pandoc. The CI compiles =horg= with the latest Pandoc API available at the build time, so using the latest released version of the Pandoc binary has a good chance of fixing the problem.
+It can happen that the JSON API version is incompatible with your installed version of Pandoc. The CI compiles =horg= with the latest Pandoc API available at the build time, so using the latest released version of the Pandoc binary has a good chance of fixing the problem.
 
 ** Installation from source
 *** Using =cabal=
