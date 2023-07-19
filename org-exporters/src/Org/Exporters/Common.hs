@@ -5,7 +5,6 @@
 
 module Org.Exporters.Common
   ( ExportBackend (..)
-  , templateDir
   , objectExp
   , objectsExp
   , elementExp
@@ -31,8 +30,7 @@ import Org.Parser.Elements (elements)
 import Org.Parser.Objects (plainMarkupContext, standardSet)
 import Org.Types
 import Org.Walk (MWTag, MultiWalk)
-import Paths_org_exporters (getDataDir)
-import System.FilePath (isRelative, takeExtension, (-<.>), (</>))
+import System.FilePath (isRelative, takeExtension, (-<.>))
 
 data ExportBackend m = ExportBackend
   { affiliatedMap :: Keywords -> ExpansionMap m
@@ -42,9 +40,6 @@ data ExportBackend m = ExportBackend
   , customElement :: ExportBackend m -> OrgData -> OrgElement -> Maybe (ExpansionMap m)
   , customObject :: ExportBackend m -> OrgData -> OrgObject -> Maybe (ExpansionMap m)
   }
-
-templateDir :: IO FilePath
-templateDir = (</> "templates") <$> getDataDir
 
 keywordsMap ::
   Monad m =>

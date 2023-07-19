@@ -27,6 +27,7 @@ executable horg
   other-modules:      Options
   build-depends:
     , base                  >=4.15   && <4.19
+    , directory
     , filepath
     , megaparsec
     , ondim
@@ -34,8 +35,6 @@ executable horg
     , org-exporters
     , org-parser
     , pandoc
-    , path                  >=0.9.2  && <0.10
-    , path-io               >=1.7.0  && <1.9
     , pretty-simple         >=4.1
     , relude
 
