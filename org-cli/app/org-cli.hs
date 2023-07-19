@@ -12,7 +12,8 @@ import Ondim.Targets.LaTeX qualified as L
 import Ondim.Targets.Pandoc qualified as P
 import Options qualified as O
 import Options.Applicative
-import Org.Exporters.Common (documentExp, templateDir)
+import Org.Exporters.Common (documentExp)
+import Org.Exporters.Data.Templates (templateDirEmbeded, templatesEmbed)
 import Org.Exporters.HTML qualified as H
 import Org.Exporters.LaTeX qualified as L
 import Org.Exporters.Pandoc qualified as P
@@ -21,10 +22,19 @@ import Org.Exporters.Processing.InternalLinks (resolveLinks)
 import Org.Exporters.Processing.Prune (pruneDoc)
 import Org.Parser
 import Org.Types (OrgDocument)
-import Path (parseAbsDir, parseRelDir)
-import Path.IO (copyDirRecur', doesDirExist)
+import System.Directory qualified as D
 import Text.Megaparsec (errorBundlePretty)
 import Text.Pretty.Simple
+import System.FilePath ((</>), takeDirectory)
+
+pandocState :: Monad m => OndimState m
+pandocState = templatesEmbed [P.loadPandocMd] <> P.defaultState
+
+htmlState :: Monad m => OndimState m
+htmlState = templatesEmbed [H.loadHtml] <> H.defaultState
+
+latexState :: Monad m => OndimState m
+latexState = templatesEmbed [L.loadLaTeX] <> L.defaultState
 
 renderDoc ::
   Maybe FilePath ->
@@ -33,32 +43,32 @@ renderDoc ::
   OrgDocument ->
   IO (Either OndimException LByteString)
 renderDoc localDir oo datum doc = do
-  defDir <- templateDir
-  let usrDir = O.templateDir oo
+  let dirs = catMaybes [O.templateDir oo, localDir]
   let (cfgs, st, bk) = case O.format oo of
-        O.HTML -> ([H.loadHtml], H.defaultState, H.defBackend)
-        O.Pandoc -> ([P.loadPandocMd], P.defaultState, P.defBackend)
-        O.LaTeX -> ([L.loadLaTeX], L.defaultState, L.defBackend)
-  tpls <- loadTemplates cfgs $ catMaybes [usrDir, localDir, Just defDir]
-  evalOndimTWith (tpls <> st) $
+        O.HTML -> ([H.loadHtml], htmlState, H.defBackend)
+        O.Pandoc -> ([P.loadPandocMd], pandocState, P.defBackend)
+        O.LaTeX -> ([L.loadLaTeX], latexState, L.defBackend)
+  tpls <-
+    if null dirs
+      then return st
+      else (<> st) <$> loadTemplates cfgs dirs
+  evalOndimTWith tpls $
     callTemplateFold @Rendered (O.layout oo)
       `binding` documentExp bk datum doc
 
 main :: IO ()
 main = do
-  ddir <- parseAbsDir =<< templateDir
-  tdir <- parseRelDir ".horg"
-  ldir <-
-    ifM
-      (doesDirExist tdir)
-      (return $ Just ".horg")
-      (return Nothing)
+  let tdir = ".horg"
+  exists <- D.doesDirectoryExist tdir
+  let ldir = bool Nothing (Just tdir) exists
   execParser O.appCmd >>= \case
     O.CmdInitTemplates -> do
-      ifM
-        (doesDirExist tdir)
-        (putStrLn "'.horg' directory already exists.")
-        (copyDirRecur' ddir tdir)
+      if exists
+        then putStrLn "'.horg' directory already exists."
+        else forM_ templateDirEmbeded \(fp, bs) -> do
+          let path = tdir </> fp
+          D.createDirectoryIfMissing True $ takeDirectory path
+          writeFileBS path bs
     O.CmdExport opts -> do
       (txt, fp) <- case O.input opts of
         O.StdInput -> (,"stdin") <$> T.getContents

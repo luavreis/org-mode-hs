@@ -52,6 +52,7 @@ library
   exposed-modules:
     Org.Exporters.Citeproc
     Org.Exporters.Common
+    Org.Exporters.Data.Templates
     Org.Exporters.HTML
     Org.Exporters.Processing
     Org.Exporters.Processing.GatherSettings
@@ -69,6 +70,7 @@ library
     , bytestring    >=0.11.4 && <0.12
     , citeproc      >=0.8.1  && <0.9
     , containers
+    , file-embed
     , filepath      >=1.4.2  && <1.5
     , megaparsec
     , multiwalk
