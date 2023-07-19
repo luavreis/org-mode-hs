@@ -4,8 +4,8 @@ This repository provides a parser and exporters for Org Mode documents. The Org 
   
 * Table of contents :TOC:
 - [[#org-cli-horg][org-cli (horg)]]
-  - [[#installation][Installation]]
   - [[#usage][Usage]]
+  - [[#installation-from-source][Installation from source]]
   - [[#customizing-templates][Customizing templates]]
 - [[#org-parser-library][org-parser library]]
   - [[#how-to-test-and-play-with-it][How to test and play with it]]
@@ -15,15 +15,8 @@ This repository provides a parser and exporters for Org Mode documents. The Org 
   - [[#defining-a-new-export-backend][Defining a new export backend]]
 
 * org-cli (horg)
-** Installation
-*** Using =cabal=
-#+begin_src bash
-git clone https://github.com/lucasvreis/org-mode-hs.git
-cd org-mode-hs
-cabal install horg
-#+end_src
 
-Please note that this library and some of its dependencies are not on Hackage yet, so you need to clone this repository first. 
+You can find compiled binaries for Linux and MacOS on the [[https://github.com/lucasvreis/org-mode-hs/releases][releases page]].
 
 ** Usage
 The =horg= CLI tool has some basic help pages, to see them type:
@@ -33,6 +26,35 @@ horg -h
 # Exporter help
 horg export -h
 #+end_src
+
+To convert to HTML, for instance, you can type:
+#+begin_src bash
+# Save to out.html
+horg export html -i myfile.org -o out.html
+
+# Print to stdout
+horg export html -i myfile.org --stdout
+#+end_src
+
+*** Using Pandoc
+The Pandoc exporter does not output Pandoc formats directly, but rather, it generates a JSON AST that can be fed into Pandoc. You can pipe this JSON into Pandoc to convert to Markdown or any other supported format:
+
+#+begin_src bash
+horg export pandoc -i myfile.org --stdout | pandoc --from json --to markdown
+#+end_src
+
+It can happen that the JSON version is incompatible with your installed version of Pandoc. The CI compiles =horg= with the latest Pandoc API available at the build time, so using the latest released version of the Pandoc binary has a good chance of fixing the problem.
+
+** Installation from source
+*** Using =cabal=
+#+begin_src bash
+git clone https://github.com/lucasvreis/org-mode-hs.git
+cd org-mode-hs
+cabal install horg
+#+end_src
+
+Please note that this library and some of its dependencies are not on Hackage yet, so you need to clone this repository first. 
+
 ** Customizing templates
 You can use the =horg init-templates= command to populate a =.horg= directory in the current directory with the default templates, which you can then modify.
 
