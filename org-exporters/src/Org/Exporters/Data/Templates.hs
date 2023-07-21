@@ -14,6 +14,6 @@ templateDir = (</> "templates") <$> getDataDir
 templateDirEmbeded :: [(FilePath, ByteString)]
 templateDirEmbeded = $(embedDir "data/templates")
 
-templatesEmbed :: [LoadConfig] -> OndimState n
+templatesEmbed :: [LoadConfig n] -> OndimState n
 templatesEmbed cfg =
   loadTemplatesEmbed "org-exporters-default" cfg templateDirEmbeded

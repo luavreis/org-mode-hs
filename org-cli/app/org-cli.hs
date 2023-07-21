@@ -6,7 +6,7 @@ import Control.Exception (try)
 import Data.Text.IO qualified as T
 import Ondim
 import Ondim.Extra.Exceptions (prettyException)
-import Ondim.Extra.Loading (TemplateLoadingError (..), loadTemplates)
+import Ondim.Extra.Loading (LoadConfig (..), TemplateLoadingError (..), loadTemplates)
 import Ondim.Targets.HTML qualified as H
 import Ondim.Targets.LaTeX qualified as L
 import Ondim.Targets.Pandoc qualified as P
@@ -17,24 +17,21 @@ import Org.Exporters.Data.Templates (templateDirEmbeded, templatesEmbed)
 import Org.Exporters.HTML qualified as H
 import Org.Exporters.LaTeX qualified as L
 import Org.Exporters.Pandoc qualified as P
-import Org.Exporters.Processing (OrgData, gatherSettings, runPipeline, withCurrentData)
-import Org.Exporters.Processing.InternalLinks (resolveLinks)
-import Org.Exporters.Processing.Prune (pruneDoc)
+import Org.Exporters.Processing (OrgData, processAll)
 import Org.Parser
 import Org.Types (OrgDocument)
 import System.Directory qualified as D
 import System.FilePath (isDrive, takeDirectory, (</>))
-import Text.Megaparsec (errorBundlePretty)
 import Text.Pretty.Simple
 
-pandocState :: Monad m => OndimState m
-pandocState = templatesEmbed [P.loadPandocMd] <> P.defaultState
+loadPandoc :: forall m. Monad m => LoadConfig m
+loadPandoc = (P.loadPandocMd @m) {initialState = templatesEmbed [P.loadPandocMd]}
 
-htmlState :: Monad m => OndimState m
-htmlState = templatesEmbed [H.loadHtml] <> H.defaultState
+loadHtml :: forall m. Monad m => LoadConfig m
+loadHtml = (H.loadHtml @m) {initialState = templatesEmbed [H.loadHtml]}
 
-latexState :: Monad m => OndimState m
-latexState = templatesEmbed [L.loadLaTeX] <> L.defaultState
+loadLaTeX :: forall m. Monad m => LoadConfig m
+loadLaTeX = (L.loadLaTeX @m) {initialState = templatesEmbed [L.loadLaTeX]}
 
 renderDoc ::
   [FilePath] ->
@@ -44,14 +41,14 @@ renderDoc ::
   IO (Either OndimException LByteString)
 renderDoc udirs oo datum doc = do
   let dirs = maybeToList (O.templateDir oo) ++ udirs
-  let (cfgs, st, bk) = case O.format oo of
-        O.HTML -> ([H.loadHtml], htmlState, H.defBackend)
-        O.Pandoc -> ([P.loadPandocMd], pandocState, P.defBackend)
-        O.LaTeX -> ([L.loadLaTeX], latexState, L.defBackend)
+  let (cfg, bk) = case O.format oo of
+        O.HTML -> (loadHtml, H.defBackend)
+        O.Pandoc -> (loadPandoc, P.defBackend)
+        O.LaTeX -> (loadLaTeX, L.defBackend)
   tpls <-
     if null dirs
-      then return st
-      else (<> st) <$> loadTemplates cfgs dirs
+      then return $ initialState cfg
+      else loadTemplates [cfg] dirs
   evalOndimTWith tpls $
     callTemplateFold @Rendered (O.layout oo)
       `binding` documentExp bk datum doc
@@ -85,20 +82,8 @@ main = do
       (txt, fp) <- case O.input opts of
         O.StdInput -> (,"stdin") <$> T.getContents
         O.FileInput f -> (,f) . decodeUtf8 <$> readFileBS f
-      parsed <-
-        case parseOrgDoc defaultOrgOptions fp txt of -- TODO org options
-          Left e -> do
-            error $
-              unlines
-                [ "There was an error parsing your Org file."
-                , "Since this should not happen, please open an issue on GitHub."
-                , toText (errorBundlePretty e)
-                ]
-          Right d -> pure d
-      let (processed, datum) = runPipeline do
-            gatherSettings parsed
-            pruned <- withCurrentData $ pruneDoc parsed
-            getCompose $ resolveLinks pruned
+      let parsed = parseOrgDoc defaultOrgOptions fp txt -- TODO org options
+          (processed, datum) = processAll parsed
       out <- try
         case O.backend opts of
           O.AST False -> return $ Right $ show processed
