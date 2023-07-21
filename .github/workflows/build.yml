@@ -68,6 +68,9 @@ jobs:
       - name: Run tests
         run: cabal test all
 
+      - name: Run bench
+        run: cabal bench all
+
       - name: Output executable
         run: |
           cabal install all:exes --install-method=copy --installdir=target --program-suffix='-${{ matrix.os }}-${{ github.ref_name }}'
