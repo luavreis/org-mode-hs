@@ -1,25 +1,29 @@
-cabal-version: 3.6
-name:          org-exporters
-version:       0.1
-license:       GPL-3.0-only
-synopsis:      Customizable exporter for Org Mode documents.
+cabal-version:      3.6
+name:               org-exporters
+version:            0.1
+license:            GPL-3.0-only
+synopsis:           Customizable exporter for Org Mode documents.
 description:
   org-parser provides a parser and an HTML exporter for Org Mode documents.
   The Org document is parsed into an AST similar to org-element's, and the
   HTML exporter is highly configurable using HTML templates.
 
-maintainer:    @lucasvreis
-bug-reports:   https://github.com/lucasvreis/org-mode-hs/issues
-copyright:     (c) 2022 lucasvreis
-category:      Text
-build-type:    Simple
-tested-with:   GHC ==9.2 || ==9.4
-data-dir:      data
+maintainer:         @lucasvreis
+bug-reports:        https://github.com/lucasvreis/org-mode-hs/issues
+copyright:          (c) 2022 lucasvreis
+category:           Text
+build-type:         Simple
+tested-with:        GHC ==9.2 || ==9.4
+data-dir:           data
 data-files:
   **/*.html
   **/*.md
   **/*.tex
-  **/*.tpl
+
+extra-source-files:
+  **/*.html
+  **/*.md
+  **/*.tex
 
 source-repository head
   type:     git
