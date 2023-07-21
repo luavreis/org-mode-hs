@@ -13,11 +13,19 @@ import Org.Exporters.Processing.InternalLinks
 import Org.Exporters.Processing.OrgData
 import Org.Exporters.Processing.Prune
 import Org.Exporters.Processing.SpecialStrings
+import Org.Types (OrgDocument)
 
 withCurrentData :: F t -> M t
 withCurrentData x = do
   cdata <- fix . runReader <$> gets snd
   pure $ runReader x cdata
+
+processAll :: OrgDocument -> (OrgDocument, OrgData)
+processAll p = runPipeline do
+  gatherSettings p
+  pruned <- withCurrentData $ pruneDoc p
+  let processed = processSpecialStrings pruned
+  getCompose $ resolveLinks processed
 
 runPipeline :: M (F t) -> (t, OrgData)
 runPipeline = continuePipeline initialOrgData
