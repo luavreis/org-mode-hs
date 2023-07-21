@@ -1,0 +1,2973 @@
+{
+    "blocks": [
+        {
+            "c": [
+                1,
+                [
+                    "o-que-sao-tensores",
+                    [
+                        ""
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": "O que são tensores?",
+                        "t": "Str"
+                    }
+                ]
+            ],
+            "t": "Header"
+        },
+        {
+            "c": [
+                {
+                    "c": "Em várias partes da ciência e da matemática, precisamos lidar com um conjunto de vetores e obter um outro vetor ou escalar como resultado; um dos exemplos mais simples é o de calcular o volume de paralelogramos, paralelepípedos e seus correspondentes em dimensões maiores. Por conta da estrutura linear dos espaços vetoriais, é natural considerar que a transformação envolvida seja multilinear, agindo como uma transformação linear quando são fixadas todas menos uma das entradas. Por exemplo, uma função ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f:\\R^2\\times\\R^2\\to\\R"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " que calcula o volume do paralelogramo gerado por dois vetores em ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\R^2"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " é 2-linear, e na segunda entrada isso significa que ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f(u,v+\\lambda w)=f(u,v)+\\lambda f(u,w)"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ".",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "A ideia dos tensores é construir uma correspondência entre as funções multilineares, que têm domínios em produtos cartesianos de espaços vetoriais, e funções lineares, com domínio no ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "c": "produto tensorial",
+                            "t": "Str"
+                        }
+                    ],
+                    "t": "Emph"
+                },
+                {
+                    "c": " desses espaços. Com isso em mente, definimos este produto especificando as propriedades que ele deve ter: se ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V_1,\\dots,V_k"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " são espaços vetoriais, o seu produto tensorial constitui uma dupla ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "(\\otimes,V)"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " de um espaço vetorial ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " e uma função ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "k~"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": "-linear ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\otimes:\\prod_{i=1}^k V_i\\to V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " que satisfazem uma ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "DoubleQuote"
+                        },
+                        [
+                            {
+                                "c": "propriedade universal",
+                                "t": "Str"
+                            }
+                        ]
+                    ],
+                    "t": "Quoted"
+                },
+                {
+                    "c": ": para toda função ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "k~"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": "-linear ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\psi:\\prod_{i=1}^k V_i\\to W"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", existe uma única função linear ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\tilde\\psi:V\\to W"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " tal que ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\psi=\\tilde\\psi\\circ\\otimes"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ". Podemos mostrar que a imagem de ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\otimes"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " gera ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " (mesmo sendo, em geral, menor que ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": "), os elementos de ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " são chamados de tensores, e ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " é denotado por ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V_1\\otimes...\\otimes V_k"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ". A correspondência entre formas multilineares e mapas lineares com domínio no produto tensorial fica condensada na seguinte preposição:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "proposition"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": "Para todo espaço vetorial ",
+                                "t": "Str"
+                            },
+                            {
+                                "c": [
+                                    {
+                                        "t": "InlineMath"
+                                    },
+                                    "W"
+                                ],
+                                "t": "Math"
+                            },
+                            {
+                                "c": ", a função",
+                                "t": "Str"
+                            }
+                        ],
+                        "t": "Para"
+                    },
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{equation*}\n  \\Gamma:\\Hom_{\\F}^k(V_1,...,V_k, W)\\to\\Hom_{\\F}(V_1\\otimes...\\otimes V_k,W)\n\\end{equation*}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    },
+                    {
+                        "c": [
+                            {
+                                "c": "dada por ",
+                                "t": "Str"
+                            },
+                            {
+                                "c": [
+                                    {
+                                        "t": "InlineMath"
+                                    },
+                                    "\\Gamma(\\psi)=\\tilde\\psi"
+                                ],
+                                "t": "Math"
+                            },
+                            {
+                                "c": " é um isomorfismo linear entre os dois espaços, com inversa ",
+                                "t": "Str"
+                            },
+                            {
+                                "c": [
+                                    {
+                                        "t": "InlineMath"
+                                    },
+                                    "\\Gamma^{-1}(f)=f\\circ\\otimes"
+                                ],
+                                "t": "Math"
+                            },
+                            {
+                                "c": ".",
+                                "t": "Str"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                2,
+                [
+                    "uma-pequena-motivacao-teoria-quantica",
+                    [
+                        ""
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": "Uma pequena motivação: teoria quântica",
+                        "t": "Str"
+                    }
+                ]
+            ],
+            "t": "Header"
+        },
+        {
+            "c": [
+                {
+                    "c": "É bem sabido que o produto tensorial tem um papel bastante relevante na teoria quântica. Na teoria, os estados de um sistema são vetores em um espaço vetorial complexo com produto interno (um espaço de Hilbert). Quando queremos ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "DoubleQuote"
+                        },
+                        [
+                            {
+                                "c": "juntar",
+                                "t": "Str"
+                            }
+                        ]
+                    ],
+                    "t": "Quoted"
+                },
+                {
+                    "c": " vários sistemas quânticos para formar um novo sistema, o sistema resultante tem como espaço de estados o produto tensorial dos espaços originais. Nesse espaço produto, aparecem os tensores não puros, tensores que não estão na imagem da função ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\otimes"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ": vistos assim, eles são justamente os estados que não podem ser formados pelo produto de um estado de cada componente, e são chamados de estados ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "c": "emaranhados",
+                            "t": "Str"
+                        }
+                    ],
+                    "t": "Emph"
+                },
+                {
+                    "c": ".",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Transformações em um sistema quântico são representadas por operadores lineares unitários (operadores sobrejetivos que preservam o produto interno). Se temos dois sistemas ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\cat{H}_1,\\cat{H}_2"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " com operatores ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f:\\cat{H}_1\\to\\cat{H}_1"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " e ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "g:\\cat{H}_2\\to\\cat{H}_2"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", podemos nos perguntar se faz sentido existir uma transformação em ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\cat{H}_1\\otimes\\cat{H}_2"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " que representa as duas transformações sendo feitas em paralelo, ao mesmo tempo:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "proposition"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": "Sejam ",
+                                "t": "Str"
+                            },
+                            {
+                                "c": [
+                                    {
+                                        "t": "InlineMath"
+                                    },
+                                    "V_1,V_2,W_1,W_2"
+                                ],
+                                "t": "Math"
+                            },
+                            {
+                                "c": " espaços vetoriais. Então existe e é única uma transformação linear injetora",
+                                "t": "Str"
+                            }
+                        ],
+                        "t": "Para"
+                    },
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{equation*}\n\\Omega :\\Hom_{\\F}(V_1,W_1) \\otimes \\Hom_{\\F}(V_2,W_2)\\to\\Hom_{\\F}(V_1\\otimes W_1,V_2\\otimes W_2)\n\\end{equation*}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    },
+                    {
+                        "c": [
+                            {
+                                "c": "tal que para todas as transformações lineares ",
+                                "t": "Str"
+                            },
+                            {
+                                "c": [
+                                    {
+                                        "t": "InlineMath"
+                                    },
+                                    "S:V_1\\to W_1"
+                                ],
+                                "t": "Math"
+                            },
+                            {
+                                "c": ", ",
+                                "t": "Str"
+                            },
+                            {
+                                "c": [
+                                    {
+                                        "t": "InlineMath"
+                                    },
+                                    "T:V_2\\to W_2"
+                                ],
+                                "t": "Math"
+                            },
+                            {
+                                "c": " e quaisquer vetores ",
+                                "t": "Str"
+                            },
+                            {
+                                "c": [
+                                    {
+                                        "t": "InlineMath"
+                                    },
+                                    "v_1\\in V_1"
+                                ],
+                                "t": "Math"
+                            },
+                            {
+                                "c": " e ",
+                                "t": "Str"
+                            },
+                            {
+                                "c": [
+                                    {
+                                        "t": "InlineMath"
+                                    },
+                                    "v_2\\in V_2"
+                                ],
+                                "t": "Math"
+                            },
+                            {
+                                "c": ", vale ",
+                                "t": "Str"
+                            },
+                            {
+                                "c": [
+                                    {
+                                        "t": "InlineMath"
+                                    },
+                                    "\\Gamma(S \\otimes T)(v_1 \\otimes v_2)=S(v_1)\\otimes T(v_2)"
+                                ],
+                                "t": "Math"
+                            },
+                            {
+                                "c": ". Para simplificar a notação, passaremos a chamar ",
+                                "t": "Str"
+                            },
+                            {
+                                "c": [
+                                    {
+                                        "t": "InlineMath"
+                                    },
+                                    "\\Gamma(S \\otimes T)"
+                                ],
+                                "t": "Math"
+                            },
+                            {
+                                "c": " simplesmente de ",
+                                "t": "Str"
+                            },
+                            {
+                                "c": [
+                                    {
+                                        "t": "InlineMath"
+                                    },
+                                    "S\\otimes T"
+                                ],
+                                "t": "Math"
+                            },
+                            {
+                                "c": ".",
+                                "t": "Str"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "É intuitivo pensar em ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "DoubleQuote"
+                        },
+                        [
+                            {
+                                "c": "processos",
+                                "t": "Str"
+                            }
+                        ]
+                    ],
+                    "t": "Quoted"
+                },
+                {
+                    "c": " que agem sobre os sistemas compondo operadores em paralelo ou sequencialmente. Como podemos usar desenhos de maneira formal para pensar sobre processos que envolvem tensores?",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                1,
+                [
+                    "diagramas",
+                    [
+                        ""
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": "Diagramas",
+                        "t": "Str"
+                    }
+                ]
+            ],
+            "t": "Header"
+        },
+        {
+            "c": [
+                {
+                    "c": "Os diagramas são compostos de caixas e fios, onde as caixas representam funções lineares e os fios servem como forma compor essas transformações. Para deixar a notação mais clara, podemos etiquetar as caixas com os nomes das transformações e os fios com os respectivos espaços vetoriais que são domínios ou contradomínios dessas transformações. Como exemplo, veja a transformação ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f:V\\to W"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " abaixo. Quando as funções envolvidas agem sobre produtos tensoriais, como ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "g:V_1\\otimes\\dots\\otimes V_n\\to W_1\\otimes\\dots\\otimes W_m"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", desenhamos as caixas com vários fios que entram ou saem, um para cada fator do produto:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": [
+                        {
+                            "t": "DisplayMath"
+                        },
+                        "\n\\begin{tikzpicture}[disp]\n \\matrix (c) {\n    \\coordinate (s); \\\\\n    \\node[below= .6 of s, box] (f) {$f$};\n    \\coordinate[below= .6 of f] (e); \\\\\n  };\n  \\draw[oes={->-}]\n  (s) -- node[vs] {$V$}\n  (f) -- node[vs] {$W$} (e);\n\n  \\matrix[right= 3 of f] (c) {\n      \\node[box] (f) {$g$};\n      \\heads[2]{f}{0}\n      \\tails[2]{f}{2}\\\\\n  };\n  \\node[vs,left= of f-hs-1] {$V_1$};\n  \\node[vs,right=of f-hs-2] {$V_n$};\n  \\node[vs,between= f-hs-1 and f-hs-2,yshift=1mm,xshift=.7mm]\n  {$...$};\n  \\node[vs,left= of f-ts-2] {$W_1$};\n  \\node[vs,right=of f-ts-1] {$W_m$};\n  \\node[vs,between= f-ts-1 and f-ts-2,yshift=1mm,xshift=.7mm]\n  {$...$};\n\\end{tikzpicture}\n"
+                    ],
+                    "t": "Math"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Conhecemos duas ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "DoubleQuote"
+                        },
+                        [
+                            {
+                                "c": "receitas de bolo",
+                                "t": "Str"
+                            }
+                        ]
+                    ],
+                    "t": "Quoted"
+                },
+                {
+                    "c": " para produzir uma transformação linear a partir de outras duas, ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " e ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "g"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ": o produto tensorial ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f \\otimes g"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", e, se ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " e ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "g"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " concordarem domínio com contradomínio, a composta ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f\\circ g"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ". Nos diagramas, a composição de duas funções é ilustrada como na figura abaixo. Note que se tivermos mais caixas empilhadas, a associatividade da composição garante que não precisamos nos importar com parênteses.",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": [
+                        {
+                            "t": "DisplayMath"
+                        },
+                        "\n\\begin{tikzpicture}[disp]\n  \\matrix (c2) {\n    \\node (s)   {};\n    \\node[below= .6 of s, box  ] (f)   {$f$};\n    \\node[below= .6 of f, box  ] (g)   {$g$};\n    \\node[below= .6 of g       ] (e)   {}; \\\\\n  };\n  \\draw[oes={->-}] (s)\n  -- node[vs] {$V$} (f)\n  -- node[vs] {$W$} (g)\n  -- node[vs] {$U$} (e);\n\n  \\defeq{c2};\n\n  \\matrix[rofeq   ] {\n    \\node (s)  {};\n    \\node[below= .6 of s, box  ] (gof) {$g\\circ f$};\n    \\node[below= .6 of gof     ] (e)  {}; \\\\\n  };\n  \\draw[oes={->-}] (s)\n  -- node[vs] {$V$} (gof)\n  -- node[vs] {$U$} (e);\n\\end{tikzpicture}\n"
+                    ],
+                    "t": "Math"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Representamos produtos tensoriais de funções ao colocar as suas caixas lado a lado:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": [
+                        {
+                            "t": "DisplayMath"
+                        },
+                        "\n\\begin{tikzpicture}[disp]\n  \\matrix (c) {\n    \\node (s1) {};\n    \\node[below= .8 of s1, box ] (f)   {$f$};\n    \\node[below= .8 of f       ] (e1)  {};\n    \\node[right= .8 of s1      ] (s2)  {};\n    \\node[below= .8 of s2, box ] (g)   {$g$};\n    \\node[below= .8 of g       ] (e2)  {}; \\\\\n  };\n  \\draw[oes={->-}] (s1)\n  -- node[vs] {$V$} (f)\n  -- node[vs] {$W$} (e1);\n\n  \\path[oes={->-}] (s2)\n  -- node[vs] {$X$} (g)\n  -- node[vs] {$U$} (e2);\n\n  \\eq{c};\n\n  \\matrix[rofeq] (c) {\n    \\node (s1) {};\n    \\node[below= .8 of s1, box ] (f)   {$f$};\n    \\node[below= .8 of f       ] (e1)  {};\n    \\node[right= .8 of s1      ] (s2)  {};\n    \\node[below= .8 of s2, box ] (g)   {$g$};\n    \\node[below= .8 of g       ] (e2)  {}; \\\\\n  };\n  \\draw[oes={->-}] (s1)\n  -- node[vs] {$V$} (f)\n  -- node[vs] {$W$} (e1);\n\n  \\path[oes={->-}] (s2)\n  -- node[vs] {$X$} (g)\n  -- node[vs] {$U$} (e2);\n\n  \\node[box,fit=(f) (g)] {};\n\n  \\defeq{c};\n\n  \\matrix[rofeq] (c3) {\n    \\node (s1) {};\n    \\node[below= 2.1 of s1      ] (e1)  {};\n    \\node[right= 1.  of s1      ] (s2)  {};\n    \\node[below= 2.1 of s2      ] (e2)  {};\n    \\node[between=s1 and e2, box] (c) {$f\\otimes g$}; \\\\\n  };\n  \\draw[oes={->-}] (s1)\n  to[out=-90,in=120] node[vs] {$V$} (c)\n  to[out=-120,in=90] node[vs] {$W$} (e1);\n\n  \\path[oes={->-}] (s2)\n  to[out=-90,in=60] node[vs] {$X$} (c)\n  to[out=-60,in=90] node[vs] {$U$} (e2);\n\\end{tikzpicture}\n"
+                    ],
+                    "t": "Math"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Em geral, os diagramas sempre corresponderão a transformações lineares que saem de um produto tensorial de espaços e vão a outro produto tensorial. De fato, os diagramas podem ser convertidos para a notação algébrica usual ao serem lidos linha por linha como uma composição de funções, e vice-versa. Mesmo sendo equivalentes à notação usual, a mágica dos diagramas é que a representação gráfica deixa algumas das regras para manipular tensores mais intuitivas.",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Seguindo as definições que vimos acima, os diagramas de tensores têm uma estrutura formada por linhas, onde cada linha corresponde a um produto tensorial de funções e os fios indicam como compor as linhas verticalmente. Como as linhas dos diagramas são lidas de cima para baixo, em muitas passagens ficará mais claro para a leitura introduzir a notação ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "g\\comp f\\comp...\\comp h"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " para significar a composição ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "h\\circ...\\circ f\\circ g"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " de funções escrita na ordem reversa (assim, a leitura da esquerda para direita acompanha a leitura de cima para baixo do diagrama), e usaremos ela no decorrer do texto. A função identidade é ilustrada por um fio vazio e vertical ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        "todo",
+                        "\\tikz[baseline=-3.5mm,thick,minimum width=4mm]{\\draw[->-] (0,0)--(0,-5mm);}"
+                    ],
+                    "t": "RawInline"
+                },
+                {
+                    "c": " . Note que pela igualdade ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "(g\\comp f)\\otimes(h\\comp w)=(g\\otimes h)\\comp(f\\otimes w)"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", não precisamos nos preocupar com a ordem que interpretamos as operações composição e produto:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": [
+                        {
+                            "t": "DisplayMath"
+                        },
+                        "\n\\begin{tikzpicture}[disp]\n\n  \\matrix (c) {\n    \\node (s1) {};\n    \\node[below= .5 of s1, box  ] (g)   {$g$};\n    \\node[below= .5 of g,  box  ] (f)   {$f$};\n    \\node[below= .5 of f        ] (e1)  {};\n    \\node[right=  1 of s1       ] (s2)  {};\n    \\node[below= .5 of s2, box  ] (h)   {$h$};\n    \\node[below= .5 of h,  box  ] (w)   {$w$};\n    \\node[below= .5 of w        ] (e2)  {}; \\\\\n  };\n  \\draw[->] (s1)--(g)--(f)--(e1);\n  \\draw[->] (s2)--(h)--(w)--(e2);\n  \\node[box,fit=(f) (g)] {};\n  \\node[box,fit=(h) (w)] {};\n\n  \\eq{c};\n\n  \\matrix[rofeq] (c) {\n    \\node (s1) {};\n    \\node[below= .5 of s1, box  ] (g)   {$g$};\n    \\node[below= .5 of g,  box  ] (f)   {$f$};\n    \\node[below= .5 of f        ] (e1)  {};\n    \\node[right=  1 of s1       ] (s2)  {};\n    \\node[below= .5 of s2, box  ] (h)   {$h$};\n    \\node[below= .5 of h,  box  ] (w)   {$w$};\n    \\node[below= .5 of w        ] (e2)  {}; \\\\\n  };\n  \\draw[->] (s1)--(g)--(f)--(e1);\n  \\draw[->] (s2)--(h)--(w)--(e2);\n\n  \\eq{c};\n\n  \\matrix[rofeq] (c) {\n    \\node (s1) {};\n    \\node[below= .5 of s1, box  ] (g)   {$g$};\n    \\node[below= .5 of g,  box  ] (f)   {$f$};\n    \\node[below= .5 of f        ] (e1)  {};\n    \\node[right=  1 of s1       ] (s2)  {};\n    \\node[below= .5 of s2, box  ] (h)   {$h$};\n    \\node[below= .5 of h,  box  ] (w)   {$w$};\n    \\node[below= .5 of w        ] (e2)  {}; \\\\\n  };\n  \\draw[->] (s1)--(g)--(f)--(e1);\n  \\draw[->] (s2)--(h)--(w)--(e2);\n  \\node[box,fit=(g) (h)] {};\n  \\node[box,fit=(f) (w)] {};\n\\end{tikzpicture}\n"
+                    ],
+                    "t": "Math"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Mas basta considerar diagramas com mais de duas colunas que vemos que outros detalhes do formalismo também ficam escondidos na maneira que representamos os diagramas; por exemplo, quando colocamos três funções ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f,g"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " e ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "h"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " lado a lado, subentende-se ser possível identificar as funções ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f\\ot (g\\ot h)"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " e ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "(f\\ot g)\\ot h"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " entre si de ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "DoubleQuote"
+                        },
+                        [
+                            {
+                                "c": "maneira natural",
+                                "t": "Str"
+                            }
+                        ]
+                    ],
+                    "t": "Quoted"
+                },
+                {
+                    "c": ", mesmo que elas atuem em espaços diferentes. Por enquanto, vamos subentender que sempre que preciso, aplicamos os isomorfismos canônicos entre esses espaços para que se adequem aos domínios e contradomínios das funções – é possível abordar essas noções de maneira um pouco mais formal a partir de transformações naturais e outros conceitos da teoria das categorias, mas não faremos isso aqui.",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Podemos representar um escalar ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\lambda\\in\\F"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " ou um vetor ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "v\\in V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " como na figura abaixo:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\centering\n    \\matrix (c) {\n      \\node[vec] (v) {$v$};\n      \\coordinate[below= .6 of v] (e) {}; \\\\\n    };\n    \\node[vec,above= 1 of c.south] (lam) {$\\lambda$};\n    \\draw[oes={->-}] (v)\n    -- node[vs] {$V$} (e);\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "Por que falamos de transformações antes de escalares ou vetores? A razão para isso é que do ponto de vista formal, as coisas ficam um pouco mais simples se pensarmos que escalares e vetores também são funções lineares: cada escalar ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\lambda"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " pode ser visto como a transformação ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\lambda:\\F\\to\\F"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " dada por ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "t\\mapsto\\lambda t"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", e cada vetor ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "v"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " pode ser representado pela função ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "v:\\F\\to V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " definida por ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "t\\mapsto tv"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ". Com essa mudança, todos os elementos dos diagramas serão transformações lineares, e os fios que carregam escalares ficam invisíveis. Não precisamos nos preocupar com eles pois sempre que preciso, lançamos mão do isomorfismo canônico ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\F\\otimes V\\cong V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " dado por ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\lambda\\otimes v\\mapsto\\lambda v"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ".",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "No mundo dos produtos tensoriais, existe um único isomorfismo ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "B_{V,W}:V\\ot W\\to W\\ot V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " que troca os vetores ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "v\\ot w\\mapsto w\\ot v"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ". Nos diagramas, ele é desenhado como um par ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        "todo",
+                        "\\tikz[baseline=-3.5mm,thick,minimum width=4mm]{\\draw[oes={->-l}] (0,0) to[in=90,out=-90] (4mm,-5mm) (4mm,0) to[in=90,out=-90] (0,-5mm); }"
+                    ],
+                    "t": "RawInline"
+                },
+                {
+                    "c": " de fios trocados. Assim, o diagrama",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix (c) {\n      \\draw[oes={->-l}]\n      (0,0) node[vs] {$V$} to[in=90,out=-90] (8mm,-1)\n      to[in=90,out=-90] (0,-2)\n      (8mm,0) node[vs,right] {$W$} to[in=90,out=-90] (0,-1)\n      to[in=90,out=-90] (8mm,-2);\\\\};\n    \\eq[0]{c};\n    \\matrix[rofeq] {\n      \\draw[oes={->-}]\n      (0,0)--(0,-1)--(0,-2)\n      (8mm,0)--(8mm,-1)--(8mm,-2);\\\\\n    };\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "expressa a igualdade ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "B_{V,W}\\comp{}B_{W,V}=\\id_{V\\ot{}W}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ". Como os diagramas são em si funções lineares, também podemos fazer com eles as operações usuais de um espaço vetorial. Por exemplo, se ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\car(\\F)\\neq2"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", o diagrama abaixo é uma função linear:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                "todo",
+                "\\(\\displaystyle\n \\tikz[disp,baseline=-0.65ex]{\\matrix {\n  \\node[box] (s) {$s_2$};\n  \\heads[2]{s}{0}\n  \\tails[2]{s}{2} \\\\\n};} :=\\;\n\\frac12\\left(\n\\tikz[disp]{\n  \\matrix (c) {\n  \\draw[oes={->-l}]\n  (0,0) to[in=90,out=-90] (8mm,-1)\n  (8mm,0) to[in=90,out=-90] (0,-1);\\\\};\n  \\node[right=of c] (p) {+};\n  \\matrix[right=of p] {\n    \\draw[oes={->-}]\n    (0,0)--(0,-1)\n    (8mm,0)--(8mm,-1);\\\\\n  };}\\right)\n\\)\n"
+            ],
+            "t": "RawBlock"
+        },
+        {
+            "c": [
+                {
+                    "c": "e o leitor curioso pode checar que ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "s_2\\comp s_2=s_2"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " usando a identidade que vimos logo acima. Outra transformação interessante é o funcional avaliação ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\ev{V}: V\\ot{}V^*\\to\\F"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " definido por ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\ev{V}(v\\ot{f})=f(v)"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ". Nos inspirando na existência desse funcional, introduziremos a partir daqui uma notação para fios que carregam o espaço dual ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V^*"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " de um espaço ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " ao representá-los como um fio também etiquetado por ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", mas com a orientação (a seta) invertida. Com essa notação e com a justificativa de que ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\ev{V}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " é o funcional ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "DoubleQuote"
+                        },
+                        [
+                            {
+                                "c": "canônico",
+                                "t": "Str"
+                            }
+                        ]
+                    ],
+                    "t": "Quoted"
+                },
+                {
+                    "c": " nesse espaço, passaremos a escrever o mapa ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\ev{V}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " como um simples fio dobrado:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix (c0) {\n      \\node[vec] (f) {$f$};\n      \\coordinate[below= .6 of f] (e);\n      \\draw[->-] (e)-- node[vs] {$V$} (f);\\\\\n    };\n    \\defeq{c0};\n    \\matrix[rofeq] (c0) {\n      \\node[vec] (v) {$f$};\n      \\coordinate[below= .6 of v] (e);\n      \\draw[->-] (v)-- node[vs] {$V^*$} (e);\\\\\n    };\n    \\matrix[right=2 of c0] (c1) {\n      \\node[vs] at (-1,0) {$V$};\n      \\tev[-1,0]{0,0}\\\\\n    };\n    \\defeq{c1};\n    \\matrix[rofeq] (c) {\n      \\node[box] (ev) {$\\displaystyle\\ev{\\scriptscriptstyle V}$};\n      \\fheads[2]{ev}{1}\\\\\n    };\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "Assim, também fica simples descobrir algumas correspondências entre tensores e mapas lineares, por exemplo, ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "T:V^*\\ot W\\to\\Hom_{\\F}(V,W)"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " dada por:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                "todo",
+                "\\(\n  \\tikz[disp] {\n    \\matrix (c0) {\n      \\node[vec] (f) {$u$};\n      \\tails[2]{f}{1}\n      \\node[vs] at (f-t-2) {$V$};\n      \\node[vs,right] at (f-t-1) {$W$};\\\\\n    };\n  }\n  \\xmapsto{T}\n  \\tikz[disp] {\n    \\matrix (c0) {\n      \\node[vec] (w) {$u$};\n      \\coordinate[above left=1 of w] (t);\n      \\coordinate[below=1 of t] (b);\n      \\coordinate[below=.5 of b] (b1);\n      \\coordinate (w1) at ($(w)-(.5,.8)$);\n      \\draw[oes={->-}] (t) node[vs] {$V$} -- (b)\n      .. controls (b1) and (w1).. (w);\n      \\draw[->-] (w) to[out=-60,in=90] ($(w)+(.5,-.8)$)\n      node[vs,right] {$W$};\\\\\n    };\n  }\n\\)\n"
+            ],
+            "t": "RawBlock"
+        },
+        {
+            "c": [
+                {
+                    "c": "Se interpretamos o diagrama na linguagem usual, obtemos:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": [
+                        {
+                            "t": "DisplayMath"
+                        },
+                        "\n\\begin{equation*}\n T(u)=(\\id_V\\ot\\, u)\n\\comp (\\ev{V}\\ot\\id_W).\n\\end{equation*}\n"
+                    ],
+                    "t": "Math"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Mais explicitamente, ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "T(f\\ot w)(v)"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " pode ser calculado passo a passo como:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": [
+                        {
+                            "t": "DisplayMath"
+                        },
+                        "\n\\begin{equation*}\n v\\xmapsto{\\id_V\\ot\\, f\\,\\ot\\, w} v\\ot f\\ot w\n\\xmapsto{\\ev{V}\\ot\\id_W} f(v)\\ot w\n\\xmapsto{\\sim} f(v)w,\n\\end{equation*}\n"
+                    ],
+                    "t": "Math"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "ou seja, ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "T(f\\ot w)(v)=f(v)w"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ".",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                2,
+                [
+                    "dimensao-finita",
+                    [
+                        ""
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": "Dimensão finita",
+                        "t": "Str"
+                    }
+                ]
+            ],
+            "t": "Header"
+        },
+        {
+            "c": [
+                {
+                    "c": "Diagramas de tensores envolvendo espaços de dimensões finitas são especiais. Nesse contexto, conseguimos definir um dual ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\coev{V}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " do funcional ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\ev{V}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " que tem o efeito de dobrar os fios para baixo, chamado de coavaliação. Explicitamente, em dimensão finita o morfismo ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "T"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " visto acima é um isomorfismo, e definiremos ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\coev{V}=T^{-1}(\\id_V)"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ".",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Note que essa definição não depende de uma escolha da base, mas se tomarmos uma base ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\{e_i\\}_{i=1}^n"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " de ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", podemos mostrar que ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\coev{V}=\\sum_{i=1}^n e_i^*\\ot e_i"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ":",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": [
+                        {
+                            "t": "DisplayMath"
+                        },
+                        "\n\\begin{equation*}\n T(\\coev{V})(v)=T\\left(\\sum_{i=1}^n e_i^*\\ot e_i\\right)(v)\n=\\sum_{i=1}^nT(e_i^*\\ot e_i)(v)\n=\\sum_{i=1}^n e_i^*(v)e_i=v.\n\\end{equation*}\n"
+                    ],
+                    "t": "Math"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Com isso em mente, passaremos a representar ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\coev{V}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " nos diagramas da seguinte forma:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix (c) {\n      \\tcoev{1,0}\\\\\n    };\n    \\eq{c};\n    \\matrix[rofeq] (c) {\n      \\node[box] (ev) {$\\coev{V}$};\n      \\tails[2]{ev}{1}\\\\\n    };\n    \\eq{c};\n    \\node[rofeq] {$\\displaystyle1\\mapsto\\sum_{i=1}^{n}e^*_i\\otimes e_i$};\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "As identidades mais importantes, que tanto justificam chamar ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\coev{V}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " de dual de ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\ev{V}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " como mostram uma ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "DoubleQuote"
+                        },
+                        [
+                            {
+                                "c": "interpretação topológica",
+                                "t": "Str"
+                            }
+                        ]
+                    ],
+                    "t": "Quoted"
+                },
+                {
+                    "c": " dos diagramas, são as ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "c": "identidades zig-zag",
+                            "t": "Str"
+                        }
+                    ],
+                    "t": "Emph"
+                },
+                {
+                    "c": ":",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": [
+                        {
+                            "t": "DisplayMath"
+                        },
+                        "\n\\begin{tikzpicture}[disp]\n  \\matrix[matd] (m) {\n    &&\\\\&&\\\\&&\\\\\n  };\n  \\tcoev[m-2-2]{m-2-3}\n  \\draw[->-] (m-1-1)--(m-2-1);\n  \\tev[m-2-1]{m-2-2}\n  \\draw[->-] (m-2-3)--(m-3-3);\n\n  \\eq{m};\n\n  \\matrix[rofeq] (m) {\n    \\draw[->-] (0,1.4) to (0,0);\\\\\n  };\n\n  \\matrix[right= 2 of m,matd] (m) {\n    &&\\\\&&\\\\&&\\\\\n  };\n  \\tcoev[m-2-1]{m-2-2}\n  \\draw[->-] (m-2-3)--(m-1-3);\n  \\tev[m-2-2]{m-2-3}\n  \\draw[->-] (m-3-1)--(m-2-1);\n\n  \\eq{m};\n\n  \\matrix[rofeq] (m) {\n    \\draw[->-] (0,-1.4) to (0,0);\\\\\n  };\n\\end{tikzpicture}\n"
+                    ],
+                    "t": "Math"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Podemos provar essas identidades: a identidade da esquerda é, por definição, o fato que ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "T(\\coev{V})=\\id_V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", e na direita podemos mostrar a igualdade aplicando uma ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f\\in V^*"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " ao diagrama, e assim obtendo:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": [
+                        {
+                            "t": "DisplayMath"
+                        },
+                        "\n\\begin{equation*}\n f\\xmapsto{\\coev{V}\\ot\\,\\id_{V^*}}\n\\sum_{i=1}^n e_i^*\\ot e_i\\ot f\n\\xmapsto{\\id_{V^*}\\ot\\,\\ev{V}} \\sum_{i=1}^n f(e_i)e_i^* = f.\n\\end{equation*}\n"
+                    ],
+                    "t": "Math"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Usando o morfismo ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "B_{V^*,V}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", também podemos definir ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\ev{V^*}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " e ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\coev{V^*}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", respectivamente:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": [
+                        {
+                            "t": "DisplayMath"
+                        },
+                        "\n\\begin{tikzpicture}[disp]\n  \\matrix (c) {\n    \\tev[1,0]{0,0}\n    \\node[vs,above] at (1,0) {$V$};\n    \\node[vs,above] at (0,0) {$V^*$};\\\\\n  };\n  \\defeq{c};\n  \\matrix[rofeq] (c) {\n    \\tev[0,0]{1,0}\n    \\draw\n    (1,.8) to[in=90,out=-90] (0,0)\n    (1,0) to[in=-90,out=90] (0,.8);\\\\\n  };\n\n  \\matrix[right= 2 of c] (c) {\n    \\tcoev[1,0]{0,0}\n    \\node[vs,below] at (0,0) {$V$};\n    \\node[vs,below] at (1,0) {$V^*$};\\\\\n  };\n  \\defeq{c};\n  \\matrix[rofeq] (c) {\n    \\tcoev{1,0}\n    \\draw\n    (1,-.8) to[in=-90,out=90] (0,0)\n    (1,0) to[in=90,out=-90] (0,-.8);\\\\\n  };\n\\end{tikzpicture}\n"
+                    ],
+                    "t": "Math"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "e similarmente, podemos obter outras duas identidades zig-zag com essas versões. Observe que a notação também sugere uma identificação do bidual ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "(V^*)^*"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " com o espaço ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ". Isso se justifica pela existência de um isomorfismo ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\Phi:V\\to (V^*)^*"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " dado por ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\Phi(v)(g)=g(v)"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", que é canônico no sentido que não depende de uma escolha de base do espaço. O mesmo não vale para ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V^*"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", entretanto. Na linguagem categórica, os espaços vetoriais de dimensão finita formam uma ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "c": "categoria fechada compacta",
+                            "t": "Str"
+                        }
+                    ],
+                    "t": "Emph"
+                },
+                {
+                    "c": ".",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                {
+                    "c": "Poderíamos provar algumas igualdades apenas substituindo pedaços do diagrama por identidades anteriores, por exemplo:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix[matd,column sep=7mm] (m) {\n      &&\\\\&&\\\\&&\\\\&&\\\\\n    };\n    \\draw[oes={-<-l}]\n    (m-4-3)--(m-3-3) to[out=90,in=-90] (m-2-2);\n    \\tcoev[m-2-1]{m-2-2}\n    \\draw (m-2-1) -- (m-3-1);\n    \\tev[m-3-2]{m-3-1}\n    \\draw[oes={-<-l}]\n    (m-3-2) to[out=90,in=-90] (m-2-3) -- (m-1-3);\n    \\node[box,fit=(m-1-1) (m-2-3),red] {};\n    \\eq{m};\n\n    \\matrix[rofeq,matd,column sep=7mm] (m) {\n      &&\\\\&&\\\\&&\\\\&&\\\\&&\\\\&&\\\\\n    };\n    \\draw[oes={-<-l}]\n    (m-6-3)--(m-5-3) to[out=90,in=-90] (m-4-2)\n    to[out=90,in=-90] (m-3-3)--(m-2-3);\n    \\tcoev[m-2-2]{m-2-3}\n    \\draw[oes={-<-l}]\n    (m-2-2) to[out=-90,in=90] (m-3-1)--(m-4-1)--(m-5-1);\n    \\tev[m-5-2]{m-5-1}\n    \\draw[oes={-<-l}]\n    (m-5-2) to[out=90,in=-90] (m-4-3)\n    to[out=90,in=-90] (m-3-2)\n    to[out=90,in=-90] (m-2-1) -- (m-1-1);\n    \\node[box,fit=(m-1-1) (m-4-3),red,opacity=.2] {};\n    \\node[box,fit=(m-5-2) (m-3-3),violet] {};\n\n    \\eq{m};\n    \\matrix[rofeq,matd,column sep=7mm] (m) {\n      &&\\\\&&\\\\&&\\\\&&\\\\\n    };\n    \\draw[oes={-<-l}]\n    (m-4-3)--(m-2-3);\n    \\tcoev[m-2-2]{m-2-3}\n    \\draw[oes={-<-l}]\n    (m-2-2) to[out=-90,in=90] (m-3-1);\n    \\tev[m-3-2]{m-3-1}\n    \\draw[oes={-<-l}]\n    (m-3-2) to[out=90,in=-90] (m-2-1)--(m-1-1);\n    \\node[box,fit=(m-4-1) (m-2-2),olive] {};\n\n    \\eq{m};\n\n    \\matrix[rofeq,matd,column sep=7mm] (m) {\n      &&\\\\&&\\\\&&\\\\\n    };\n    \\tcoev[m-2-2]{m-2-3}\n    \\draw[->-] (m-1-1)--(m-2-1);\n    \\tev[m-2-1]{m-2-2}\n    \\draw[->-] (m-2-3)--(m-3-3);\n    \\node[box,fit=(m-2-1) (m-3-2),olive,opacity=.2] {};\n\n    \\eq{m};\n\n    \\matrix[rofeq] (m) {\n      \\draw[->-] (0,1.4) to (0,0);\\\\\n    };\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "Mas de forma mais geral, é possível demonstrar que é sempre permitido\n",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "DoubleQuote"
+                        },
+                        [
+                            {
+                                "c": "desembaraçar",
+                                "t": "Str"
+                            }
+                        ]
+                    ],
+                    "t": "Quoted"
+                },
+                {
+                    "c": " os diagramas. Faremos isso com algums lemas que mostram como uma\nfunção ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " comuta com os fios dobrados. Por exemplo, é simples ver que:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix[matd,row sep=1.2cm] (m) {\n      &\\\\&\\\\\n    };\n    \\matrix (t) {\n      \\node[box] (f) at (m-2-1) {$f$};\n      \\coordinate[below=.2 of f] (fe);\n      \\draw (f)--(fe);\n      \\draw[->-l] (m-1-2) to[out=-90,in=90] (f);\n      \\draw[oes={->-l}] (m-1-1) to[out=-90,in=90]\n      (m-2-2 |- f.north) -- (m-2-2 |- fe);\\\\\n    };\n\n    \\eq{t};\n\n    \\matrix[rofeq,matd,row sep=1.2cm,yshift=-2.5mm] (m) {\n      &\\\\&\\\\\n    };\n    \\node[box] (f) at (m-1-2) {$f$};\n    \\coordinate[above=.2 of f] (fs);\n    \\draw (fs)--(f);\n    \\draw[->-l] (f) to[out=-90,in=90] (m-2-1);\n    \\draw[oes={->-l}] (m-1-1 |- fs) -- (m-2-1 |- f.south)\n    to[out=-90,in=90] (m-2-2);\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "Definimos a ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "c": "transposta",
+                            "t": "Str"
+                        }
+                    ],
+                    "t": "Emph"
+                },
+                {
+                    "c": " de funções lineares ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f:V\\to W"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "g:W^*\\to V^*"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " pelos diagramas:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix (c) {\n      \\node[box] (ft) {$f^t$};\n      \\fheads{ft}{1}\n      \\ftails{ft}{0}\\\\\n    };\n    \\defeq{c};\n    \\matrix[rofeq,matd] (m) {\n      &&\\\\&&\\\\&&\\\\\n    };\n    \\node[box] (f) at (m-2-2) {$f$};\n    \\tcoev[m-2-1 |- f.north]{f.north}\n    \\tev[f.south]{m-2-3 |- f.south}\n    \\draw[oes={->-}]\n    (m-3-1) -- (m-2-1 |- f.north)\n    (m-2-3 |- f.south) -- (m-1-3);\n\n    \\matrix[right=2 of m] (c) {\n      \\node[box] (ft) {$g^t$};\n      \\fheads{ft}{0}\n      \\ftails{ft}{1}\\\\\n    };\n    \\defeq{c};\n    \\matrix[rofeq,matd] (m) {\n      &&\\\\&&\\\\&&\\\\\n    };\n    \\node[box] (f) at (m-2-2) {$g$};\n    \\tcoev[f.north]{m-2-1 |- f.north}\n    \\tev[m-2-3 |- f.south]{f.south}\n    \\draw[oes={->-}]\n    (m-2-1 |- f.north) --(m-3-1)\n    (m-1-3)--(m-2-3 |- f.south);\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "Podemos checar que a primeira transposta ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f^t"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " concorda com a transposta usual\nao aplicá-la a um vetor ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "w\\in W^*"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ". Pelas definições do diagrama acima e de\n",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\ev{V}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", sabemos que para todo ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "v\\in V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "(f^t(w))(v)"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " é igual a:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix (c) {\n      \\node[vec] (w) {$w$};\n      \\node[box,below=.2 of w] (ft) {$f^t$};\n      \\node[vec,left=.3 of ft] (v) {$v$};\n      \\tev[v.south]{ft.south}\n      \\draw (ft)--(w);\\\\\n    };\n    \\eq{c};\n    \\matrix[rofeq,matd] (m) {\n      &&&\\\\&&&\\\\&&&\\\\\n    };\n    \\node[box] (f) at (m-2-3) {$f$};\n    \\node[vec] (w) at (m-1-4) {$w$};\n    \\node[vec] (v) at (m-2-1) {$v$};\n    \\tev[v.south]{m-2-2 |- f.south}\n    \\tcoev[m-2-2 |- f.north]{f.north}\n    \\tev[f.south]{m-2-4 |- f.south}\n    \\draw[oes={->-}]\n    (m-2-2  |- f.south) -- (m-2-2 |- f.north)\n    (m-2-4 |- f.south) -- (w);\n    \\eq{m};\n    \\matrix[rofeq,matd] (m) {\n      &\\\\&\\\\&\\\\\n    };\n    \\node[box] (f) at (m-2-1) {$f$};\n    \\node[vec] (w) at (m-2-2) {$w$};\n    \\node[vec] (v) at (m-1-1) {$v$};\n    \\tev[f.south]{w.south}\n    \\draw (v)--(f);\n    \\eq{m};\n    \\node[rofeq,xshift=-3mm] {$(w\\circ f)(v)$};\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "Como isso vale para todos ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "v"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " e ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "w"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "f^t"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " concorda com a transposta usual. Para ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "g^t"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", isso é apenas parcialmente verdade; ela é a transposta usual ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "DoubleQuote"
+                        },
+                        [
+                            {
+                                "c": "a menos",
+                                "t": "Str"
+                            }
+                        ]
+                    ],
+                    "t": "Quoted"
+                },
+                {
+                    "c": " do isomorfismo canônico ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\Phi"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ". Com a transposta, andamos pelos fios com os ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "c": "lemas do deslizamento",
+                            "t": "Str"
+                        }
+                    ],
+                    "t": "Emph"
+                },
+                {
+                    "c": ":",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix[matd] (m) {\n      &\\\\&\\\\&\\\\\n    };\n    \\node[box] (f) at (m-2-1) {$f$};\n    \\tev[f.south]{m-2-2 |- f.south}\n    \\draw[oes={->-}]\n    (m-1-1) -- (f.north)\n    (m-2-2 |- f.south) -- (m-1-2);\n    \\eq{m};\n    \\matrix[rofeq,matd] (m) {\n      &&&\\\\&&&\\\\&&&\\\\\n    };\n    \\node[box] (f) at (m-2-3) {$f$};\n    \\tev[f.south]{m-2-4 |- f.south}\n    \\tcoev[m-1-2 |- f.north]{f.north}\n    \\tev[m-2-1 |- f.south]{m-2-2 |- f.south}\n    \\draw[oes={->-}]\n    (m-1-1) -- (m-2-1 |- f.south)\n    (m-2-2 |- f.south) -- (m-2-2 |- f.north)\n    (m-2-4 |- f.south) -- (m-1-4);\n    \\eq{m};\n    \\matrix[rofeq,matd] (m) {\n      &\\\\&\\\\&\\\\\n    };\n    \\node[box] (f) at (m-2-2) {$f^t$};\n    \\tev[m-2-1 |- f.south]{f.south}\n    \\draw[oes={->-}]\n    (f.north) -- (m-1-2)\n    (m-1-1) -- (m-2-1 |- f.south);\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "Usando o mesmo argumento,",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix[matd] (m) {\n      &\\\\&\\\\&\\\\\n    };\n    \\node[box] (f) at (m-2-1) {$f^t$};\n    \\tcoev[f.north]{m-2-2 |- f.north}\n    \\draw[oes={->-}]\n    (m-3-1) -- (f)\n    (m-2-2 |- f.north) -- (m-3-2);\n    \\eq{m};\n    \\matrix[rofeq,matd] (m) {\n      &&&\\\\&&&\\\\&&&\\\\\n    };\n    \\node[box] (f) at (m-2-2) {$f$};\n    \\tev[f.south]{m-2-3 |- f.south}\n    \\tcoev[m-1-1 |- f.north]{f.north}\n    \\tcoev[m-2-3 |- f.north]{m-2-4 |- f.north}\n    \\draw[oes={->-}]\n    (m-3-1) -- (m-2-1 |- f.north)\n    (m-2-3 |- f.south) -- (m-2-3 |- f.north)\n    (m-2-4 |- f.north) -- (m-3-4);\n    \\eq{m};\n    \\matrix[rofeq,matd] (m) {\n      &\\\\&\\\\&\\\\\n    };\n    \\node[box] (f) at (m-2-2) {$f$};\n    \\tcoev[m-2-1 |- f.north]{f.north}\n    \\draw[oes={->-}]\n    (f) -- (m-3-2)\n    (m-3-1) -- (m-2-1 |- f.north);\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "e também:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n  \\matrix[matd] (m) {\n    &\\\\&\\\\&\\\\\n  };\n  \\node[box] (f) at (m-2-1) {$f$};\n  \\tcoev[m-2-2 |- f.north]{f.north}\n  \\draw[oes={->-}]\n  (f) -- (m-3-1)\n  (m-3-2) -- (m-2-2 |- f.north);\n  \\eq[0]{m};\n  \\matrix[right=of eq,matd] (m) {\n    &\\\\&\\\\&\\\\\n  };\n  \\node[box,yshift=10pt] (f) at (m-2-2) {$f$};\n  \\tcoev[m-2-1 |- f.north]{f.north}\n  \\draw[oes={->-}]\n  (f) to[out=-90,in=90] (m-3-1)\n  (m-3-2) to[out=90,in=-90] (m-2-1 |- f)\n  (m-2-1 |- f) -- (m-2-1 |- f.north);\n  \\eq{m};\n  \\matrix[rofeq,matd] (m) {\n    &\\\\&\\\\&\\\\\n  };\n  \\node[box,yshift=10pt] (f) at (m-2-1) {$f^t$};\n  \\tcoev[f.north]{m-2-2 |- f.north}\n  \\draw[oes={->-l}]\n  (m-3-2) to[out=90,in=-90] (f)\n  (m-2-2 |- f) to[out=-90,in=90] (m-3-1)\n  (m-2-2 |- f.north) -- (m-2-2 |- f);\n  \\eq[0]{m};\n  \\matrix[right=of eq,matd] (m) {\n    &\\\\&\\\\&\\\\\n  };\n  \\node[box] (f) at (m-2-2) {$f^t$};\n  \\tcoev[f.north]{m-2-1 |- f.north}\n  \\draw[oes={->-}]\n  (m-3-2) -- (f)\n  (m-2-1 |- f.north) -- (m-3-1);\n\\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    },
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n  \\matrix[matd] (m) {\n    &\\\\&\\\\&\\\\\n  };\n  \\node[box] (f) at(m-2-1) {$f^t$};\n  \\tev[m-2-2 |- f.south]{f.south}\n  \\draw[oes={->-}]\n  (f) -- (m-1-1)\n  (m-1-2) -- (m-2-2 |- f.south);\n  \\eq{m};\n\n  \\matrix[rofeq,matd] (m) {\n    &\\\\&\\\\&\\\\\n  };\n  \\node[box] (f) at(m-2-2) {$f$};\n  \\tev[f.south]{m-2-1 |- f.south}\n  \\draw[oes={->-}]\n  (m-1-2) -- (f)\n  (m-2-1 |- f.south) -- (m-1-1);\n\\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "Os mesmos lemas valem para uma função ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "g:W^*\\to V^*"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " pelas mesmas provas, basta\ninverter as setas. Mas também note que poderíamos ter definido as transpostas de\numa forma diferente, dobrando os fios na direção oposta. Porém, usando os lemas\nanteriores, provar que essa transposta alternativa é igual a que já foi definida\né uma tarefa simples de ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "DoubleQuote"
+                        },
+                        [
+                            {
+                                "c": "deslizar",
+                                "t": "Str"
+                            }
+                        ]
+                    ],
+                    "t": "Quoted"
+                },
+                {
+                    "c": " a função:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix[matd] (m) {\n      &&\\\\&&\\\\&&\\\\\n    };\n    \\node[box] (f) at (m-2-2) {$f$};\n    \\tcoev[m-2-3 |- f.north]{f.north}\n    \\tev[f.south]{m-2-1 |- f.south}\n    \\draw[oes={->-}]\n    (m-2-1 |- f.south) -- (m-1-1)\n    (m-3-3) -- (m-1-3 |- f.north);\n\n    \\eq{m};\n\n    \\matrix[rofeq,matd] (m) {\n      &&\\\\&&\\\\&&\\\\\n    };\n    \\node[box] (f) at (m-2-3) {$f^t$};\n    \\tcoev[f.north]{m-2-2 |- f.north}\n    \\tev[m-2-2 |-f.south]{m-2-1 |- f.south}\n    \\draw[oes={->-}]\n    (m-3-3) -- (f)\n    (m-2-2 |- f.north) -- (m-2-2 |- f.south)\n    (m-2-1 |- f.south) -- (m-1-1);\n\n    \\eq{m};\n\n    \\matrix[rofeq] (c) {\n      \\node[box] (ft) {$f^t$};\n      \\fheads{ft}{1}\n      \\ftails{ft}{0}\\\\\n    };\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "Se compormos as duas versões da transposta e aplicarmos a identidade zig-zag,\nmostramos também que ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "(f^t)^t=f"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " (para a transposta que definimos, claro).\nJuntos, esses fatos garantem que podemos ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "DoubleQuote"
+                        },
+                        [
+                            {
+                                "c": "desembaraçar",
+                                "t": "Str"
+                            }
+                        ]
+                    ],
+                    "t": "Quoted"
+                },
+                {
+                    "c": " fios soltos nos\ndiagramas simplesmente deslizando as funções ao longo dos fios; no máximo, os\nfios trocam a função para sua transposta ou vice-versa.",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                2,
+                [
+                    "calculando-com-os-diagramas",
+                    [
+                        ""
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": "Calculando com os diagramas",
+                        "t": "Str"
+                    }
+                ]
+            ],
+            "t": "Header"
+        },
+        {
+            "c": [
+                {
+                    "c": "Até então, nós aprendemos um formalismo relativamente abstrato para os diagramas, mas ainda não é fácil calcular valores numéricos. Para nos ajudar nisso, vamos escolher uma base ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "(e_i)_{i=1}^n"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " do espaço ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "V"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", e denotar ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "e^i=e_i^*"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " para todo ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "i\\in\\{0,...,n\\}"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ". O truque principal é uma decomposição da função identidade:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix (m) {\n      \\draw[->-] (0,1.4) to (0,0);\\\\\n    };\n    \\eq{m};\n    \\node[right=.1 of eq] (sum) {$\\displaystyle\\sum_{i=1}^d$};\n    \\matrix[right=.2 of sum,matd] (m) {\n      \\\\ \\\\\n    };\n    \\node[vec] (v) at (m-1-1) {$e^i$};\n    \\node[vec] (dv) at (m-2-1) {$e_i$};\n    \\ftails[1]{dv}{1}\n    \\fheads[1]{v}{0}\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "Estaremos sempre identificando ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\F^*\\cong\\F"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ", de forma que ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "(e_i)^t=\\Phi(e_i): V^*\\to\\F"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " e ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "(e^i)^t=e^i : \\F\\to V^*"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": " (lembrando: os vetores estão sendo vistos como funções). As transpostas desses elementos serão representadas com a mesma etiqueta, mas com um fio na direção oposta (já que são essencialmente os mesmos). Por exemplo, um diagrama curioso:",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix (c) {\n      \\node[tbox] (f) {$f$};\n      \\coordinate[left= .5 of f] (a);\n      \\node[left= 0 of a,vs] {$V$}; \\\\\n    };\n    \\draw[oes={->-}] (f)\n    .. controls ($(f) - (0,1)$) and ($(a) - (0,1)$) .. (a)\n    .. controls ($(a) + (0,1)$) and ($(f) + (0,1)$) .. (f);\n\n    \\eq{c};\n\n    \\node[rofeq] (sum) {$\\displaystyle\\sum_{i=1}^d$};\n    \\matrix[right=.2 of sum,matd] (m) {\n      &\\\\&\\\\\n    };\n    \\node[vec] (v) at (m-1-1) {$e_i$};\n    \\node[vec] (dv) at (m-2-1) {$e^i$};\n    \\node[box,between=m-2-2 and m-1-2] (f) {$f$};\n    \\tcoev[v.north]{f |- v}\n    \\tev[f |- dv]{dv.south}\n    \\draw\n    (f |- v) -- (f) -- (f |- dv);\n    \\eq[.3]{m};\n\n    \\node[right=of eq] (sum) {$\\displaystyle\\sum_{i=1}^d$};\n    \\matrix[right=.2 of sum,matd] (m) {\n      \\\\\\\\\\\\\n    };\n    \\node[vec] (v) at (m-1-1) {$e_i$};\n    \\node[vec] (dv) at (m-3-1) {$e^i$};\n    \\node[box] (f) at (m-2-1) {$f$};\n    \\draw (v)--(f)--(dv);\n    \\eq[.3]{m};\n    \\node[right=of eq] {$\\tr(f)$};\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        },
+        {
+            "c": [
+                {
+                    "c": "Com isso, fica bastante simples mostrar que ",
+                    "t": "Str"
+                },
+                {
+                    "c": [
+                        {
+                            "t": "InlineMath"
+                        },
+                        "\\tr(f\\circ g)=\\tr(g\\circ f)"
+                    ],
+                    "t": "Math"
+                },
+                {
+                    "c": ":",
+                    "t": "Str"
+                }
+            ],
+            "t": "Para"
+        },
+        {
+            "c": [
+                [
+                    "",
+                    [
+                        "latexfigure"
+                    ],
+                    []
+                ],
+                [
+                    {
+                        "c": [
+                            {
+                                "c": [
+                                    {
+                                        "t": "DisplayMath"
+                                    },
+                                    "\n\\begin{tikzpicture}[disp]\n    \\matrix[matd] (m) {\n      &\\\\&\\\\\n    };\n    \\node[box] (f) at (m-1-2) {$f$};\n    \\node[box]  (g) at (m-2-2) {$g$};\n    \\tcoev[m-1-1 |- f.north]{f.north}\n    \\tev[g.south]{m-2-1 |- g.south}\n    \\draw\n    (m-2-1 |- g.south) -- (m-1-1 |- f.north)\n    (f) -- (g);\n\n    \\eq{m};\n\n    \\matrix[rofeq,matd] (m) {\n      &\\\\\n    };\n    \\node[box] (f) at (m-1-2) {$f$};\n    \\node[box] (g) at (m-1-1) {$g^t$};\n    \\tcoev[g.north]{f.north}\n    \\tev[f.south]{g.south}\n\n    \\eq{m};\n\n    \\matrix[rofeq,matd] (m) {\n      &\\\\&\\\\\n    };\n    \\node[box] (f) at (m-1-2) {$g$};\n    \\node[box] (g) at (m-2-2) {$f$};\n    \\tcoev[m-1-1 |- f.north]{f.north}\n    \\tev[g.south]{m-2-1 |- g.south}\n    \\draw\n    (m-2-1 |- g.south) -- (m-1-1 |- f.north)\n    (f) -- (g);\n  \\end{tikzpicture}\n"
+                                ],
+                                "t": "Math"
+                            }
+                        ],
+                        "t": "Para"
+                    }
+                ]
+            ],
+            "t": "Div"
+        }
+    ],
+    "meta": {
+        "author": {
+            "c": [
+                {
+                    "c": "Lucas V. R.",
+                    "t": "Str"
+                }
+            ],
+            "t": "MetaInlines"
+        },
+        "title": {
+            "c": [
+                {
+                    "c": "Diagramas de tensores",
+                    "t": "Str"
+                }
+            ],
+            "t": "MetaInlines"
+        }
+    },
+    "pandoc-api-version": [
+        1,
+        23
+    ]
+}

@@ -1,0 +1,1803 @@
+<!DOCTYPE HTML><html>
+<html>
+<head>
+<meta charset="utf-8"><title>Emacs Configuration</title>
+<style media="screen" type="text/css">
+ #content { max-width: 60em; margin: auto; }
+ .title {
+     text-align: center;
+     margin-bottom: .2em;
+ }
+ .subtitle {
+     text-align: center;
+     font-size: medium;
+     font-weight: bold;
+     margin-top:0;
+ }
+ .todo { font-family: monospace; color: red; }
+ .done { font-family: monospace; color: green; }
+ .priority { font-family: monospace; color: orange; }
+ .tag {
+     background-color: #eee;
+     font-family: monospace;
+     padding: 2px;
+     font-size: 80%;
+     font-weight: normal;
+ }
+ .timestamp { color: #bebebe; }
+ .timestamp-kwd { color: #5f9ea0; }
+ .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+ .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+ .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+ .underline { text-decoration: underline; }
+ #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+ p.verse { margin-left: 3%; }
+ pre {
+     border: 1px solid #e6e6e6;
+     border-radius: 3px;
+     background-color: #f2f2f2;
+     padding: 8pt;
+     font-family: monospace;
+     overflow: auto;
+     margin: 1.2em;
+ }
+ pre.src {
+     position: relative;
+     overflow: auto;
+ }
+ pre.src:before {
+     display: none;
+     position: absolute;
+     top: -8px;
+     right: 12px;
+     padding: 3px;
+     color: #555;
+     background-color: #f2f2f299;
+ }
+ pre.src:hover:before { display: inline; margin-top: 14px;}
+ /* Languages per Org manual */
+ pre.src-asymptote:before { content: 'Asymptote'; }
+ pre.src-awk:before { content: 'Awk'; }
+ pre.src-authinfo::before { content: 'Authinfo'; }
+ pre.src-C:before { content: 'C'; }
+ pre.src-clojure:before { content: 'Clojure'; }
+ pre.src-css:before { content: 'CSS'; }
+ pre.src-D:before { content: 'D'; }
+ pre.src-ditaa:before { content: 'ditaa'; }
+ pre.src-dot:before { content: 'Graphviz'; }
+ pre.src-calc:before { content: 'Emacs Calc'; }
+ pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+ pre.src-fortran:before { content: 'Fortran'; }
+ pre.src-gnuplot:before { content: 'gnuplot'; }
+ pre.src-haskell:before { content: 'Haskell'; }
+ pre.src-hledger:before { content: 'hledger'; }
+ pre.src-java:before { content: 'Java'; }
+ pre.src-js:before { content: 'Javascript'; }
+ pre.src-latex:before { content: 'LaTeX'; }
+ pre.src-ledger:before { content: 'Ledger'; }
+ pre.src-lisp:before { content: 'Lisp'; }
+ pre.src-lilypond:before { content: 'Lilypond'; }
+ pre.src-lua:before { content: 'Lua'; }
+ pre.src-matlab:before { content: 'MATLAB'; }
+ pre.src-mscgen:before { content: 'Mscgen'; }
+ pre.src-ocaml:before { content: 'Objective Caml'; }
+ pre.src-octave:before { content: 'Octave'; }
+ pre.src-org:before { content: 'Org mode'; }
+ pre.src-oz:before { content: 'OZ'; }
+ pre.src-plantuml:before { content: 'Plantuml'; }
+ pre.src-processing:before { content: 'Processing.js'; }
+ pre.src-python:before { content: 'Python'; }
+ pre.src-R:before { content: 'R'; }
+ pre.src-ruby:before { content: 'Ruby'; }
+ pre.src-sass:before { content: 'Sass'; }
+ pre.src-scheme:before { content: 'Scheme'; }
+ pre.src-screen:before { content: 'Gnu Screen'; }
+ pre.src-sed:before { content: 'Sed'; }
+ pre.src-sh:before { content: 'shell'; }
+ pre.src-sql:before { content: 'SQL'; }
+ pre.src-sqlite:before { content: 'SQLite'; }
+ pre.src-forth:before { content: 'Forth'; }
+ pre.src-io:before { content: 'IO'; }
+ pre.src-J:before { content: 'J'; }
+ pre.src-makefile:before { content: 'Makefile'; }
+ pre.src-maxima:before { content: 'Maxima'; }
+ pre.src-perl:before { content: 'Perl'; }
+ pre.src-picolisp:before { content: 'Pico Lisp'; }
+ pre.src-scala:before { content: 'Scala'; }
+ pre.src-shell:before { content: 'Shell Script'; }
+ pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+ pre.src-cpp:before  { content: 'C++'; }
+ pre.src-abc:before  { content: 'ABC'; }
+ pre.src-coq:before  { content: 'Coq'; }
+ pre.src-groovy:before  { content: 'Groovy'; }
+ pre.src-bash:before  { content: 'bash'; }
+ pre.src-csh:before  { content: 'csh'; }
+ pre.src-ash:before  { content: 'ash'; }
+ pre.src-dash:before  { content: 'dash'; }
+ pre.src-ksh:before  { content: 'ksh'; }
+ pre.src-mksh:before  { content: 'mksh'; }
+ pre.src-posh:before  { content: 'posh'; }
+ pre.src-ada:before { content: 'Ada'; }
+ pre.src-asm:before { content: 'Assembler'; }
+ pre.src-caml:before { content: 'Caml'; }
+ pre.src-delphi:before { content: 'Delphi'; }
+ pre.src-html:before { content: 'HTML'; }
+ pre.src-idl:before { content: 'IDL'; }
+ pre.src-mercury:before { content: 'Mercury'; }
+ pre.src-metapost:before { content: 'MetaPost'; }
+ pre.src-modula-2:before { content: 'Modula-2'; }
+ pre.src-pascal:before { content: 'Pascal'; }
+ pre.src-ps:before { content: 'PostScript'; }
+ pre.src-prolog:before { content: 'Prolog'; }
+ pre.src-simula:before { content: 'Simula'; }
+ pre.src-tcl:before { content: 'tcl'; }
+ pre.src-tex:before { content: 'TeX'; }
+ pre.src-plain-tex:before { content: 'Plain TeX'; }
+ pre.src-verilog:before { content: 'Verilog'; }
+ pre.src-vhdl:before { content: 'VHDL'; }
+ pre.src-xml:before { content: 'XML'; }
+ pre.src-nxml:before { content: 'XML'; }
+ pre.src-conf:before { content: 'Configuration File'; }
+
+ table { border-collapse:collapse; }
+ caption.t-above { caption-side: top; }
+ caption.t-bottom { caption-side: bottom; }
+ td, th { vertical-align:top;  }
+ th.org-right  { text-align: center;  }
+ th.org-left   { text-align: center;   }
+ th.org-center { text-align: center; }
+ td.org-right  { text-align: right;  }
+ td.org-left   { text-align: left;   }
+ td.org-center { text-align: center; }
+ dt { font-weight: bold; }
+ .footpara { display: inline; }
+ .footdef  { margin-bottom: 1em; }
+ .figure { padding: 1em; }
+ .figure p { text-align: center; }
+ .equation-container {
+     display: table;
+     text-align: center;
+     width: 100%;
+ }
+ .equation {
+     vertical-align: middle;
+ }
+ .equation-label {
+     display: table-cell;
+     text-align: right;
+     vertical-align: middle;
+ }
+ .inlinetask {
+     padding: 10px;
+     border: 2px solid gray;
+     margin: 10px;
+     background: #ffffcc;
+ }
+ #org-div-home-and-up
+ { text-align: right; font-size: 70%; white-space: nowrap; }
+ textarea { overflow-x: auto; }
+ .linenr { font-size: smaller }
+ .code-highlighted { background-color: #ffff00; }
+ .org-info-js_info-navigation { border-style: none; }
+ #org-info-js_console-label
+ { font-size: 10px; font-weight: bold; white-space: nowrap; }
+ .org-info-js_search-highlight
+ { background-color: #ffff00; color: #000000; font-weight: bold; }
+ .org-svg { }
+</style><script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head>
+<body>
+<div class="content" id="content"><h1 class="title">Emacs Configuration</h1><div id="table-of-contents">
+<h2>Table of Contents</h2>
+<ul>
+<li>
+<a href="#disables-and-unpins">
+<span class="headline">
+<span class="title">Disables and unpins</span></span></a></li>
+<li>
+<a href="#my-library">
+<span class="headline">
+<span class="title">My library</span></span></a>
+<ul>
+<li>
+<a href="#non-interactive">
+<span class="headline">
+<span class="title">Non-interactive</span></span></a>
+<ul>
+<li>
+<a href="#advices">
+<span class="headline">
+<span class="title">Advices</span></span></a></li>
+<li>
+<a href="#list-of-strings-predicate">
+<span class="headline">
+<span class="title">List of strings predicate</span></span></a></li>
+<li>
+<a href="#macros">
+<span class="headline">
+<span class="title">Macros</span></span></a></li></ul></li>
+<li>
+<a href="#interactive">
+<span class="headline">
+<span class="title">Interactive</span></span></a>
+<ul>
+<li>
+<a href="#remove-all-advice-from-a-symbol">
+<span class="headline">
+<span class="title">Remove all advice from a symbol</span></span></a></li></ul></li></ul></li>
+<li>
+<a href="#editor">
+<span class="headline">
+<span class="title">Editor</span></span></a>
+<ul>
+<li>
+<a href="#completion-search-and-insertion">
+<span class="headline">
+<span class="title">Completion, search and insertion</span></span></a>
+<ul>
+<li>
+<a href="#in-buffer-completion-and-insertion">
+<span class="headline">
+<span class="title">In-buffer completion and insertion</span></span></a></li>
+<li>
+<a href="#gui-enhacements">
+<span class="headline">
+<span class="title">GUI enhacements</span></span></a></li>
+<li>
+<a href="#global-search-and-completion">
+<span class="headline">
+<span class="title">Global search and completion</span></span></a></li></ul></li>
+<li>
+<a href="#help-and-error-system">
+<span class="headline">
+<span class="title">Help and error system</span></span></a>
+<ul>
+<li>
+<a href="#eldoc-box">
+<span class="headline">
+<span class="title">Eldoc-box</span></span></a></li>
+<li>
+<a href="#jinx-spell">
+<span class="headline">
+<span class="title">Jinx (spell)</span></span></a></li>
+<li>
+<a href="#which-key">
+<span class="headline">
+<span class="title">Which-key</span></span></a></li></ul></li>
+<li>
+<a href="#organize-text-editing">
+<span class="headline">
+<span class="title">ORGANIZE Text editing</span></span></a>
+<ul>
+<li>
+<a href="#evil">
+<span class="headline">
+<span class="title">Evil</span></span></a></li>
+<li>
+<a href="#scroll">
+<span class="headline">
+<span class="title">Scroll</span></span></a></li>
+<li>
+<a href="#variables-1">
+<span class="headline">
+<span class="title">Variables</span></span></a></li>
+<li>
+<a href="#shrink-whitespace">
+<span class="headline">
+<span class="title">Shrink whitespace</span>
+<span class="meta-item tag tag-bindings">bindings</span></span></a></li>
+<li>
+<a href="#highlighting-tree-sitter">
+<span class="headline">
+<span class="title">Highlighting (Tree-sitter)</span></span></a></li>
+<li>
+<a href="#saving">
+<span class="headline">
+<span class="title">Saving</span></span></a></li>
+<li>
+<a href="#blink-cursor">
+<span class="headline">
+<span class="title">Blink cursor</span></span></a></li>
+<li>
+<a href="#enable-perl-like-regex-search">
+<span class="headline">
+<span class="title">Enable perl-like regex search</span></span></a></li>
+<li>
+<a href="#popups">
+<span class="headline">
+<span class="title">Popups</span></span></a></li>
+<li>
+<a href="#others">
+<span class="headline">
+<span class="title">Others</span></span></a></li></ul></li>
+<li>
+<a href="#formatting">
+<span class="headline">
+<span class="title">Formatting</span></span></a>
+<ul>
+<li>
+<a href="#apheleia">
+<span class="headline">
+<span class="title">Apheleia</span></span></a></li>
+<li>
+<a href="#ws-butler">
+<span class="headline">
+<span class="title">WS butler</span></span></a></li></ul></li>
+<li>
+<a href="#selection">
+<span class="headline">
+<span class="title">Selection</span></span></a>
+<ul>
+<li>
+<a href="#expand-region">
+<span class="headline">
+<span class="title">Expand-region</span>
+<span class="meta-item tag tag-bindings">bindings</span></span></a></li></ul></li>
+<li>
+<a href="#overall-ui">
+<span class="headline">
+<span class="title">Overall UI</span></span></a>
+<ul>
+<li>
+<a href="#doom-dashboard">
+<span class="headline">
+<span class="title">Doom dashboard</span></span></a></li>
+<li>
+<a href="#organize-faces">
+<span class="headline">
+<span class="title">ORGANIZE Faces</span></span></a></li>
+<li>
+<a href="#mode-line">
+<span class="headline">
+<span class="title">Mode-line</span></span></a></li>
+<li>
+<a href="#tab-bar">
+<span class="headline">
+<span class="title">Tab bar</span></span></a></li>
+<li>
+<a href="#treemacs">
+<span class="headline">
+<span class="title">Treemacs</span></span></a></li>
+<li>
+<a href="#theme">
+<span class="headline">
+<span class="title">Theme</span></span></a></li>
+<li>
+<a href="#window-divisors">
+<span class="headline">
+<span class="title">Window divisors</span></span></a></li></ul></li></ul></li>
+<li>
+<a href="#living-in-emacs">
+<span class="headline">
+<span class="title">Living in Emacs</span></span></a>
+<ul>
+<li>
+<a href="#lsp">
+<span class="headline">
+<span class="title">LSP</span></span></a>
+<ul>
+<li>
+<a href="#lsp-ui">
+<span class="headline">
+<span class="title">LSP-UI</span></span></a></li></ul></li>
+<li>
+<a href="#terminal">
+<span class="headline">
+<span class="title">Terminal</span></span></a>
+<ul>
+<li>
+<a href="#eat-emulate-a-terminal">
+<span class="headline">
+<span class="title">Eat (Emulate A Terminal)</span></span></a></li></ul></li>
+<li>
+<a href="#calibre">
+<span class="headline">
+<span class="title">Calibre</span></span></a></li>
+<li>
+<a href="#vcgitmagit">
+<span class="headline">
+<span class="title">VC/Git/Magit</span></span></a>
+<ul>
+<li>
+<a href="#magit-todos">
+<span class="headline">
+<span class="title">Magit Todos</span></span></a></li>
+<li>
+<a href="#git-auto-commit-mode">
+<span class="headline">
+<span class="title">Git Auto Commit Mode</span></span></a></li></ul></li></ul></li>
+<li>
+<a href="#organize-features">
+<span class="headline">
+<span class="title">ORGANIZE Features</span></span></a>
+<ul>
+<li>
+<a href="#benchmark-init">
+<span class="headline">
+<span class="title">Benchmark init</span></span></a></li>
+<li>
+<a href="#citations-and-citar">
+<span class="headline">
+<span class="title">Citations and Citar</span></span></a>
+<ul>
+<li>
+<a href="#citar-org-roam-templates">
+<span class="headline">
+<span class="title"><code class="verbatim">citar-org-roam</code> templates</span></span></a></li>
+<li>
+<a href="#org-cite-csl-activate">
+<span class="headline">
+<span class="title">Org-cite-csl-activate</span></span></a></li></ul></li>
+<li>
+<a href="#crdt">
+<span class="headline">
+<span class="title">CRDT</span></span></a></li>
+<li>
+<a href="#elfeed">
+<span class="headline">
+<span class="title">Elfeed</span></span></a>
+<ul>
+<li>
+<a href="#elfeed-tube">
+<span class="headline">
+<span class="title">Elfeed-tube</span></span></a></li></ul></li>
+<li>
+<a href="#esxml">
+<span class="headline">
+<span class="title">Esxml</span></span></a></li>
+<li>
+<a href="#engrave-faces">
+<span class="headline">
+<span class="title">Engrave Faces</span></span></a></li>
+<li>
+<a href="#google-translate">
+<span class="headline">
+<span class="title">Google translate</span></span></a></li>
+<li>
+<a href="#olivetti">
+<span class="headline">
+<span class="todokw todo TODO">
+        TODO
+      </span>
+<span class="title">Olivetti</span></span></a></li>
+<li>
+<a href="#pdf-tools">
+<span class="headline">
+<span class="title">PDF Tools</span></span></a></li>
+<li>
+<a href="#perps-mode">
+<span class="headline">
+<span class="title">Perps-mode</span></span></a></li>
+<li>
+<a href="#real-auto-save">
+<span class="headline">
+<span class="title">Real auto-save</span></span></a></li></ul></li>
+<li>
+<a href="#minor-modes">
+<span class="headline">
+<span class="title">Minor modes</span></span></a>
+<ul>
+<li>
+<a href="#focus">
+<span class="headline">
+<span class="title">Focus</span></span></a></li>
+<li>
+<a href="#iedit">
+<span class="headline">
+<span class="title">Iedit</span></span></a></li></ul></li>
+<li>
+<a href="#languages">
+<span class="headline">
+<span class="title">Languages</span></span></a>
+<ul>
+<li>
+<a href="#dart-flutter">
+<span class="headline">
+<span class="title">Dart (flutter)</span></span></a></li>
+<li>
+<a href="#f">
+<span class="headline">
+<span class="title">F#</span></span></a></li>
+<li>
+<a href="#haskell">
+<span class="headline">
+<span class="title">Haskell</span></span></a></li>
+<li>
+<a href="#lisps">
+<span class="headline">
+<span class="title">Lisps</span></span></a>
+<ul>
+<li>
+<a href="#parinfer">
+<span class="headline">
+<span class="title">Parinfer</span></span></a></li>
+<li>
+<a href="#kmonad">
+<span class="headline">
+<span class="title">kmonad</span></span></a></li></ul></li>
+<li>
+<a href="#lean">
+<span class="headline">
+<span class="title">Lean</span></span></a></li>
+<li>
+<a href="#latex">
+<span class="headline">
+<span class="title">LaTeX</span></span></a>
+<ul>
+<li>
+<a href="#do-not-auto-fill-my-text-when-i-wrap-it-inside-an-environment">
+<span class="headline">
+<span class="title">Do not auto fill my text when I wrap it inside an environment</span></span></a></li></ul></li>
+<li>
+<a href="#org">
+<span class="headline">
+<span class="title">Org</span></span></a>
+<ul>
+<li>
+<a href="#installation-4">
+<span class="headline">
+<span class="title">Installation</span></span></a></li>
+<li>
+<a href="#variaveis">
+<span class="headline">
+<span class="title">Variáveis</span></span></a></li>
+<li>
+<a href="#attach-download">
+<span class="headline">
+<span class="title">Attach &amp; Download</span></span></a></li>
+<li>
+<a href="#appearance">
+<span class="headline">
+<span class="title">Appearance</span></span></a></li>
+<li>
+<a href="#bindings">
+<span class="headline">
+<span class="title">Bindings</span>
+<span class="meta-item tag tag-bindings">bindings</span></span></a></li>
+<li>
+<a href="#general-config">
+<span class="headline">
+<span class="title">General config</span></span></a></li>
+<li>
+<a href="#linking">
+<span class="headline">
+<span class="title">Linking</span></span></a></li>
+<li>
+<a href="#logging">
+<span class="headline">
+<span class="title">Logging</span></span></a></li>
+<li>
+<a href="#minor">
+<span class="headline">
+<span class="title">Minor</span></span></a></li>
+<li>
+<a href="#gutter">
+<span class="headline">
+<span class="title">Gutter</span></span></a></li>
+<li>
+<a href="#hook">
+<span class="headline">
+<span class="title">Hook</span></span></a></li>
+<li>
+<a href="#organon">
+<span class="headline">
+<span class="title">Organon</span></span></a></li>
+<li>
+<a href="#exporting">
+<span class="headline">
+<span class="title">Exporting</span></span></a></li>
+<li>
+<a href="#org-roam">
+<span class="headline">
+<span class="title">Org-roam</span></span></a></li>
+<li>
+<a href="#org-roam-ui">
+<span class="headline">
+<span class="title">Org-roam-ui</span></span></a></li>
+<li>
+<a href="#org-protocol">
+<span class="headline">
+<span class="title">Org-protocol</span></span></a></li>
+<li>
+<a href="#unfill-instead-of-fill">
+<span class="headline">
+<span class="title">Unfill instead of fill</span></span></a></li>
+<li>
+<a href="#vulpea">
+<span class="headline">
+<span class="title">Vulpea</span></span></a></li>
+<li>
+<a href="#writing-mode">
+<span class="headline">
+<span class="title">Writing mode</span></span></a></li></ul></li>
+<li>
+<a href="#web">
+<span class="headline">
+<span class="title">Web</span></span></a></li>
+<li>
+<a href="#yuck-mode">
+<span class="headline">
+<span class="title">Yuck mode</span></span></a></li></ul></li>
+<li>
+<a href="#scientific-writing-mostly-mathematics">
+<span class="headline">
+<span class="title">Scientific writing (mostly mathematics)</span></span></a>
+<ul>
+<li>
+<a href="#mamimo">
+<span class="headline">
+<span class="title">Mamimo</span></span></a></li>
+<li>
+<a href="#abbrev-1">
+<span class="headline">
+<span class="title">Abbrev</span></span></a>
+<ul>
+<li>
+<a href="#language-math-predicate">
+<span class="headline">
+<span class="title">Language &amp; math predicate</span></span></a></li>
+<li>
+<a href="#textual-abbrevs">
+<span class="headline">
+<span class="title">Textual abbrevs</span></span></a></li>
+<li>
+<a href="#variable-abbrevs">
+<span class="headline">
+<span class="title">Variable abbrevs</span></span></a></li>
+<li>
+<a href="#tables-and-mode-local-tables">
+<span class="headline">
+<span class="title">Tables and mode-local tables</span></span></a></li></ul></li></ul></li>
+<li>
+<a href="#organize-bindings">
+<span class="headline">
+<span class="title">ORGANIZE Bindings</span></span></a>
+<ul>
+<li>
+<a href="#comandos-familiares">
+<span class="headline">
+<span class="title">Comandos familiares</span></span></a></li>
+<li>
+<a href="#linhas-visuais">
+<span class="headline">
+<span class="title">Linhas visuais</span></span></a></li>
+<li>
+<a href="#hydras">
+<span class="headline">
+<span class="title">Hydras</span></span></a></li>
+<li>
+<a href="#kitty-terminal">
+<span class="headline">
+<span class="title">Kitty (Terminal)</span></span></a></li>
+<li>
+<a href="#leader-edit-key">
+<span class="headline">
+<span class="title">Leader edit key</span></span></a></li></ul></li>
+<li>
+<a href="#workarounds-1">
+<span class="headline">
+<span class="title">Workarounds</span></span></a>
+<ul>
+<li>
+<a href="#doom">
+<span class="headline">
+<span class="title">Doom</span></span></a></li></ul></li></ul></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;;; -*- lexical-binding: t; -*-<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq user-full-name &quot;Lucas V. R.&quot;<br>      user-mail-address &quot;redacted&quot;)<br></pre></div>
+<section id="disables-and-unpins"><h2>
+<span class="headline">
+<span class="title">Disables and unpins</span></span></h2>
+<div class="org-src-container">
+<pre class="src src-elisp">;; -*- no-byte-compile: t; -*-<br>;;; $DOOMDIR/packages.el<br>(package! flycheck-popup-tip :disable t)<br>(package! writegood-mode :disable t)<br>(package! hl-line :disable t)<br>(package! revealjs :disable t)<br>(package! org-re-reveal :disable t)<br>(package! company :disable t)<br>(unpin! doom-themes)<br>(unpin! vertico)<br>(unpin! treemacs)<br>(unpin! evil-tex)<br>(unpin! all-the-icons)<br></pre></div></section>
+<section id="my-library"><h2>
+<span class="headline">
+<span class="title">My library</span></span></h2>
+<section id="non-interactive"><h3>
+<span class="headline">
+<span class="title">Non-interactive</span></span></h3>
+<section id="advices"><h4>
+<span class="headline">
+<span class="title">Advices</span></span></h4>
+<p>Para desabilitar as mensagens chatas:</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defun advice--inhibit-message (f &amp;rest r) (let ((inhibit-message t)) (apply f r)))<br></pre></div></section>
+<section id="list-of-strings-predicate"><h4>
+<span class="headline">
+<span class="title">List of strings predicate</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defun string-list-p (x) (and (listp x) (--all? (stringp it) x)))<br></pre></div></section>
+<section id="macros"><h4>
+<span class="headline">
+<span class="title">Macros</span></span></h4>
+<ol>
+<li id="defhook">
+<p><b>
+<span class="headline">
+<span class="todokw todo TODO">
+        TODO
+      </span>
+<span class="title">Defhook</span></span></b></p></li>
+<li id="boolean-variable-toggle-setq-toggle">
+<p><b>
+<span class="headline">
+<span class="title">Boolean variable toggle (<code class="code">setq-toggle</code>)</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defmacro setq-toggle (s)<br>  `(setq ,s (not ,s)))<br></pre></div></li></ol></section></section>
+<section id="interactive"><h3>
+<span class="headline">
+<span class="title">Interactive</span></span></h3>
+<section id="remove-all-advice-from-a-symbol"><h4>
+<span class="headline">
+<span class="title">Remove all advice from a symbol</span></span></h4>
+<p>This was taken from <a href="https://emacs.stackexchange.com/a/24658">StackExchange</a> long ago.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defun advice-unadvice (sym)<br>  &quot;Remove all advices from symbol SYM.&quot;<br>  (interactive &quot;aFunction symbol: &quot;)<br>  (advice-mapc (lambda (advice _props) (advice-remove sym advice)) sym))<br></pre></div></section></section></section>
+<section id="editor"><h2>
+<span class="headline">
+<span class="title">Editor</span></span></h2>
+<section id="completion-search-and-insertion"><h3>
+<span class="headline">
+<span class="title">Completion, search and insertion</span></span></h3>
+<section id="in-buffer-completion-and-insertion"><h4>
+<span class="headline">
+<span class="title">In-buffer completion and insertion</span></span></h4>
+<ol>
+<li id="aas-auto-expanding-snippets">
+<p><b>
+<span class="headline">
+<span class="title">AAS (auto expanding snippets)</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! aas :recipe (:host github :repo &quot;ymarco/auto-activating-snippets&quot;))<br></pre></div></li>
+<li id="abbrev">
+<p><b>
+<span class="headline">
+<span class="title">Abbrev</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(add-hook! &#39;text-mode-hook<br>           (abbrev-mode +1))<br><br>(setq abbrev-file-name (concat doom-private-dir &quot;abbrev_defs&quot;))<br></pre></div></li>
+<li id="cape-completion-at-point-extensions">
+<p><b>
+<span class="headline">
+<span class="title">Cape (completion-at-point extensions)</span></span></b></p>
+<ol>
+<li id="installation">
+<p><b>
+<span class="headline">
+<span class="title">Installation</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! cape)<br></pre></div></li>
+<li id="configuration">
+<p><b>
+<span class="headline">
+<span class="title">Configuration</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package cape<br>  :after corfu<br>  ;; Bind dedicated completion commands<br>  :bind ((&quot;C-c c p&quot; . completion-at-point) ;; capf<br>         (&quot;C-c c t&quot; . complete-tag)        ;; etags<br>         (&quot;C-c c d&quot; . cape-dabbrev)        ;; or dabbrev-completion<br>         (&quot;C-c c f&quot; . cape-file)<br>         (&quot;C-c c k&quot; . cape-keyword)<br>         (&quot;C-c c s&quot; . cape-symbol)<br>         (&quot;C-c c a&quot; . cape-abbrev)<br>         (&quot;C-c c i&quot; . cape-ispell)<br>         (&quot;C-c c l&quot; . cape-line)<br>         (&quot;C-c c w&quot; . cape-dict)<br>         (&quot;C-c c \\&quot; . cape-tex)<br>         (&quot;C-c c &amp;&quot; . cape-sgml)<br>         (&quot;C-c c r&quot; . cape-rfc1345))<br>  :init<br>  ;; Add `completion-at-point-functions&#39;, used by `completion-at-point&#39;.<br>  (setq cape-dabbrev-check-other-buffers nil<br>        cape-dabbrev-min-length 3<br>        dabbrev-case-fold-search t)<br>  (add-to-list &#39;completion-at-point-functions #&#39;cape-file)<br>  (add-to-list &#39;completion-at-point-functions #&#39;cape-tex)<br>  (add-to-list &#39;completion-at-point-functions #&#39;cape-keyword))<br>    ;;(add-to-list &#39;completion-at-point-functions #&#39;cape-sgml)<br>    ;;(add-to-list &#39;completion-at-point-functions #&#39;cape-rfc1345)<br>    ;;(add-to-list &#39;completion-at-point-functions #&#39;cape-abbrev)<br>    ;;(add-to-list &#39;completion-at-point-functions #&#39;cape-ispell)<br>    ;;(add-to-list &#39;completion-at-point-functions #&#39;cape-dict)<br>    ;;(add-to-list &#39;completion-at-point-functions #&#39;cape-symbol)<br>    ;;(add-to-list &#39;completion-at-point-functions #&#39;cape-line)<br></pre></div></li></ol></li>
+<li id="corfu">
+<p><b>
+<span class="headline">
+<span class="title">Corfu</span></span></b></p>
+<ol>
+<li id="installation-1">
+<p><b>
+<span class="headline">
+<span class="title">Installation</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! corfu :recipe (:host github :repo &quot;minad/corfu&quot; :files (&quot;*.el&quot; &quot;extensions/*.el&quot;)))<br>(package! popon :recipe (:type git :repo &quot;https://codeberg.org/akib/emacs-popon.git&quot;))<br>(package! corfu-terminal :recipe (:type git :repo &quot;https://codeberg.org/akib/emacs-corfu-terminal.git&quot;))<br></pre></div></li>
+<li id="configuration-1">
+<p><b>
+<span class="headline">
+<span class="title">Configuration</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package corfu<br>  :bind (:map corfu-map<br>         (&quot;\\&quot; . corfu-quit)<br>         (&quot;TAB&quot; . corfu-next)<br>         (&quot;S-TAB&quot; . corfu-previous)<br>         (&quot;&lt;tab&gt;&quot; . corfu-next)<br>         (&quot;&lt;backtab&gt;&quot; . corfu-previous)<br>         (&quot;M-s&quot; . corfu-insert-separator))<br>  :hook (doom-first-input . global-corfu-mode)<br>  <br>  ;; Optional customizations<br>  :custom<br>  (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous&#39;<br>  (corfu-auto t)<br>  (corfu-auto-delay 0)<br>  (corfu-auto-prefix 3)<br>  (corfu-preselect &#39;prompt)<br>  ;; (corfu-commit-predicate nil)   ;; Do not commit selected candidates on next input<br>  ;; (corfu-quit-at-boundary t)     ;; Automatically quit at word boundary<br>  (corfu-quit-no-match &#39;separator))        ;; Automatically quit if there is no match<br>  ;; (corfu-echo-documentation nil) ;; Do not show documentation in the echo area<br>  ;; You may want to enable Corfu only for certain modes.<br>  ;; :hook ((prog-mode . corfu-mode)<br>  ;;        (shell-mode . corfu-mode)<br>  ;;        (eshell-mode . corfu-mode))<br><br>;; Dabbrev works with Corfu<br>(use-package dabbrev<br>  :custom (dabbrev-search-all-buffers nil)<br>  ;; Swap M-/ and C-M-/<br>  :bind ((&quot;M-/&quot; . dabbrev-completion)<br>         (&quot;C-M-/&quot; . dabbrev-expand)))<br><br>;; A few more useful configurations...<br>(use-package emacs<br>  :init<br>  ;; TAB cycle if there are only few candidates<br>  (setq completion-cycle-threshold 3)<br><br>  ;; Emacs 28: Hide commands in M-x which do not work in the current mode.<br>  ;; Corfu commands are hidden, since they are not supposed to be used via M-x.<br>  (setq read-extended-command-predicate<br>        #&#39;command-completion-default-include-p)<br><br>  ;; Enable indentation+completion using the TAB key.<br>  ;; `completion-at-point&#39; is often bound to M-TAB.<br>  (setq tab-always-indent &#39;complete))<br></pre></div></li></ol></li>
+<li id="color-picker-zenity">
+<p><b>
+<span class="headline">
+<span class="title">Color picker (Zenity)</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! zenity-color-picker)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(map! :leader :n &quot;e c&quot; #&#39;zenity-cp-color-at-point-dwim)<br></pre></div></li>
+<li id="yasnippet">
+<p><b>
+<span class="headline">
+<span class="title">Yasnippet</span></span></b></p>
+<p>Fixes the issue where when a placeholder appeared on an empty line, no
+indentation was applied. For instance, this:</p>
+<div class="org-src-container">
+<pre class="src src-org">1. bla<br>   quote|<br></pre></div>
+<p>would be expanded to this:</p>
+<div class="org-src-container">
+<pre class="src src-org"> 1. bla<br>    ,#+begin_quote<br>|<br>    ,#+end_quote<br></pre></div>
+<p>quite annoing…</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq yas-also-indent-empty-lines t)<br></pre></div>
+<ol>
+<li id="movimentos-entre-campos">
+<p><b>
+<span class="headline">
+<span class="title">Movimentos entre campos</span></span></b></p>
+<p>Uma dessas coisas que se imagina, por que não fizeram assim?</p>
+<div class="org-src-container">
+<pre class="src src-elisp">(defadvice! my-yas--maybe-move-to-active-field (snippet)<br>  &quot;Try to move to SNIPPET&#39;s active (or first) field and return it if found.&quot;<br><br>  :override #&#39;yas--maybe-move-to-active-field<br><br>  (let ((target-field (or (yas--snippet-active-field snippet)<br>                          (car (yas--snippet-fields snippet)))))<br>    (when target-field<br>      (yas--move-to-field snippet target-field)<br>      (goto-char (yas--field-end target-field))<br>      target-field)))<br></pre></div></li>
+<li id="interaction-with-corfu">
+<p><b>
+<span class="headline">
+<span class="title">Interaction with Corfu</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defadvice! yas-expand-filter-corfu-a (&amp;rest r)<br>  :before-while #&#39;yas-maybe-expand-abbrev-key-filter<br>  (not (and (frame-live-p corfu--frame) (frame-visible-p corfu--frame))))<br></pre></div></li></ol></li></ol></section>
+<section id="gui-enhacements"><h4>
+<span class="headline">
+<span class="title">GUI enhacements</span></span></h4>
+<ol>
+<li id="kind-icon">
+<p><b>
+<span class="headline">
+<span class="title">Kind-icon</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! kind-icon)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package kind-icon<br>  :after corfu<br>  :custom<br>  (kind-icon-default-face &#39;corfu-default) ; to compute blended backgrounds correctly<br>  :config<br>  (setq kind-icon-default-style &#39;(:padding 0 :stroke 0 :margin 0 :radius 0 :height 0.8 :scale 1.0))<br>  (add-hook! &#39;doom-load-theme-hook #&#39;kind-icon-reset-cache)<br>  (add-to-list &#39;corfu-margin-formatters #&#39;kind-icon-margin-formatter))<br></pre></div></li></ol></section>
+<section id="global-search-and-completion"><h4>
+<span class="headline">
+<span class="title">Global search and completion</span></span></h4>
+<ol>
+<li id="consult">
+<p><b>
+<span class="headline">
+<span class="title">Consult</span></span></b></p>
+<ol>
+<li id="installation-2">
+<p><b>
+<span class="headline">
+<span class="title">Installation</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(unpin! consult)<br></pre></div></li>
+<li id="configuration-2">
+<p><b>
+<span class="headline">
+<span class="title">Configuration</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package consult<br>  :bind (:map doom-leader-map<br>              (&quot;,&quot; . consult-buffer)))<br><br>(after! consult<br>  (map! :n &quot;M-y&quot;      #&#39;consult-yank-replace <br>        :leader &quot;h I&quot; #&#39;consult-info<br>                &quot;r r&quot; #&#39;consult-register<br>                &quot;r s&quot; #&#39;consult-register-store<br>                &quot;r l&quot; #&#39;consult-register-load))<br></pre></div></li></ol></li>
+<li id="orderless">
+<p><b>
+<span class="headline">
+<span class="title">Orderless</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package corfu<br>  :config<br>  (setq completion-styles &#39;(basic-limited orderless basic)))<br></pre></div>
+<p>Também quero que tenha inicialismos (por exemplo, <code class="verbatim">hmlm -&gt; hide-mode-line-mode</code>):</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq orderless-matching-styles<br>      &#39;(orderless-initialism<br>        orderless-literal<br>        orderless-regexp))<br></pre></div>
+<ol>
+<li id="orderless-fast-dispatch">
+<p><b>
+<span class="headline">
+<span class="title">Orderless fast dispatch</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defun basic-limited-all-completions (string table pred point)<br>  (when (length&lt; string 4)<br>    (completion-emacs21-all-completions string table pred point)))<br><br>(defun basic-limited-try-completion (string table pred point)<br>  (when (length&lt; string 4)<br>    (completion-emacs21-try-completion string table pred point)))<br><br>(add-to-list &#39;completion-styles-alist<br>             &#39;(basic-limited<br>               basic-limited-try-completion<br>               basic-limited-all-completions<br>               &quot;Limited basic completion.&quot;))<br></pre></div></li></ol></li>
+<li id="register-interaction-with-evil">
+<p><b>
+<span class="headline">
+<span class="title">Register interaction with Evil</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! (consult evil)<br>  (defadvice! evil-paste--pretend-to-be-yank-a (&amp;rest _r)<br>    :after #&#39;evil-paste-after<br>    :after #&#39;evil-paste-before<br>    (setq this-command &#39;yank<br>          yank-undo-function (lambda (_ _) (evil-undo-pop)))))<br></pre></div></li>
+<li id="vertico">
+<p><b>
+<span class="headline">
+<span class="title">Vertico</span></span></b></p>
+<ol>
+<li id="configuration-3">
+<p><b>
+<span class="headline">
+<span class="title">Configuration</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package vertico<br>  :bind (:map vertico-map<br>         (&quot;M-k&quot; . vertico-next)<br>         (&quot;M-j&quot; . vertico-previous))<br>  :config<br>  ;; (vertico-reverse-mode +1)<br>  (setq vertico-resize nil<br>        vertico-count 8))<br></pre></div></li></ol></li></ol></section></section>
+<section id="help-and-error-system"><h3>
+<span class="headline">
+<span class="title">Help and error system</span></span></h3>
+<section id="eldoc-box"><h4>
+<span class="headline">
+<span class="title">Eldoc-box</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! eldoc-box)<br></pre></div></section>
+<section id="jinx-spell"><h4>
+<span class="headline">
+<span class="title">Jinx (spell)</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! jinx)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package jinx<br>  :config<br>  (setq jinx-languages &quot;pt_BR en_US&quot;)<br>  (dolist (hook &#39;(text-mode-hook conf-mode-hook))<br>    (add-hook hook #&#39;jinx-mode))<br>  (define-key evil-visual-state-map &quot;z=&quot; &#39;jinx-correct)<br>  (define-key evil-normal-state-map &quot;z=&quot; &#39;jinx-correct))<br></pre></div></section>
+<section id="which-key"><h4>
+<span class="headline">
+<span class="title">Which-key</span></span></h4>
+<ol>
+<li id="posframe">
+<p><b>
+<span class="headline">
+<span class="title">Posframe</span>
+<span class="meta-item tag tag-ARCHIVE">ARCHIVE</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! which-key-posframe)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package which-key-posframe<br>  :hook (which-key-mode . which-key-posframe-mode)<br>  :config<br>  (add-hook &#39;doom-after-reload-hook #&#39;posframe-delete-all)<br>  (setq which-key-posframe-poshandler #&#39;posframe-poshandler-frame-bottom-center))<br></pre></div></li></ol></section></section>
+<section id="organize-text-editing"><h3>
+<span class="headline">
+<span class="title">ORGANIZE Text editing</span></span></h3>
+<section id="evil"><h4>
+<span class="headline">
+<span class="title">Evil</span></span></h4>
+<ol>
+<li id="variables">
+<p><b>
+<span class="headline">
+<span class="title">Variables</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq evil-shift-round nil<br>      evil-cross-lines t<br>      evil-move-cursor-back nil<br>      evil-want-fine-undo t<br>      evil-snipe-spillover-scope &#39;visible<br>      evil-respect-visual-line-mode t<br><br>      ;; Substitui vários matches por linha no evil-ex<br>      evil-ex-substitute-global t)<br></pre></div>
+<p>This is very important. The newline at the end of a line is a character too!</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq evil-move-beyond-eol t)<br></pre></div></li>
+<li id="mouse-bindings-for-multicursor-evil-mc">
+<p><b>
+<span class="headline">
+<span class="title">Mouse bindings for multicursor (<code class="verbatim">evil-mc</code>)</span></span></b></p>
+<p>Toggle multicursors at mouse pointer with <code class="verbatim">C-&lt;mouse-1&gt;</code>.</p>
+<div class="org-src-container">
+<pre class="src src-elisp">(defun evil-mc/toggle-cursor-on-click (event)<br>  &quot;Add a cursor where you click, or remove a fake cursor that is<br>already there.&quot;<br>  (interactive &quot;e&quot;)<br>  (mouse-minibuffer-check event)<br>  (require &#39;evil-mc)<br>  ;; Use event-end in case called from mouse-drag-region.<br>  ;; If EVENT is a click, event-end and event-start give same value.<br>  (let ((position (event-end event)))<br>    (if (not (windowp (posn-window position)))<br>        (error &quot;Position not in text area of window&quot;))<br>    (select-window (posn-window position))<br>    (let ((pt (posn-point position)))<br>      (if (numberp pt)<br>          ;; is there a fake cursor with the actual *point* right where we are?<br>          (unless (evil-mc-undo-cursor-at-pos pt)<br>            (save-excursion<br>              (goto-char pt)<br>              (evil-mc-make-cursor-here)))))))<br><br>(after! evil<br>  (map! &quot;C-&lt;down-mouse-1&gt;&quot; nil)<br>  (map! &quot;C-&lt;mouse-1&gt;&quot; #&#39;evil-mc/toggle-cursor-on-click))<br></pre></div></li>
+<li id="text-objects">
+<p><b>
+<span class="headline">
+<span class="title">Text objects</span></span></b></p>
+<ol>
+<li id="org-headlines">
+<p><b>
+<span class="headline">
+<span class="title">Org headlines</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(defun evil-org--parse-headline ()<br>  (save-excursion<br>    (end-of-line)<br>    (outline-previous-heading)<br>    (skip-chars-forward &quot;* \t&quot;)<br>    (let* ((todo-start     (point))<br>           (todo-end1      (and org-todo-regexp<br>                                (let (case-fold-search) (looking-at (concat org-todo-regexp &quot; &quot;)))<br>                                (goto-char (1- (match-end 0)))))<br>           (todo-end2      (when todo-end1 (skip-chars-forward &quot; \t&quot;) (point)))<br>           (priority-start (point))<br>           (priority-end   (when (looking-at &quot;\\[#.\\][ \t]*&quot;) (goto-char (match-end 0))))<br>           (_              (and (let (case-fold-search) (looking-at org-comment-string))<br>                                (goto-char (match-end 0))))<br>           (title-start    (point))<br>           (tags-start     (when (re-search-forward &quot;[ \t]+\\(:[[:alnum:]_@#%:]+:\\)[ \t]*$&quot;<br>                                                    (line-end-position) &#39;move)<br>                             (goto-char (match-beginning 0))<br>                             (match-beginning 1)))<br>           (title-end      (point)))<br>      (list todo-start todo-end1 todo-end2 priority-start<br>            priority-end title-start title-end<br>            tags-start (line-end-position)))))<br><br>(after! evil<br>  (evil-define-text-object evil-org-headline (count &amp;optional beg end type)<br>    &quot;Select the current org heading&quot; :jump t<br>    (save-excursion<br>      (end-of-line)<br>      (outline-previous-heading)<br>      (list (line-beginning-position) (line-end-position))))<br>  <br>  (evil-define-text-object evil-org-headline-title (c &amp;rest _)<br>    &quot;Select the title text in the current org heading&quot; :jump t<br>    (let ((parse (evil-org--parse-headline)))<br>      (list (nth 5 parse) (nth 6 parse))))<br>  <br>  (evil-define-text-object evil-org-headline-todo (c &amp;rest _)<br>    &quot;Select the todo entry in the current org heading&quot; :jump t<br>    (let ((parse (evil-org--parse-headline)))<br>      (list (nth 0 parse) (nth 2 parse))))<br>  <br>  (evil-define-text-object evil-org-headline-inner-todo (c &amp;rest _)<br>    &quot;Select the inner todo entry in the current org heading&quot; :jump t<br>    (let ((parse (evil-org--parse-headline)))<br>      (list (nth 0 parse) (nth 1 parse))))<br>  <br>  (evil-define-text-object evil-org-headline-priority (c &amp;rest _)<br>    &quot;Select the priority entry in the current org heading&quot; :jump t<br>    (let ((parse (evil-org--parse-headline)))<br>      (list (nth 3 parse) (nth 4 parse))))<br>  <br>  (evil-define-text-object evil-org-headline-tags (c &amp;rest _)<br>    &quot;Select the tags in the current org heading&quot; :jump t<br>    (let ((parse (evil-org--parse-headline)))<br>      (list (nth 6 parse) (nth 8 parse))))<br>  <br>  (evil-define-text-object evil-org-headline-inner-priority (c &amp;rest r)<br>    &quot;Select the inner part of priority in the current org heading&quot; :jump t<br>    (let ((parse (evil-org--parse-headline)))<br>      (when (nth 4 parse)<br>        (let ((p (+ 2 (nth 3 parse)))) (list p (1+ p))))))<br>  <br>  (evil-define-text-object evil-org-headline-inner-tags (c &amp;rest _)<br>    &quot;Select the inner part of tags in the current org heading&quot; :jump t<br>    (let ((parse (evil-org--parse-headline)))<br>      (when (nth 7 parse)<br>        (list (1+ (nth 7 parse)) (1- (nth 8 parse))))))<br>  <br>  (map! :map &#39;evil-inner-text-objects-map<br>        &quot;h h&quot; #&#39;evil-org-headline-title<br>        &quot;h t&quot; #&#39;evil-org-headline-inner-todo<br>        &quot;h p&quot; #&#39;evil-org-headline-inner-priority<br>        &quot;h a&quot; #&#39;evil-org-headline-inner-tags)<br>  <br>  (map! :map &#39;evil-outer-text-objects-map<br>        &quot;h h&quot; #&#39;evil-org-headline<br>        &quot;h t&quot; #&#39;evil-org-headline-todo<br>        &quot;h p&quot; #&#39;evil-org-headline-priority<br>        &quot;h a&quot; #&#39;evil-org-headline-tags))<br></pre></div></li>
+<li id="camel-case">
+<p><b>
+<span class="headline">
+<span class="title">CameL case</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! evil<br>  (evil-define-text-object evil-prog-camelcase (c &amp;rest _)<br>    &quot;Select a camelCase \&quot;word\&quot;. For instance, if cursor is at | in<br>camelCase|dWord, then it selects \&quot;Cased\&quot;.&quot; :jump t<br>    (let ((case-fold-search nil))<br>       (if-let* ((_     (looking-at-p &quot;[[:lower:]]&quot;))<br>                 (begin (save-excursion (re-search-backward &quot;[[:upper:]]\\|[^[:alpha:]].&quot;)<br>                                        (match-end 0)))<br>                 (end   (save-excursion (re-search-forward &quot;[^[:lower:]]&quot;))))<br>           (list (1- begin) (1- end))<br>         (if-let* ((_   (looking-at-p &quot;[[:upper:]]&quot;))<br>                   (end (save-excursion (re-search-forward &quot;[[:alpha:]][[:upper:]]\\|[^[:alpha:]]&quot;)<br>                                        (match-end 0))))<br>             (list (point) (1- end)))))))<br><br>(map! :mode &#39;prog-mode<br>      :map &#39;evil-inner-text-objects-map<br>      &quot;l&quot; #&#39;evil-prog-camelcase)<br></pre></div></li></ol></li></ol></section>
+<section id="scroll"><h4>
+<span class="headline">
+<span class="title">Scroll</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq mouse-wheel-scroll-amount &#39;(3 ((shift) . 6)) ;; one line at a time<br>      mouse-wheel-progressive-speed nil ;; don&#39;t accelerate scrolling<br>      scroll-margin 0<br>      scroll-step 1) ;; keyboard scroll one line at a time<br><br>(when (fboundp &#39;pixel-scroll-precision-mode)<br>  (pixel-scroll-precision-mode +1)<br>  (setq pixel-scroll-precision-interpolate-mice nil))<br></pre></div></section>
+<section id="variables-1"><h4>
+<span class="headline">
+<span class="title">Variables</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq-default fill-column 80)<br><br>(setq amalgamating-undo-limit 3)<br><br>(setq tab-always-indent t)<br><br>;; (setq company-idle-delay 0.1<br>;;       company-minimum-prefix-length 1)<br><br>(setq mouse-drag-and-drop-region t<br>      mouse-drag-and-drop-region-cut-when-buffers-differ t<br>      mouse-drag-and-drop-region-show-tooltip nil)<br><br>(setq default-input-method &quot;TeX&quot;)<br></pre></div>
+<p>Deixa o <code class="verbatim">text-scale-mode</code> mais devagar.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq text-scale-mode-step 1.05)<br></pre></div></section>
+<section id="shrink-whitespace"><h4>
+<span class="headline">
+<span class="title">Shrink whitespace</span>
+<span class="meta-item tag tag-bindings">bindings</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq doom-leader-alt-key &quot;M-SPC&quot;)<br>(map! :i &quot;C-SPC&quot; #&#39;cycle-spacing)<br></pre></div></section>
+<section id="highlighting-tree-sitter"><h4>
+<span class="headline">
+<span class="title">Highlighting (Tree-sitter)</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(global-tree-sitter-mode)<br>(add-hook &#39;tree-sitter-after-on-hook #&#39;tree-sitter-hl-mode)<br></pre></div></section>
+<section id="saving"><h4>
+<span class="headline">
+<span class="title">Saving</span></span></h4>
+<p>Desabilita a mensagem de salvamento.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(advice-add &#39;save-buffer :around #&#39;advice--inhibit-message)<br></pre></div></section>
+<section id="blink-cursor"><h4>
+<span class="headline">
+<span class="title">Blink cursor</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(blink-cursor-mode -1)<br></pre></div></section>
+<section id="enable-perl-like-regex-search"><h4>
+<span class="headline">
+<span class="title">Enable perl-like regex search</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(pcre-mode +1)<br></pre></div></section>
+<section id="popups"><h4>
+<span class="headline">
+<span class="title">Popups</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq +popup-defaults<br>      &#39;(:side bottom<br>        :height 0.3<br>        :width 130<br>        :quit t<br>        :select ignore<br>        :ttl 5))<br><br>(setq +popup-default-alist<br>      &#39;((window-height . 0.3)<br>        (reusable-frames . visible)))<br></pre></div></section>
+<section id="others"><h4>
+<span class="headline">
+<span class="title">Others</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(remove-hook! &#39;(org-mode-hook text-mode-hook) #&#39;flyspell-mode)<br>(remove-hook! &#39;org-mode-hook #&#39;org-cdlatex-mode)<br><br>(setq vterm-shell &quot;zsh&quot;<br>      delete-by-moving-to-trash t<br>      mouse-autoselect-window nil)<br></pre></div></section></section>
+<section id="formatting"><h3>
+<span class="headline">
+<span class="title">Formatting</span></span></h3>
+<section id="apheleia"><h4>
+<span class="headline">
+<span class="title">Apheleia</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! apheleia)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package apheleia<br>  :config<br>  (push &#39;(fourmolu . (&quot;fourmolu&quot; &quot;--stdin-input-file&quot; (or (buffer-file-name) (buffer-name)))) apheleia-formatters)<br>  (setf (alist-get &#39;latexindent apheleia-formatters) &#39;(&quot;latexindent&quot; &quot;-y=defaultIndent:&#39;  &#39;&quot; &quot;--logfile=/dev/null&quot;))<br>  (setf (alist-get &#39;haskell-mode apheleia-mode-alist) &#39;fourmolu))<br></pre></div></section>
+<section id="ws-butler"><h4>
+<span class="headline">
+<span class="title">WS butler</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! ws-butler<br>  (setq ws-butler-global-exempt-modes<br>        &#39;(special-mode<br>          comint-mode<br>          term-mode<br>          eshell-mode<br>          diff-mode<br>          markdown-mode<br>          org-mode<br>          latex-mode)))<br></pre></div></section></section>
+<section id="selection"><h3>
+<span class="headline">
+<span class="title">Selection</span></span></h3>
+<section id="expand-region"><h4>
+<span class="headline">
+<span class="title">Expand-region</span>
+<span class="meta-item tag tag-bindings">bindings</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package expand-region<br>  :config<br>  (map! :n &quot;C-a&quot; #&#39;er/expand-region<br>           &quot;C-S-a&quot; #&#39;er/contract-region))<br></pre></div></section></section>
+<section id="overall-ui"><h3>
+<span class="headline">
+<span class="title">Overall UI</span></span></h3>
+<section id="doom-dashboard"><h4>
+<span class="headline">
+<span class="title">Doom dashboard</span></span></h4>
+<p>Small dashboard changes:</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;; Disables &quot;benchmark&quot; echo message<br>(remove-hook &#39;window-setup-hook #&#39;doom-display-benchmark-h)<br></pre></div>
+<ol>
+<li id="banner">
+<p><b>
+<span class="headline">
+<span class="title">Banner</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq +doom-dashboard-functions &#39;(doom-dashboard-widget-shortmenu<br>                                  doom-dashboard-widget-loaded))<br></pre></div></li></ol></section>
+<section id="organize-faces"><h4>
+<span class="headline">
+<span class="title">ORGANIZE Faces</span></span></h4>
+<ol>
+<li id="fonts">
+<p><b>
+<span class="headline">
+<span class="title">Fonts</span></span></b></p>
+<p>Note: the twemoji font is the CBDT/CBLC variant from Fedora, and in AUR it is named <code class="verbatim">ttf-twemoji</code>. The SVG-in-OTF variant <u>will not</u> work!</p>
+<p>If it works, you will see a twemoji smile: 🙂</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq doom-font                (font-spec :family &quot;Victor Mono&quot; :size 19 :weight &#39;medium)<br>      doom-variable-pitch-font (font-spec :family &quot;IBM Plex Sans&quot; :size 19 :weight &#39;normal)<br>      doom-serif-font          (font-spec :family &quot;IBM Plex Mono&quot; :weight &#39;light))<br>      ;; doom-unicode-font        (font-spec :family &quot;JuliaMono&quot; :weight &#39;normal))<br><br>;; Colocamos uma ordem de prioridade para tentar ter todos os unicodes e emojis.<br>(setq use-default-font-for-symbols t)<br>(defun my/adjust-fonts ()<br>  ;; (set-fontset-font t &#39;unicode (font-spec :family &quot;Concrete Math&quot;))<br>  (set-fontset-font t &#39;unicode (font-spec :family &quot;Julia Mono&quot;) nil &#39;append)<br>  (set-fontset-font t &#39;emoji &quot;Twemoji&quot; nil &#39;prepend))<br><br>(add-hook! &#39;after-setting-font-hook #&#39;my/adjust-fonts)<br></pre></div></li>
+<li id="comments-and-keywords">
+<p><b>
+<span class="headline">
+<span class="title">Comments and keywords</span></span></b></p>
+<p>Deixamos os comentários itálicas, e os <code class="code">keywords</code> oblíquos.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(custom-set-faces!<br>  &#39;(font-lock-comment-face :slant italic :weight normal)<br>  &#39;(font-lock-keyword-face :slant italic :weight normal))<br></pre></div></li>
+<li id="child-frames">
+<p><b>
+<span class="headline">
+<span class="title">Child frames</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(custom-set-faces!<br>  `(child-frame-border :inherit default))<br></pre></div></li>
+<li id="echo-area">
+<p><b>
+<span class="headline">
+<span class="title">Echo area</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defun customize-echo ()<br>  (with-current-buffer &quot; *Echo Area 0*&quot;<br>    (face-remap-add-relative &#39;default &#39;(:family &quot;Julia Mono&quot;))<br>    (face-remap-add-relative &#39;default &#39;(:height 140 :inherit shadow)))<br>  (with-current-buffer &quot; *Echo Area 1*&quot;<br>    (face-remap-add-relative &#39;default &#39;(:family &quot;Julia Mono&quot;))<br>    (face-remap-add-relative &#39;default &#39;(:height 140 :inherit shadow))))<br><br>;; (add-hook &#39;doom-load-theme-hook #&#39;customize-echo 40)<br></pre></div></li>
+<li id="icons">
+<p><b>
+<span class="headline">
+<span class="title">Icons</span></span></b></p>
+<p>Adjusts the icon sizes so they are a bit smaller.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq all-the-icons-scale-factor 0.88)<br></pre></div></li>
+<li id="ligatures">
+<p><b>
+<span class="headline">
+<span class="title">Ligatures</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! ligature :recipe (:host github :repo &quot;mickeynp/ligature.el&quot;))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package ligature<br>  :config<br>  (ligature-set-ligatures<br>   &#39;t &#39;(&quot;&lt;/&quot; &quot;&lt;/&gt;&quot; &quot;/&gt;&quot; &quot;~-&quot; &quot;-~&quot; &quot;~@&quot; &quot;&lt;~&quot; &quot;&lt;~&gt;&quot; &quot;&lt;~~&quot; &quot;~&gt;&quot; &quot;~~&quot;<br>        &quot;~~&gt;&quot; &quot;&gt;=&quot; &quot;&lt;=&quot; &quot;&lt;!--&quot; &quot;##&quot; &quot;###&quot; &quot;####&quot; &quot;|-&quot; &quot;-|&quot; &quot;|-&gt;&quot;<br>        &quot;&lt;-|&quot; &quot;&gt;-|&quot; &quot;|-&lt;&quot; &quot;|=&quot; &quot;|=&gt;&quot; &quot;&lt;-&quot; &quot;&lt;--&quot; &quot;--&gt;&quot; &quot;-&gt;&quot; &quot;-&lt;&quot;<br>        &quot;&gt;-&gt;&quot; &quot;&gt;&gt;-&quot; &quot;&lt;&lt;-&quot; &quot;&lt;-&gt;&quot; &quot;-&gt;&gt;&quot; &quot;-&lt;&lt;&quot; &quot;&lt;-&lt;&quot; &quot;==&gt;&quot; &quot;=&gt;&quot; &quot;=/=&quot;<br>        &quot;!==&quot; &quot;!=&quot; &quot;&lt;==&quot; &quot;&gt;&gt;=&quot; &quot;=&gt;&gt;&quot; &quot;&gt;=&gt;&quot; &quot;&lt;=&gt;&quot; &quot;&lt;=&lt;&quot; &quot;&lt;&lt;=&quot; &quot;=&lt;&lt;&quot;<br>        &quot;.-&quot; &quot;.=&quot; &quot;=:=&quot; &quot;=!=&quot; &quot;==&quot; &quot;===&quot; &quot;::&quot; &quot;:=&quot; &quot;:&gt;&quot; &quot;:&lt;&quot; &quot;&gt;:&quot;<br>        &quot;&lt;|&quot; &quot;&lt;|&gt;&quot; &quot;|&gt;&quot; &quot;&lt;&gt;&quot; &quot;&lt;$&quot; &quot;&lt;$&gt;&quot; &quot;$&gt;&quot; &quot;&lt;+&quot; &quot;&lt;+&gt;&quot; &quot;+&gt;&quot;<br>        &quot;?=&quot; &quot;/=&quot; &quot;/==&quot; &quot;/\\&quot; &quot;\\/&quot; &quot;__&quot; &quot;&amp;&amp;&quot; &quot;++&quot; &quot;+++&quot;))<br>  ;; Enables ligature checks globally in all buffers. You can also do it<br>  ;; per mode with `ligature-mode&#39;.<br>  (global-ligature-mode t))<br></pre></div></li>
+<li id="mixed-pitch">
+<p><b>
+<span class="headline">
+<span class="title">Mixed-pitch</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defface my-mixed-pitch-face &#39;((t . nil))<br>  &quot;Face for `mixed-pitch-mode&#39;&quot;)<br>(custom-set-faces!<br>  &#39;(my-mixed-pitch-face :family &quot;Alegreya Sans Scaled&quot; :height 1.1))<br><br>(setq mixed-pitch-face &#39;my-mixed-pitch-face<br>      mixed-pitch-set-height nil)<br></pre></div>
+<p>No modeline pode aparecer um trecho com fonte <code class="code">font-lock-string-face</code>. Como fica feio, vamos removê-lo.</p>
+<p>Além disso, <code class="code">org-drawer</code> não está na lista por padrão.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! mixed-pitch<br>  (setq mixed-pitch-fixed-pitch-faces<br>        (seq-difference<br>         (seq-union mixed-pitch-fixed-pitch-faces<br>                    &#39;(org-drawer))<br>         &#39;(font-lock-string-face diff-added diff-removed))))<br></pre></div></li>
+<li id="yasnippet-1">
+<p><b>
+<span class="headline">
+<span class="title">Yasnippet</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(custom-set-faces!<br>  `(yas-field-highlight-face<br>    :inherit nil<br>    :background ,(doom-blend &quot;#b315b3&quot; (face-attribute &#39;default :background) 0.2)<br>    :foreground &quot;undefined&quot;))<br></pre></div></li></ol></section>
+<section id="mode-line"><h4>
+<span class="headline">
+<span class="title">Mode-line</span></span></h4>
+<ol>
+<li id="faces">
+<p><b>
+<span class="headline">
+<span class="title">Faces</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(custom-set-faces!<br>  &#39;(mode-line :height 105 :family &quot;Julia Mono&quot;)<br>  &#39;(mode-line-inactive :height 105 :family &quot;Julia Mono&quot;)<br>  &#39;(doom-modeline-buffer-modified :underline t :inherit nil)<br>  &#39;(doom-modeline-info :foreground &quot;white&quot;))<br>(setq! doom-modeline-height 22<br>       doom-modeline-bar-width 1)<br></pre></div></li>
+<li id="doom-mode-line">
+<p><b>
+<span class="headline">
+<span class="title">Doom mode-line</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq doom-modeline-irc nil<br>      doom-modeline-icon nil)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-elisp">(after! doom-modeline<br>  (doom-modeline-def-segment buffer-name<br>    &quot;Display the current buffer&#39;s name, without any other information.&quot;<br>    (concat<br>      (doom-modeline-spc)<br>      (doom-modeline--buffer-name)))<br><br>  (doom-modeline-def-segment pdf-icon<br>    &quot;PDF icon from all-the-icons.&quot;<br>    (concat<br>      (doom-modeline-spc)<br>      (doom-modeline-icon &#39;octicon &quot;file-pdf&quot; nil nil<br>                          :face (if (doom-modeline--active)<br>                                    &#39;all-the-icons-red<br>                                  &#39;mode-line-inactive)<br>                          :v-adjust 0.02)))<br><br>  (defun doom-modeline-update-pdf-pages ()<br>    &quot;Update PDF pages.&quot;<br>    (setq doom-modeline--pdf-pages<br>          (let ((current-page-str (number-to-string (eval `(pdf-view-current-page))))<br>                (total-page-str (number-to-string (pdf-cache-number-of-pages))))<br>            (concat<br>              (propertize<br>                (concat (make-string (- (length total-page-str) (length current-page-str)) 32)<br>                      &quot; P&quot; current-page-str)<br>                &#39;face &#39;mode-line)<br>              (propertize (concat &quot;/&quot; total-page-str) &#39;face &#39;doom-modeline-buffer-minor-mode)))))<br><br>  (doom-modeline-def-segment pdf-pages<br>    &quot;Display PDF pages.&quot;<br>    (if (doom-modeline--active) doom-modeline--pdf-pages<br>      (propertize doom-modeline--pdf-pages &#39;face &#39;mode-line-inactive)))<br><br>  (doom-modeline-def-modeline &#39;pdf<br>    &#39;(bar window-number pdf-pages pdf-icon buffer-name)<br>    &#39;(misc-info matches major-mode process vcs)))<br><br></pre></div></li></ol></section>
+<section id="tab-bar"><h4>
+<span class="headline">
+<span class="title">Tab bar</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(map! :n &quot;M-z&quot; #&#39;toggle-frame-tab-bar)<br></pre></div></section>
+<section id="treemacs"><h4>
+<span class="headline">
+<span class="title">Treemacs</span></span></h4>
+<ol>
+<li id="esconder-algumas-coisas">
+<p><b>
+<span class="headline">
+<span class="title">Esconder algumas coisas</span></span></b></p>
+<p>Roubado do tecosaur.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defcustom treemacs-file-ignore-extensions<br>  &#39;(&quot;aux&quot; &quot;ptc&quot; &quot;fdb_latexmk&quot; &quot;fls&quot; &quot;synctex.gz&quot; &quot;toc&quot;         ;; LaTeX<br>    &quot;glg&quot;  &quot;glo&quot;  &quot;gls&quot;  &quot;glsdefs&quot;  &quot;ist&quot;  &quot;acn&quot;  &quot;acr&quot;  &quot;alg&quot; ;; LaTeX - glossary<br>    &quot;mw&quot;                                                       ;; LaTeX - pgfplots<br>    &quot;pdfa.xmpi&quot;)                                               ;; LaTeX - pdfx<br>  &quot;File extension which `treemacs-ignore-filter&#39; will ensure are ignored&quot;<br>  :safe #&#39;string-list-p)<br><br>(defcustom treemacs-file-ignore-globs<br>  &#39;(&quot;*/_minted-*&quot;                                        ;; LaTeX<br>     &quot;*/.auctex-auto&quot; &quot;*/_region_.log&quot; &quot;*/_region_.tex&quot;) ;; AucTeX<br>  &quot;Globs which will are transformed to `treemacs-file-ignore-regexps&#39;<br>which `treemacs-ignore-filter&#39; will ensure are ignored&quot;<br>  :safe #&#39;string-list-p)<br></pre></div></li>
+<li id="make-treemacs-fringes-appear">
+<p><b>
+<span class="headline">
+<span class="title">Make treemacs fringes appear</span></span></b></p>
+<p>They only appear if this variable is set to a value \(\ge\) 7.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq doom-themes-treemacs-bitmap-indicator-width 7)<br></pre></div></li></ol></section>
+<section id="theme"><h4>
+<span class="headline">
+<span class="title">Theme</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq doom-theme &#39;ef-cherie)<br></pre></div>
+<ol>
+<li id="ef-themes">
+<p><b>
+<span class="headline">
+<span class="title">ef-themes</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! ef-themes)<br></pre></div></li></ol></section>
+<section id="window-divisors"><h4>
+<span class="headline">
+<span class="title">Window divisors</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq window-divider-default-bottom-width 2   ; default is 1<br>      window-divider-default-right-width  2)  ; default is 1<br></pre></div></section></section></section>
+<section id="living-in-emacs"><h2>
+<span class="headline">
+<span class="title">Living in Emacs</span></span></h2>
+<section id="lsp"><h3>
+<span class="headline">
+<span class="title">LSP</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(unpin! lsp-mode)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package lsp<br>  :custom<br>  (lsp-completion-provider :none)<br>  (lsp-lens-enable t)<br>  (lsp-enable-snippet nil)<br>  (lsp-use-plists &quot;true&quot;)<br>  :init<br>  (defun my/lsp-mode-setup-completion ()<br>    (setf (alist-get &#39;styles (alist-get &#39;lsp-capf completion-category-defaults))<br>          &#39;(orderless)))<br>  :hook<br>  (lsp-completion-mode . my/lsp-mode-setup-completion))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(map! :map &#39;lsp-mode-map :leader :n &quot;c f&quot; #&#39;lsp-format-buffer)<br></pre></div>
+<section id="lsp-ui"><h4>
+<span class="headline">
+<span class="title">LSP-UI</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq lsp-ui-sideline-diagnostic-max-lines 10)<br></pre></div></section></section>
+<section id="terminal"><h3>
+<span class="headline">
+<span class="title">Terminal</span></span></h3>
+<section id="eat-emulate-a-terminal"><h4>
+<span class="headline">
+<span class="title">Eat (Emulate A Terminal)</span></span></h4>
+<ol>
+<li id="installation-3">
+<p><b>
+<span class="headline">
+<span class="title">Installation</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! eat)<br></pre></div></li></ol></section></section>
+<section id="calibre"><h3>
+<span class="headline">
+<span class="title">Calibre</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! calibredb)<br></pre></div></section>
+<section id="vcgitmagit"><h3>
+<span class="headline">
+<span class="title">VC/Git/Magit</span></span></h3>
+<section id="magit-todos"><h4>
+<span class="headline">
+<span class="title">Magit Todos</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(put &#39;magit-todos-exclude-globs &#39;safe-local-variable #&#39;listp)<br></pre></div></section>
+<section id="git-auto-commit-mode"><h4>
+<span class="headline">
+<span class="title">Git Auto Commit Mode</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! git-auto-commit-mode)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(pushnew! safe-local-variable-values &#39;(gac-automatically-push-p . t))<br></pre></div></section></section></section>
+<section id="organize-features"><h2>
+<span class="headline">
+<span class="title">ORGANIZE Features</span></span></h2>
+<section id="benchmark-init"><h3>
+<span class="headline">
+<span class="title">Benchmark init</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! benchmark-init :recipe (:host github :repo &quot;kekeimiku/benchmark-init-el&quot;))<br></pre></div></section>
+<section id="citations-and-citar"><h3>
+<span class="headline">
+<span class="title">Citations and Citar</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package citar<br>  :custom<br>  (citar-file-open-functions &#39;((&quot;pdf&quot; . citar-file-open-external)))<br>  (citar-bibliography &#39;(&quot;/home/lucas/Zotero/bibs/all.bib&quot;))<br>  (org-cite-csl-styles-dir &quot;/home/lucas/Zotero/styles&quot;)<br>  (citar-symbols `((file ,(all-the-icons-faicon &quot;file-o&quot; :face &#39;all-the-icons-green :v-adjust -0.1) . &quot; &quot;)<br>                   (note ,(all-the-icons-material &quot;speaker_notes&quot; :face &#39;all-the-icons-blue :v-adjust -0.3) . &quot; &quot;)<br>                   (link ,(all-the-icons-octicon &quot;link&quot; :face &#39;all-the-icons-orange :v-adjust 0.01) . &quot; &quot;)))<br>  (citar-symbol-separator &quot; &quot;))<br></pre></div>
+<section id="citar-org-roam-templates"><h4>
+<span class="headline">
+<span class="title"><code class="verbatim">citar-org-roam</code> templates</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq citar-org-roam-note-title-template &quot;${author editor}: ${title}&quot;)<br></pre></div></section>
+<section id="org-cite-csl-activate"><h4>
+<span class="headline">
+<span class="title">Org-cite-csl-activate</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(unpin! citar) <br>(package! oc-csl-activate :recipe (:host github :repo &quot;andras-simonyi/org-cite-csl-activate&quot;))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package oc-csl-activate<br>  :after (org citar)<br>  :config<br>  (setq org-cite-activate-processor &#39;csl-activate<br>        org-cite-csl-activate-use-document-style t)<br>  (add-hook &#39;org-font-lock-hook (lambda (&amp;rest _) (org-cite-csl-activate-render-all)))<br>  (add-hook! org-mode<br>    (cursor-sensor-mode +1)))<br></pre></div></section></section>
+<section id="crdt"><h3>
+<span class="headline">
+<span class="title">CRDT</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! crdt)<br></pre></div></section>
+<section id="elfeed"><h3>
+<span class="headline">
+<span class="title">Elfeed</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! elfeed<br>    (setq elfeed-search-filter &quot;@3-year-old #200&quot;))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! elfeed-goodies :disable t)<br></pre></div>
+<section id="elfeed-tube"><h4>
+<span class="headline">
+<span class="title">Elfeed-tube</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! elfeed-tube)<br>(package! elfeed-tube-mpv)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package elfeed-tube<br>  :after elfeed<br>  :demand t<br>  :config<br>  ;; (setq elfeed-tube-auto-save-p nil) ; default value<br>  ;; (setq elfeed-tube-auto-fetch-p t)  ; default value<br>  (elfeed-tube-setup)<br><br>  :bind (:map elfeed-show-mode-map<br>         (&quot;F&quot; . elfeed-tube-fetch)<br>         ([remap save-buffer] . elfeed-tube-save)<br>         :map elfeed-search-mode-map<br>         (&quot;F&quot; . elfeed-tube-fetch)<br>         ([remap save-buffer] . elfeed-tube-save)))<br><br>(use-package elfeed-tube-mpv<br>  :bind (:map elfeed-show-mode-map<br>              (&quot;C-c C-f&quot; . elfeed-tube-mpv-follow-mode)<br>              (&quot;C-c C-w&quot; . elfeed-tube-mpv-where)))<br></pre></div></section></section>
+<section id="esxml"><h3>
+<span class="headline">
+<span class="title">Esxml</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! esxml)<br></pre></div></section>
+<section id="engrave-faces"><h3>
+<span class="headline">
+<span class="title">Engrave Faces</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! engrave-faces)<br></pre></div></section>
+<section id="google-translate"><h3>
+<span class="headline">
+<span class="title">Google translate</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! google-translate)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package google-translate<br>  :commands (google-translate-version)<br>  :custom<br>  (google-translate-backend-method &#39;curl)<br>  :config<br>  (defun google-translate--search-tkk () &quot;Search TKK.&quot; (list 430675 2721866130)))<br></pre></div></section>
+<section id="olivetti"><h3>
+<span class="headline">
+<span class="todokw todo TODO">
+        TODO
+      </span>
+<span class="title">Olivetti</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! olivetti)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package olivetti<br>  :init<br>  (add-hook! olivetti-mode<br>    (if olivetti-mode<br>        (progn<br>          (remove-hook! lsp-mode #&#39;lsp-ui-mode)<br>          (when (bound-and-true-p lsp-mode) (lsp-ui-mode -1)))<br>      (add-hook! lsp-mode #&#39;lsp-ui-mode)<br>      (when (bound-and-true-p lsp-mode) (lsp-ui-mode +1))))<br><br>  :commands #&#39;olivetti-mode<br>  :hook (org-mode . olivetti-mode)<br>  :config<br>  (map! :leader :desc &quot;Centered mode&quot; &quot;t e&quot; #&#39;olivetti-mode)<br>  (map! :map &#39;olivetti-mode-map<br>      &quot;C-c \\&quot; nil<br>      &quot;C-c |&quot; nil)<br><br>  (setq-default olivetti-body-width 80<br>                olivetti-recall-visual-line-mode-entry-state nil)<br><br>  (after! persp-mode<br>    (defvar persp--olivetti-buffers-backup nil)<br><br>    (defun persp--olivetti-deactivate (fow)<br>      (dolist (b (mapcar #&#39;window-buffer<br>                          (window-list (selected-frame)<br>                                      &#39;no-minibuf)))<br>        (with-current-buffer b<br>          (when (eq &#39;olivetti-split-window-sensibly<br>                    split-window-preferred-function)<br>            (push b persp--olivetti-buffers-backup)<br>            (setq-local split-window-preferred-function nil)<br>            (olivetti-reset-all-windows)))))<br><br>    (defun persp--olivetti-activate (fow)<br>      (dolist (b persp--olivetti-buffers-backup)<br>        (with-current-buffer b<br>          (setq-local split-window-preferred-function<br>                      &#39;olivetti-split-window-sensibly)))<br>      (setq persp--olivetti-buffers-backup nil))<br><br>    (add-hook &#39;persp-before-deactivate-functions #&#39;persp--olivetti-deactivate)<br>    (add-hook &#39;persp-activated-functions #&#39;persp--olivetti-activate)))<br></pre></div></section>
+<section id="pdf-tools"><h3>
+<span class="headline">
+<span class="title">PDF Tools</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(unpin! pdf-tools)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! pdf-tools<br>  (defvar pdf-scroll-multiplier 2)<br>  <br>  (defun pdf-tools--scroll-mul (l)<br>    (mapcar (lambda (x) (* pdf-scroll-multiplier x)) l))<br>  <br>  (advice-add &#39;pdf-view-next-line-or-next-page :filter-args #&#39;pdf-tools--scroll-mul)<br>  (advice-add &#39;pdf-view-previous-line-or-previous-page :filter-args #&#39;pdf-tools--scroll-mul)<br>  (advice-add &#39;image-forward-hscroll :filter-args #&#39;pdf-tools--scroll-mul)<br>  (advice-add &#39;image-backward-hscroll :filter-args #&#39;pdf-tools--scroll-mul)<br>  <br>  (defun pdf-tools-center-page ()<br>    (interactive)<br>    (let* ((image (image-get-display-property))<br>           (edges (window-inside-edges))<br>           (win-width (- (nth 2 edges) (nth 0 edges)))<br>           (img-width (ceiling (car (image-display-size image)))))<br>      (image-set-window-hscroll (max 0 (/ (- img-width win-width -1) 2)))))<br>  <br>  (advice-add &#39;pdf-view-shrink :after (lambda (_) (pdf-tools-center-page)))<br>  (advice-add &#39;pdf-view-enlarge :after (lambda (_) (pdf-tools-center-page)))<br><br>  (add-hook! &#39;(doom-load-theme-hook ef-themes-post-load-hook)<br>    (setq pdf-view-midnight-colors (cons (face-attribute &#39;default :foreground) (face-attribute &#39;default :background)))))<br></pre></div></section>
+<section id="perps-mode"><h3>
+<span class="headline">
+<span class="title">Perps-mode</span></span></h3>
+<p>The following advice disables the annoying, big and ugly messages when auto-saving.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(advice-add &#39;persp-parameters-to-savelist :around #&#39;advice--inhibit-message)<br></pre></div></section>
+<section id="real-auto-save"><h3>
+<span class="headline">
+<span class="title">Real auto-save</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! real-auto-save)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package real-auto-save<br>  :after doom-first-file-hook<br>  :commands (real-auto-save-mode))<br><br>(pushnew! safe-local-variable-values &#39;(real-auto-save-interval . 0.5))<br></pre></div></section></section>
+<section id="minor-modes"><h2>
+<span class="headline">
+<span class="title">Minor modes</span></span></h2>
+<section id="focus"><h3>
+<span class="headline">
+<span class="title">Focus</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! focus :type &#39;local :recipe (:local-repo &quot;lisp/lib/focus.el&quot;))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq focus-fraction 0.7)<br>;; (custom-set-faces!<br>;;   &#39;(focus-unfocused :inherit custom-comment-tag :foreground &quot;gray&quot;))<br></pre></div></section>
+<section id="iedit"><h3>
+<span class="headline">
+<span class="title">Iedit</span></span></h3>
+<p>Desativa uma mensagem chata quando apertamos <code class="verbatim">M-d</code></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq iedit-toggle-key-default nil)<br></pre></div></section></section>
+<section id="languages"><h2>
+<span class="headline">
+<span class="title">Languages</span></span></h2>
+<section id="dart-flutter"><h3>
+<span class="headline">
+<span class="title">Dart (flutter)</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(setq flutter-sdk-path &quot;/opt/flutter&quot;)<br></pre></div></section>
+<section id="f"><h3>
+<span class="headline">
+<span class="title">F#</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq inferior-fsharp-program &quot;dotnet fsi --readline-&quot;)<br></pre></div></section>
+<section id="haskell"><h3>
+<span class="headline">
+<span class="title">Haskell</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq lsp-haskell-server-path &quot;haskell-language-server-wrapper&quot;<br>      lsp-haskell-formatting-provider &quot;fourmolu&quot;<br>      lsp-haskell-plugin-eval-global-on t<br>      lsp-haskell-plugin-class-global-on nil<br>      lsp-haskell-plugin-ghcide-type-lenses-global-on nil<br>      lsp-haskell-plugin-ghcide-completions-config-auto-extend-on nil<br>      lsp-haskell-plugin-import-lens-code-lens-on nil<br>      lsp-haskell-plugin-import-lens-code-actions-on nil)<br></pre></div>
+<p>Work around bad doom-emacs use of :prelude.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(remove-hook &#39;haskell-mode-local-vars-hook #&#39;lsp!)<br></pre></div></section>
+<section id="lisps"><h3>
+<span class="headline">
+<span class="title">Lisps</span></span></h3>
+<section id="parinfer"><h4>
+<span class="headline">
+<span class="title">Parinfer</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package parinfer-rust-mode<br>  :when (bound-and-true-p module-file-suffix)<br>  :hook (emacs-lisp-mode . parinfer-rust-mode)<br>  :init<br>  (setq parinfer-rust-library<br>        (concat doom-data-dir &quot;parinfer-rust/&quot;<br>                (cond (IS-MAC &quot;parinfer-rust-darwin.so&quot;)<br>                      (IS-LINUX &quot;parinfer-rust-linux.so&quot;)<br>                      (IS-WINDOWS &quot;parinfer-rust-windows.dll&quot;)<br>                      (IS-BSD &quot;libparinfer_rust.so&quot;))))<br>  :config<br>  (map! :map parinfer-rust-mode-map<br>        :localleader<br>        &quot;P&quot; #&#39;parinfer-rust-switch-mode<br>        &quot;p&quot; #&#39;parinfer-rust-toggle-disable))<br></pre></div>
+<ul style="list-style-type: ;">
+<li> <code class="verbatim">paren</code> Mode gives you full control of parens, while Parinfer corrects
+indentation. You can still adjust indentation, but you won’t be able to
+indent/dedent past certain boundaries set by parens on previous lines.</li>
+<li> <code class="verbatim">indent</code> Mode gives you full control of indentation, while Parinfer
+corrects or inserts close-parens where appropriate. Specifically, it only
+touches the groups of close-parens at the end of each line.</li>
+<li> <code class="verbatim">smart</code> Mode is like Indent Mode, but it tries to preserve the structure too.</li></ul>
+<p>NOTE TO SELF: <code class="verbatim">smart</code> and <code class="verbatim">indent</code> won’t allow inserting unmached }</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq parinfer-rust-preferred-mode &quot;smart&quot;)<br></pre></div>
+<ol>
+<li id="hooks">
+<p><b>
+<span class="headline">
+<span class="title">Hooks</span></span></b></p>
+<p>I don’t want to run it in all lisps, just elisp. Had some issues with <code class="code">kbd-mode</code>.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(remove-hook &#39;lisp-mode-hook #&#39;parinfer-rust-mode)<br>(add-hook! &#39;kbd-mode-hook (parinfer-rust-mode -1))<br></pre></div></li></ol></section>
+<section id="kmonad"><h4>
+<span class="headline">
+<span class="title">kmonad</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! kbd-mode :recipe (:host github :repo &quot;kmonad/kbd-mode&quot;))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package kbd-mode)<br></pre></div></section></section>
+<section id="lean"><h3>
+<span class="headline">
+<span class="title">Lean</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! lean4-mode :recipe<br>  (:host github<br>   :repo &quot;leanprover/lean4-mode&quot;<br>   :files (&quot;*.el&quot; &quot;data&quot;)))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package lean4-mode<br>  :commands (lean4-mode))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(set-popup-rule! &quot;^\\*Lean Goal\\*&quot;<br>  :side &#39;right<br>  :ttl 10<br>  :quit &#39;current<br>  :width 50<br>  :select nil<br>  :modeline nil)<br></pre></div></section>
+<section id="latex"><h3>
+<span class="headline">
+<span class="title">LaTeX</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! latex-preview-pane :disable t)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! tex<br>  (setq TeX-save-query nil<br>        TeX-view-evince-keep-focus t<br>        TeX-indent-open-delimiters &quot;[&quot;<br>        TeX-indent-close-delimiters &quot;]&quot;<br>        TeX-view-program-selection &#39;((output-pdf &quot;Zathura&quot;))<br>        TeX-view-program-list<br>        &#39;((&quot;Sioyek-flatpak&quot;<br>           (&quot;flatpak run --file-forwarding com.github.ahrm.sioyek @@ %o @@&quot;<br>            (mode-io-correlate &quot; --forward-search-file \&quot;%b\&quot; --forward-search-line %n --inverse-search \&quot;emacsclient -n +%2 %1\&quot;&quot;))))<br><br>        font-latex-fontify-script &#39;multi-level<br>        font-latex-fontify-script-max-level 3<br>        font-latex-script-display &#39;((raise -0.4) . (raise 0.4)))<br><br>  (custom-set-faces!<br>    &#39;(font-latex-subscript-face :height 0.8)<br>    &#39;(font-latex-superscript-face :height 0.8)))<br><br>(add-hook! (LaTeX-mode latex-mode)<br>  (display-line-numbers-mode -1)<br>  (setq fill-nobreak-predicate nil<br>        fill-column 9999999999))<br></pre></div>
+<section id="do-not-auto-fill-my-text-when-i-wrap-it-inside-an-environment"><h4>
+<span class="headline">
+<span class="title">Do not auto fill my text when I wrap it inside an environment</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defadvice! latex-environment-do-not-justify (f &amp;rest r)<br>  :around &#39;LaTeX-environment<br>  (let ((auto-fill-function nil))<br>    (apply f r)))<br></pre></div></section></section>
+<section id="org"><h3>
+<span class="headline">
+<span class="title">Org</span></span></h3>
+<section id="installation-4"><h4>
+<span class="headline">
+<span class="title">Installation</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(unpin! org)<br></pre></div></section>
+<section id="variaveis"><h4>
+<span class="headline">
+<span class="title">Variáveis</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(setq org-directory &quot;~/dados/org&quot;<br>      org-attach-id-dir &quot;data/&quot;<br>      org-fold-core-style &#39;overlays<br>      org-startup-folded nil<br>      org-startup-indented t<br>      org-support-shift-select t<br>      org-hide-emphasis-markers nil<br>      org-src-window-setup &#39;plain<br>      org-highlight-latex-and-related &#39;(latex script)<br>      org-emphasis-regexp-components &#39;(&quot;-[:space:](&#39;\&quot;{&quot; &quot;-[:space:].,:!?;&#39;\&quot;)}\\[&quot; &quot;{}*[:space:]&quot; &quot;.&quot; 1)<br>      org-indent-indentation-per-level 2)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-elisp">(after! org-src<br>  (pushnew! org-src-lang-modes<br>            &#39;(&quot;html&quot; . web)<br>            &#39;(&quot;lean4&quot; . lean4)))<br></pre></div></section>
+<section id="attach-download"><h4>
+<span class="headline">
+<span class="title">Attach &amp; Download</span></span></h4>
+<p>We can make <code class="verbatim">org-attach</code> work before the first headline:</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! org-attach<br>  (setq org-attach-auto-tag nil<br>        org-attach-id-to-path-function-list<br>        &#39;(org-attach-id-ts-folder-format org-attach-id-uuid-folder-format identity)))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! org-download<br>  (setq org-download-image-org-width 300))<br></pre></div>
+<ol>
+<li id="org-attach-extra">
+<p><b>
+<span class="headline">
+<span class="title">Org-attach-extra</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(add-load-path! &quot;/home/lucas/.doom.d/lisp/lib/org-attach-extra/&quot;)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package org-attach-extra<br>  :after org)<br></pre></div></li></ol></section>
+<section id="appearance"><h4>
+<span class="headline">
+<span class="title">Appearance</span></span></h4>
+<ol>
+<li id="font-lock">
+<p><b>
+<span class="headline">
+<span class="title">Font lock</span></span></b></p>
+<ol>
+<li id="hide-fragment-delimiters">
+<p><b>
+<span class="headline">
+<span class="title">Hide fragment delimiters</span>
+<span class="meta-item tag tag-monkey">monkey</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defadvice! my-org-do-latex-and-related (limit)<br>  &quot;Highlight LaTeX snippets and environments, entities and sub/superscript.<br>Stop at first highlighted object, if any.  Return t if some<br>highlighting was done, nil otherwise.&quot;<br>  :override #&#39;org-do-latex-and-related<br>  (when (org-string-nw-p org-latex-and-related-regexp)<br>    (let ((latex-prefix-re (rx (or &quot;$&quot; &quot;\\(&quot; &quot;\\[&quot;)))<br>          (blank-line-re (rx (and &quot;\n&quot; (zero-or-more (or &quot; &quot; &quot;\t&quot;)) &quot;\n&quot;))))<br>      (catch &#39;found<br>       (while (and (&lt; (point) limit)<br>               (re-search-forward org-latex-and-related-regexp nil t))<br>         (cond<br>              ((&gt;= (match-beginning 0) limit)<br>               (throw &#39;found nil))<br>          ((cl-some (lambda (f)<br>                     (memq f &#39;(org-code org-verbatim underline<br>                               org-special-keyword)))<br>                (save-excursion<br>                  (goto-char (1+ (match-beginning 0)))<br>                  (face-at-point nil t))))<br>          ;; Try to limit false positives.  In this case, ignore<br>          ;; $$...$$, \(...\), and \[...\] LaTeX constructs if they<br>          ;; contain an empty line.<br>          ((save-excursion<br>             (goto-char (match-beginning 0))<br>             (and (looking-at-p latex-prefix-re)<br>                  (save-match-data<br>                    (re-search-forward blank-line-re (1- (match-end 0)) t)))))<br>          (t<br>           (let* ((offset (if (memq (char-after (1+ (match-beginning 0)))<br>                                    &#39;(?_ ?^))<br>                              1<br>                            0))<br>                  (start (+ offset (match-beginning 0)))<br>                  (end (match-end 0)))<br>             (if (memq &#39;native org-highlight-latex-and-related)<br>                 (org-src-font-lock-fontify-block &quot;latex&quot; start end)<br>               (font-lock-prepend-text-property start end<br>                                                &#39;face &#39;org-latex-and-related))<br>             ;; my code starts here<br>             (when (and org-hide-emphasis-markers (&lt; (+ start 4) end))<br>               (cond ((member (buffer-substring start (+ start 2)) &#39;(&quot;$$&quot; &quot;\\(&quot;))<br>                      (add-text-properties start (+ start 2) &#39;(invisible org-link)))<br>                     ((string= (buffer-substring (1+ start) (+ start 2)) &quot;$&quot;)<br>                      (add-text-properties (1+ start) (+ start 2) &#39;(invisible org-link))))<br>               (cond ((member (buffer-substring end (- end 2)) &#39;(&quot;$$&quot; &quot;\\)&quot;))<br>                      (add-text-properties end (- end 2) &#39;(invisible org-link)))<br>                     ((string= (buffer-substring (1- end) (- end 2)) &quot;$&quot;)<br>                      (add-text-properties (1- end) (- end 2) &#39;(invisible org-link)))))<br>             ;; my code ends here<br>             (add-text-properties (+ offset (match-beginning 0)) (match-end 0)<br>                                  &#39;(font-lock-multiline t))<br>             (throw &#39;found t)))))<br>       nil))))<br></pre></div></li>
+<li id="fragment-fontification-without-org-block">
+<p><b>
+<span class="headline">
+<span class="title">Fragment fontification without <code class="verbatim">org-block</code></span></span></b></p>
+<p>Org reuses the <code class="code">org-src-font-lock-fontify-block</code> function to fontify LaTeX fragments natively. But this function adds the very inappropiate face <code class="code">org-block</code> to everything. Let’s remove it when the native block is one of our fragments.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defvar org--font-locking-latex-fragment nil)<br><br>(undefadvice! signal-font-locking-latex (orig-fun &amp;rest args)<br>  :around #&#39;org-do-latex-and-related<br>  (let ((org--font-locking-latex-fragment t))<br>    (apply orig-fun args)))<br><br>(undefadvice! do-not-org-block-my-latex-advice (_ start end)<br>  :after #&#39;org-src-font-lock-fontify-block<br>  (when org--font-locking-latex-fragment<br>    (alter-text-property start end &#39;face (lambda (l) (remove &#39;org-block l)))))<br></pre></div></li>
+<li id="better-alignment-for-mixed-pitch">
+<p><b>
+<span class="headline">
+<span class="title">Better alignment for <code class="verbatim">mixed-pitch</code></span></span></b></p>
+<div class="!(this.name)">
+<figure class="figure">
+<p>
+<img alt="attachment:Captura de tela de 2022-04-21 12-12-49.png" src="attachment:Captura de tela de 2022-04-21 12-12-49.png">
+<figcaption>Before</figcaption></p></figure>
+<figure class="figure">
+<p>
+<img alt="attachment:Captura de tela de 2022-04-21 12-13-01.png" src="attachment:Captura de tela de 2022-04-21 12-13-01.png">
+<figcaption>After</figcaption></p></figure></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defun org-add-indent-face-to-prespace ()<br>  (setq<br>   org-font-lock-extra-keywords<br>   (append (delete<br>            &#39;(&quot;^ *\\([-+]\\|\\(?:[0-9]+\\|[a-zA-Z]\\)[).]\\)[ \t]&quot; 1 &#39;org-list-dt append)<br>            org-font-lock-extra-keywords)<br>           ;; Add org-indent face to all spaces at line starts<br>           &#39;((&quot;^\\( +\\)&quot;<br>              (1 &#39;org-indent append))<br>             ;; Also fontify * bullets<br>             (&quot;^ +\\(\\*\\)\\([ \t]\\)&quot;<br>              (1 &#39;org-list-dt append)<br>              (2 &#39;org-indent append))<br>             ;; This is modified from user @psii<br>             ;; https://github.com/doomemacs/themes/pull/716<br>             (&quot;^ *\\([-+]\\|\\(?:[0-9]+\\|[a-zA-Z]\\)[).]\\)\\([ \t]\\)&quot;<br>                           (1 &#39;org-list-dt append)<br>                           (2 &#39;org-indent append))))))<br><br>(add-hook &#39;org-font-lock-set-keywords-hook #&#39;org-add-indent-face-to-prespace)<br></pre></div>
+<p>We can also make list bullets fixed-pitch, so they are even more aligned.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! mixed-pitch<br>  (add-to-list &#39;mixed-pitch-fixed-pitch-faces &#39;org-list-dt))<br></pre></div></li>
+<li id="fontify-counter-cookies">
+<p><b>
+<span class="headline">
+<span class="title">Fontify counter cookies</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defun org-fontify-counter-cookies ()<br>  (setq<br>   org-font-lock-extra-keywords<br>   (append org-font-lock-extra-keywords<br>           &#39;((&quot;^[ \t]*\\(?:[-+*]\\|\\(?:[0-9]+\\|[a-zA-Z]\\)[.)]\\)[ \t]+\\(\\[@\\(?:start:\\)?\\(?:[0-9]+\\|[a-zA-Z]\\)\\]\\)&quot;<br>              (1 &#39;org-property-value prepend))))))<br><br>(add-hook &#39;org-font-lock-set-keywords-hook #&#39;org-fontify-counter-cookies)<br></pre></div></li></ol></li>
+<li id="faces-1">
+<p><b>
+<span class="headline">
+<span class="title">Faces</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(custom-set-faces!<br>  &#39;(font-latex-math-face :foreground unspecified)<br>  &#39;(org-indent :inherit org-hide)<br>  &#39;(org-headline-done :foreground unspecified)<br>  &#39;(org-verse :inherit nil)<br>  &#39;(font-latex-sedate-face :inherit nil))<br><br>(custom-set-faces!<br>  &#39;(org-link :weight normal))<br>(custom-set-faces!<br>  `(outline-1 :weight bold :inherit nil)<br>  `(outline-2 :weight bold :inherit nil)<br>  `(outline-3 :weight bold :inherit nil)<br>  `(outline-4 :weight bold :inherit nil)<br>  `(outline-5 :weight bold :inherit nil)<br>  &#39;(outline-6 :weight bold :inherit nil)<br>  &#39;(outline-8 :weight bold :inherit nil)<br>  &#39;(outline-9 :weight bold :inherit nil))<br></pre></div></li></ol></section>
+<section id="bindings"><h4>
+<span class="headline">
+<span class="title">Bindings</span>
+<span class="meta-item tag tag-bindings">bindings</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(map! :mode &#39;org-mode<br>      :g &quot;C-S-s&quot; (cmd! (org-latex-export-to-pdf nil))<br>      :i &quot;C-i&quot; (cmd! (org-emphasize ?/))<br>      :i &quot;C-b&quot; (cmd! (org-emphasize ?*))<br>      :n &quot;\\&quot; #&#39;org-edit-special<br>      :localleader &quot;s p&quot; #&#39;org-paste-subtree)<br></pre></div>
+<ol>
+<li id="better-emphasis-toggle">
+<p><b>
+<span class="headline">
+<span class="title">Better emphasis toggle</span>
+<span class="meta-item tag tag-advice">advice</span></span></b></p>
+<p>If the point is before the emphasis marker, then <code class="code">org-emphasize</code> should exit it.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defadvice! org-emphasize-emph-exit-ad (char)<br>  :before-until #&#39;org-emphasize<br>  (when (eq (char-after) char)<br>    (forward-char)<br>    t))<br></pre></div></li>
+<li id="spc-s-i-to-open-subtree-with-narrowing">
+<p><b>
+<span class="headline">
+<span class="title"><code class="verbatim">SPC s I</code> to open subtree with narrowing</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(map! :mode &#39;org-mode<br>      :map &#39;doom-leader-search-map<br>      &quot;I&quot; (cmd!<br>           (let ((this-buffer (current-buffer))<br>                 (pos (point)))<br>             (consult-imenu)<br>             (org-tree-to-indirect-buffer)<br>             (setq indirect-buffer (current-buffer))<br>             ;; with-current-buffer does not save pos for some reason<br>             (switch-to-buffer this-buffer)<br>             (goto-char pos)<br>             (evil-scroll-line-to-center nil)<br>             (switch-to-buffer indirect-buffer))))<br></pre></div></li></ol></section>
+<section id="general-config"><h4>
+<span class="headline">
+<span class="title">General config</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(add-hook! org-mode<br>    &lt;&lt;org-mode-hook&gt;&gt;<br>    nil)<br><br>(set-popup-rule! &quot;\*Org Src .+\*&quot;<br>  :size 0.5)<br><br>(after! org<br>  (require &#39;org-src))<br>  ;; (add-to-list &#39;org-src-block-faces &#39;(&quot;latex&quot; (:inherit default :extend t)))<br></pre></div></section>
+<section id="linking"><h4>
+<span class="headline">
+<span class="title">Linking</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq +org-roam-link-to-org-use-id &#39;use-existing<br>      org-id-link-to-org-use-id &#39;use-existing)<br></pre></div></section>
+<section id="logging"><h4>
+<span class="headline">
+<span class="title">Logging</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq org-log-states-order-reversed t<br>      org-log-done &#39;note<br>      org-log-into-drawer t)<br></pre></div></section>
+<section id="minor"><h4>
+<span class="headline">
+<span class="title">Minor</span></span></h4>
+<ol>
+<li id="org-appear">
+<p><b>
+<span class="headline">
+<span class="title">Org-appear</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! org-appear)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package org-appear<br>  :after org<br>  :init<br>  (defun org-appear-toggle ()<br>    (interactive)<br>    (if org-appear-mode<br>        (progn (setq org-hide-emphasis-markers nil)<br>               (org-restart-font-lock)<br>               (org-appear-mode -1))<br>      (setq org-hide-emphasis-markers t)<br>      (org-restart-font-lock)<br>      (org-appear-mode 1)))<br>  :config<br>  (setq org-appear-autolinks nil<br>        org-appear-inside-latex t<br>        org-appear-autosubmarkers t)<br>  (map! :mode &#39;org-mode :leader &quot;t a&quot; #&#39;org-appear-toggle))<br></pre></div></li>
+<li id="org-noter">
+<p><b>
+<span class="headline">
+<span class="title">Org-noter</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq org-noter-notes-search-path (list (expand-file-name &quot;org-noter&quot; org-roam-directory)))<br></pre></div></li>
+<li id="org-remark">
+<p><b>
+<span class="headline">
+<span class="title">Org-remark</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! org-remark)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package org-remark<br>  :after org<br>  :config)<br></pre></div></li>
+<li id="org-roam-timestamps">
+<p><b>
+<span class="headline">
+<span class="title">Org-roam-timestamps</span>
+<span class="meta-item tag tag-ARCHIVE">ARCHIVE</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! org-roam-timestamps<br>  :recipe (:host github :repo &quot;stites/org-roam-timestamps&quot;)<br>  :pin &quot;fbbe57a7d6283624e567bd1ee46ebea3d179a321&quot;)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package! org-roam-timestamps<br>  :after org-roam<br>  :config (org-roam-timestamps-mode))<br></pre></div></li>
+<li id="org-superstar">
+<p><b>
+<span class="headline">
+<span class="title">Org-superstar</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! org-superstar)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package org-superstar<br>  :after (org)<br>  :hook (org-mode . org-superstar-mode)<br>  :config<br>  (setq org-superstar-headline-bullets-list &#39;(?◆ ?❉ ?🞱 ?🞽 ?✺)))<br>        ;; org-superstar-headline-bullets-list &#39;(&quot;🙐&quot; &quot;🙑&quot; &quot;🙒&quot; &quot;🙓&quot; &quot;🙔&quot; &quot;🙕&quot; &quot;🙖&quot; &quot;🙗&quot;)))<br></pre></div></li>
+<li id="org-transclusion">
+<p><b>
+<span class="headline">
+<span class="title">Org-transclusion</span>
+<span class="meta-item tag tag-monkey">monkey</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! org-transclusion)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package! org-transclusion<br>  :after org<br>  :init<br>  (map!<br>   :map global-map &quot;&lt;f12&gt;&quot; #&#39;org-transclusion-add<br>   :leader<br>   :prefix &quot;n&quot;<br>   :desc &quot;Org Transclusion Mode&quot; &quot;t&quot; #&#39;org-transclusion-mode)<br>  (setq org-transclusion-exclude-elements &#39;(property-drawer keyword)))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! org<br>  (defadvice! +org--recenter-after-follow-link-a (&amp;rest _args)<br>    &quot;Recenter after following a link, but only internal or file links.&quot;<br>    :after &#39;(org-footnote-action<br>             org-follow-timestamp-link<br>             org-link-open-as-file<br>             org-link-search)<br>    (if-let* ((window (get-buffer-window)))<br>        (with-selected-window window<br>          (recenter)))))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defun org-transclusion-add-better-id (link plist)<br>  &quot;Return a list for Org-ID LINK object and PLIST.<br>Return nil if not found.&quot;<br>  (when (string= &quot;id&quot; (org-element-property :type link))<br>    ;; when type is id, the value of path is the id<br>    (let* ((both (split-string (org-element-property :path link) &quot;::&quot;))<br>           (id (cl-first both))<br>           (search (cl-second both))<br>           (mkr (ignore-errors (org-id-find id t)))<br>           (payload &#39;(:tc-type &quot;org-id&quot;)))<br>      (if mkr<br>          (append payload (org-transclusion-content-better-marker mkr search plist))<br>        (message<br>         (format &quot;No transclusion done for this ID. Ensure it works at point %d, line %d&quot;<br>                 (point) (org-current-line)))<br>        nil))))<br><br>(defun org-transclusion-content-better-marker (marker search plist)<br>  &quot;Return a list of payload from MARKER and PLIST.<br>This function is intended to be used for Org-ID.  It delates the<br>work to<br>`org-transclusion-content-org-buffer-or-element&#39;.&quot;<br>  (if (and marker (marker-buffer marker)<br>           (buffer-live-p (marker-buffer marker)))<br>      (progn<br>        (with-current-buffer (marker-buffer marker)<br>          (org-with-wide-buffer<br>           (goto-char marker)<br>           (when search<br>             (org-link-search search))<br>           (if (and (not search) (org-before-first-heading-p))<br>               (org-transclusion-content-org-buffer-or-element<br>                nil plist)<br>             (org-transclusion-content-org-buffer-or-element<br>              &#39;only-element plist)))))<br>    (message &quot;Nothing done. Cannot find marker for the ID.&quot;)))<br><br>(defun org-transclusion-add-org-attach (link plist)<br>  &quot;Return a list for attached file LINK object and PLIST.<br>Return nil if not found.&quot;<br>  (when (string= &quot;attachment&quot; (org-element-property :type link))<br>    (let* ((both (split-string (org-element-property :path link) &quot;::&quot;))<br>           (path (org-attach-expand (cl-first both)))<br>           (search (cl-second both))<br>           (link_ (org-element-put-property link :path path))<br>           (link__ (org-element-put-property link_ :search-string search)))<br>      (or (org-transclusion-add-org-file link__ plist)<br>          (org-transclusion-add-other-file link__ plist)))))<br><br>(after! org-transclusion<br>  ;; (defadvice! org-transclusion-no-fringe ()<br>  ;;   :override #&#39;org-transclusion-propertize-source<br>  ;;   nil)<br>  (setq! org-transclusion-add-functions<br>        &#39;(org-transclusion-add-src-lines<br>          org-transclusion-add-better-id<br>          org-transclusion-add-org-attach<br>          org-transclusion-add-org-file<br>          org-transclusion-add-other-file)))<br></pre></div></li></ol></section>
+<section id="gutter"><h4>
+<span class="headline">
+<span class="title">Gutter</span></span></h4>
+<p>O <code class="verbatim">git-gutter</code> não funciona bem com o <code class="verbatim">org-indent-mode</code>:</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(push &#39;org-mode git-gutter:disabled-modes)<br></pre></div></section>
+<section id="hook"><h4>
+<span class="headline">
+<span class="title">Hook</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq-local auto-save-visited-interval 0.2<br>            display-line-numbers nil)<br>(setq line-spacing 5)<br>(add-to-list &#39;completion-at-point-functions #&#39;cape-dabbrev)<br></pre></div></section>
+<section id="organon"><h4>
+<span class="headline">
+<span class="title">Organon</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(define-minor-mode organon-follow-mode<br>  &quot;Set whether organon should follow your every move in Emacs.&quot;<br>  :lighter &quot; organon&quot;<br>  :global t<br>  :group &#39;organon<br>  :init-value nil<br>  (if organon-follow-mode<br>      (progn<br>        (add-hook &#39;post-command-hook #&#39;organon--update-position)<br>        (message &quot;organon will now follow you around.&quot;))<br>    (remove-hook &#39;post-command-hook #&#39;organon--update-position)<br>    (message &quot;organon will now leave you alone.&quot;)))<br><br>(defvar organon--last-pos nil)<br>(defvar organon--conn nil)<br><br>(defun organon--connect ()<br>  (require &#39;websocket)<br>  (unless organon--conn<br>    (websocket-open<br>     &quot;ws://127.0.0.1:9160&quot;<br>     :on-open (lambda (ws) (message &quot;organon: connected&quot;) (setq organon--conn ws))<br>     :on-close (lambda (ws) (message &quot;organon: disconnected&quot;) (setq organon--conn nil)))))<br><br>(defun organon--get-info ()<br>  (list :id (org-entry-get nil &quot;ID&quot; t)<br>        :file (buffer-file-name)<br>        :anchor (or (org-entry-get nil &quot;CUSTOM_ID&quot;)<br>                    (condition-case nil<br>                        (concat &quot;h-&quot; (nth 4 (org-heading-components)))<br>                      (user-error nil)))))<br><br>(defun organon--update-position ()<br>  (when-let ((_ (eq major-mode &#39;org-mode))<br>             (cur-pos (organon--get-info))<br>             (_ (not (equal cur-pos organon--last-pos))))<br>    (setq organon--last-pos cur-pos)<br>    (send-to-organon)))<br><br>(defun send-to-organon ()<br>  (interactive)<br>  (organon--connect)<br>  (when organon--conn<br>    (let ((cur-info (organon--get-info)))<br>      (websocket-send-text organon--conn (json-encode cur-info)))))<br></pre></div></section>
+<section id="exporting"><h4>
+<span class="headline">
+<span class="title">Exporting</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! ox<br>  (add-to-list<br>   &#39;org-export-smart-quotes-alist<br>   &#39;(&quot;pt-br&quot;<br>     (primary-opening :utf-8 &quot;“&quot; :html &quot;&amp;ldquo;&quot; :latex &quot;``&quot; :texinfo &quot;``&quot;)<br>     (primary-closing :utf-8 &quot;”&quot; :html &quot;&amp;rdquo;&quot; :latex &quot;&#39;&#39;&quot; :texinfo &quot;&#39;&#39;&quot;)<br>     (secondary-opening :utf-8 &quot;‘&quot; :html &quot;&amp;lsquo;&quot; :latex &quot;`&quot; :texinfo &quot;`&quot;)<br>     (secondary-closing :utf-8 &quot;’&quot; :html &quot;&amp;rsquo;&quot; :latex &quot;&#39;&quot; :texinfo &quot;&#39;&quot;)<br>     (apostrophe :utf-8 &quot;’&quot; :html &quot;&amp;rsquo;&quot;))))<br></pre></div>
+<ol>
+<li id="latex-1">
+<p><b>
+<span class="headline">
+<span class="title">LaTeX</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(after! org<br>  ;; Note to self: NEVER change this!!! You have had problems with uncompilable documents when you changed the default preamble in the past!!<br>  (setq org-latex-packages-alist nil<br>        org-latex-preview-default-process &#39;dvisvgm)<br><br>  (after! ox-latex<br>    (setq org-latex-pdf-process &#39;(&quot;latexmk -f -pdf -%latex -interaction=nonstopmode -output-directory=%o %f&quot;)<br>          org-latex-compilers &#39;(&quot;tectonic&quot; &quot;pdflatex&quot; &quot;xelatex&quot; &quot;lualatex&quot;)<br>          org-latex-compiler &quot;xelatex&quot;))<br><br>  (custom-reevaluate-setting &#39;org-latex-preview-process-alist)<br><br>  ;; To avoid issues with pdfcrop<br>  (plist-put! org-format-latex-options<br>              :background &quot;Transparent&quot;<br>              :scale 2.0))<br></pre></div></li></ol></section>
+<section id="org-roam"><h4>
+<span class="headline">
+<span class="title">Org-roam</span></span></h4>
+<ol>
+<li id="variables-2">
+<p><b>
+<span class="headline">
+<span class="title">Variables</span></span></b></p>
+<ol>
+<li id="common">
+<p><b>
+<span class="headline">
+<span class="title">Common</span></span></b></p>
+<p>Shared with desktop and termux.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! org-roam<br>  (setq org-id-method &#39;ts<br>        org-roam-completion-everywhere nil))<br></pre></div></li>
+<li id="desktop-specific">
+<p><b>
+<span class="headline">
+<span class="title">Desktop-specific</span></span></b></p>
+<p>Those aren’t shared with termux.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! org-roam<br>  (setq org-roam-directory &quot;~/dados/notas&quot;<br>        org-roam-node-display-template<br>        #(&quot;${doom-hierarchy} ${doom-type} ${doom-tags}&quot; 18 30<br>          (face font-lock-comment-face)<br>          31 43<br>          (face font-lock-comment-face))))<br></pre></div></li></ol></li>
+<li id="protocol">
+<p><b>
+<span class="headline">
+<span class="title">Protocol</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! org-roam<br>  (require &#39;org-roam-protocol))<br></pre></div></li>
+<li id="switch-workspace">
+<p><b>
+<span class="headline">
+<span class="title">Switch workspace</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defadvice! yeet/org-roam-in-own-workspace-a (&amp;rest _)<br>  &quot;Open all roam buffers in their own workspace.&quot;<br>  :before #&#39;org-roam-node-find<br>  :before #&#39;org-roam-node-random<br>  :before #&#39;org-roam-buffer-display-dedicated<br>  :before #&#39;org-roam-buffer-toggle<br>  (when (modulep! :ui workspaces)<br>    (+workspace-switch &quot;notas&quot; t))<br>  (when (functionp &#39;tabspaces-switch-or-create-workspace)<br>    (tabspaces-switch-or-create-workspace &quot;notas&quot;)))<br></pre></div></li>
+<li id="capture-templates">
+<p><b>
+<span class="headline">
+<span class="title">Capture Templates</span></span></b></p>
+<ol>
+<li id="roam">
+<p><b>
+<span class="headline">
+<span class="title">Roam</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! org-roam<br>  (setq org-roam-capture-templates<br>        &#39;((&quot;d&quot; &quot;default&quot; plain &quot;%?&quot;<br>           :target (file+head &quot;%&lt;%Y%m%d%H%M%S&gt;.org&quot; &quot;#+title: ${title}<br>#+language: pt<br>&quot;)<br>           :unnarrowed t)<br>          (&quot;m&quot; &quot;math&quot; plain &quot;%?&quot;<br>           :target (file+head &quot;math/%&lt;%Y%m%d%H%M%S&gt;.org&quot; &quot;#+title: ${title}<br>#+language: pt<br>&quot;)<br>           :unnarrowed t))))<br>          <br></pre></div></li>
+<li id="roam-ref">
+<p><b>
+<span class="headline">
+<span class="title">Roam-ref</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq org-roam-capture-ref-templates<br>      &#39;((&quot;m&quot; &quot;math&quot; plain &quot;%?&quot;<br>           :target (file+head &quot;math/%&lt;%Y%m%d%H%M%S&gt;.org&quot; &quot;#+title: ${title}\n\n${body}&quot;)<br>           :unnarrowed t)<br>        (&quot;fr&quot; &quot;Add to my future-read list&quot; entry &quot;* ${title}\n%?&quot;<br>         :target (file+olp &quot;to-read.org&quot; (&quot;${title}&quot;))<br>         :empty-lines-before 1 nil nil)<br>        (&quot;r&quot; &quot;ref&quot; plain &quot;%?&quot; :target<br>         (file+head &quot;${slug}.org&quot; &quot;#+title: ${title}&quot;)<br>         :unnarrowed t)))<br></pre></div></li></ol></li>
+<li id="workarounds">
+<p><b>
+<span class="headline">
+<span class="title">Workarounds</span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defadvice! inhibit-redisplay-on-roam-autosync (fn)<br>  &quot;Inhibit redisplay when syncing roam database on saves.&quot;<br>  :around #&#39;org-roam-db-autosync--try-update-on-save-h<br>  (let ((inhibit-redisplay t)) (funcall fn)))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defadvice! org-roam-db-insert-link--remove-search-a (f link)<br>  :around #&#39;org-roam-db-insert-link<br>  (let ((newpath (car (split-string (org-element-property :path link) &quot;::&quot;))))<br>    (funcall f (org-element-put-property link :path newpath))))<br></pre></div></li>
+<li id="md-roam">
+<p><b>
+<span class="headline">
+<span class="title"><code class="verbatim">md-roam</code></span></span></b></p>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! md-roam :recipe (:host github :repo &quot;nobiot/md-roam&quot;))<br></pre></div></li></ol></section>
+<section id="org-roam-ui"><h4>
+<span class="headline">
+<span class="title">Org-roam-ui</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(unpin! org-roam)<br>(package! org-roam-ui)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package! websocket<br>    :after org-roam-ui)<br><br>(use-package! org-roam-ui<br>  :after org-roam<br>  :commands (org-roam-ui-mode)<br>  :config<br>  (setq org-roam-ui-sync-theme t<br>        org-roam-ui-follow t<br>        org-roam-ui-update-on-save t))<br></pre></div></section>
+<section id="org-protocol"><h4>
+<span class="headline">
+<span class="title">Org-protocol</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(after! org-protocol<br>  (add-to-list &#39;org-protocol-protocol-alist<br>               &#39;(&quot;org-file&quot; :protocol &quot;org-file&quot;<br>                 :function org-protocol-goto-org-file)))<br><br>(defun org-protocol-goto-org-file (info)<br>  (if-let ((id (plist-get info :id)))<br>      (org-id-goto id)<br>    (when-let ((file (plist-get info :file)))<br>      (org-open-file file)))<br>  nil)<br></pre></div>
+<ol>
+<li id="raise-frame">
+<p><b>
+<span class="headline">
+<span class="title">Raise frame</span></span></b></p>
+<p>Requires <a href="https://extensions.gnome.org/extension/4724/window-calls/">this extension</a> to be installed.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defun org-protocol/select-current-frame ()<br>  ;; gnome stuff<br>  ;;             (shell-command-to-string<br>  ;;              (format &quot;gdbus call \<br>  ;;                         --session \<br>  ;;                         --dest org.gnome.Shell \<br>  ;;                         --object-path /org/gnome/Shell/Extensions/Windows \<br>  ;;                         --method org.gnome.Shell.Extensions.Windows.List \<br>  ;;                       | cut -c 3- | rev | cut -c4- | rev \<br>  ;;                       | jq &#39;.[] | select(.pid == %s) .id&#39;&quot; (emacs-pid))))))<br>  ;;   (dbus-call-method<br>  ;;    :session<br>  ;;    &quot;org.gnome.Shell&quot;<br>  ;;    &quot;/org/gnome/Shell/Extensions/Windows&quot;<br>  ;;    &quot;org.gnome.Shell.Extensions.Windows&quot;<br>  ;;    &quot;Activate&quot;<br>  ;;    wid))<br>  ;; this should be compatible with other WMs<br>  (select-frame-set-input-focus (selected-frame)))<br>(add-hook &#39;org-capture-mode-hook &#39;org-protocol/select-current-frame)<br></pre></div></li></ol></section>
+<section id="unfill-instead-of-fill"><h4>
+<span class="headline">
+<span class="title">Unfill instead of fill</span></span></h4>
+<p>With time, I came to the conclusion that having no line breaks inside paragraphs works better in most Org documents. So instead of <code class="code">org-fill-paragraph</code>, I’ll bind <code class="verbatim">M-q</code> to some sort of <q><code class="code">org-unfill-paragraph</code></q>.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defun org-unfill-paragraph ()<br>  (interactive)<br>  (let ((fill-column most-positive-fixnum))<br>    (org-fill-paragraph)))<br> <br>(map! :map &#39;org-mode-map &quot;M-q&quot; #&#39;org-unfill-paragraph)<br></pre></div></section>
+<section id="vulpea"><h4>
+<span class="headline">
+<span class="title">Vulpea</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! vulpea)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package! vulpea<br>  :hook ((org-roam-db-autosync-mode . vulpea-db-autosync-enable)))<br></pre></div></section>
+<section id="writing-mode"><h4>
+<span class="headline">
+<span class="title">Writing mode</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defvar-local org-writing-mode--previous-mixed-pitch nil)<br>(defvar-local org-writing-mode--previous-line-numbers nil)<br>(defvar-local org-writing-mode--previous-line-spacing 0)<br>(defvar-local org-writing-mode--frame nil)<br><br>(define-minor-mode org-writing-mode<br>  &quot;Minor mode for writing in org.&quot;<br>  :init-value nil<br>  :lighter nil<br>  (require &#39;mixed-pitch)<br>  (unless (frame-live-p org-writing-mode--frame)<br>    (setq-local org-writing-mode--frame (selected-frame)))<br>  (if org-writing-mode<br>      (progn (setq-local<br>              org-writing-mode--previous-mixed-pitch mixed-pitch-mode<br>              org-writing-mode--previous-line-numbers display-line-numbers<br>              org-writing-mode--previous-line-spacing line-spacing<br>              display-line-numbers nil<br>              line-spacing 5)<br>             (mixed-pitch-mode +1)<br>             ;; (set-frame-parameter org-writing-mode--frame &#39;internal-border-width 30)<br>             (evil-normal-state))<br>    (mixed-pitch-mode (if org-writing-mode--previous-mixed-pitch 1 -1))<br>    ;; (set-frame-parameter org-writing-mode--frame &#39;internal-border-width 0)<br>    (setq display-line-numbers org-writing-mode--previous-line-numbers<br>          line-spacing org-writing-mode--previous-line-spacing)))<br><br>(map! :mode &#39;org-mode :leader &quot;t z&quot; #&#39;org-writing-mode)<br></pre></div></section></section>
+<section id="web"><h3>
+<span class="headline">
+<span class="title">Web</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq-default web-mode-code-indent-offset 2<br>              web-mode-markup-indent-offset 2)<br></pre></div></section>
+<section id="yuck-mode"><h3>
+<span class="headline">
+<span class="title">Yuck mode</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! yuck-mode)<br></pre></div></section></section>
+<section id="scientific-writing-mostly-mathematics"><h2>
+<span class="headline">
+<span class="title">Scientific writing (mostly mathematics)</span></span></h2>
+<section id="mamimo"><h3>
+<span class="headline">
+<span class="title">Mamimo</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-elisp">(package! mamimo<br>  :type &#39;local<br>  :recipe (:local-repo &quot;lisp/lib/mamimo&quot;<br>           :files (&quot;*.el&quot; &quot;snippets&quot;)))<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(use-package mamimo<br>  :commands (mamimo-mode<br>             mamimo-yas-mode<br>             mamimo-smartkeys-mode)<br>  :config<br>  (add-hook! &#39;mamimo-mode-hook (evil-tex-mode +1)))<br></pre></div></section>
+<section id="abbrev-1"><h3>
+<span class="headline">
+<span class="title">Abbrev</span></span></h3>
+<section id="language-math-predicate"><h4>
+<span class="headline">
+<span class="title">Language &amp; math predicate</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defsubst abbrev/math-text-lang-p (lang)<br>  (and (mamimo-notmathp)<br>       (-any (lambda (k) (string= lang (cadr k)))<br>             (org-collect-keywords &#39;(&quot;language&quot;)))))<br><br>(defun abbrev/math-text-pt-p () (abbrev/math-text-lang-p &quot;pt&quot;))<br>(defun abbrev/math-text-en-p () (abbrev/math-text-lang-p &quot;en&quot;))<br></pre></div></section>
+<section id="textual-abbrevs"><h4>
+<span class="headline">
+<span class="title">Textual abbrevs</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq abbrev/math-text-abbrevs-pt<br>  &#39;((&quot;pa&quot; &quot;podemos assumir&quot;)<br>    (&quot;pd&quot; &quot;por definição&quot;)<br>    (&quot;ie&quot; &quot;i.e.&quot;)<br>    (&quot;tq&quot; &quot;tal que&quot;)<br>    (&quot;spg&quot; &quot;sem perda de generalidade&quot;)<br>    (&quot;qtp&quot; &quot;q.t.p.&quot;)<br>    (&quot;sss&quot; &quot;se, e somente se,&quot;)<br>    (&quot;li&quot; &quot;linearmente independentes&quot;)))<br><br>(setq abbrev/math-text-abbrevs-en<br>  &#39;((&quot;wlog&quot; &quot;without loss of generality&quot;)<br>    (&quot;iff&quot; &quot;if and only if&quot;)<br>    (&quot;ie&quot; &quot;i.e.&quot;)<br>    (&quot;st&quot; &quot;such that&quot;)<br>    (&quot;ae&quot; &quot;a.e.&quot;)<br>    (&quot;bd&quot; &quot;by definition&quot;)<br>    (&quot;li&quot; &quot;linearly independent&quot;)))<br></pre></div></section>
+<section id="variable-abbrevs"><h4>
+<span class="headline">
+<span class="title">Variable abbrevs</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq abbrev/var-abbrevs-pt &#39;(b c d f g h i j k l m n p q r s t u v w x y z))<br>(setq abbrev/var-abbrevs-en &#39;(b c d e f g h j k l m n o p q r s t u v w x y z))<br><br>(defun abbrev/compile-var-abbrevs (abbrevs)<br>  (mapcar (lambda (s) (list (symbol-name s) (format &quot;\\(%s\\)&quot; s) nil :system t))<br>          abbrevs))<br></pre></div></section>
+<section id="tables-and-mode-local-tables"><h4>
+<span class="headline">
+<span class="title">Tables and mode-local tables</span></span></h4>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq abbrev/tables<br>  `((abbrev/math-text-pt-table<br>     ,(append<br>       abbrev/math-text-abbrevs-pt<br>       (abbrev/compile-var-abbrevs abbrev/var-abbrevs-pt))<br>     abbrev/math-text-pt-p)<br>    (abbrev/math-text-en-table<br>     ,(append<br>       abbrev/math-text-abbrevs-en<br>       (abbrev/compile-var-abbrevs abbrev/var-abbrevs-en))<br>     abbrev/math-text-en-p)))<br><br>(defun abbrev/setup ()<br>  (require &#39;abbrev)<br>  (setq-local local-abbrev-table nil)<br>  (pcase-dolist (`(,name ,defs ,cond) abbrev/tables)<br>   (define-abbrev-table name defs :enable-function cond)<br>   (push (symbol-value name) local-abbrev-table))<br>  (abbrev-mode +1))<br><br>(add-hook &#39;mamimo-mode-hook #&#39;abbrev/setup)<br></pre></div></section></section></section>
+<section id="organize-bindings"><h2>
+<span class="headline">
+<span class="title">ORGANIZE Bindings</span></span></h2>
+<section id="comandos-familiares"><h3>
+<span class="headline">
+<span class="title">Comandos familiares</span></span></h3>
+<p>Porque ninguém merece tantos atalhos diferentes.</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(map! :g &quot;C-s&quot; &#39;save-buffer)<br>;; (map! :g &quot;C-/&quot; &#39;evilnc-comment-or-uncomment-lines)<br><br>(map! :i &quot;C-v&quot; &#39;yank)<br>(map! :i &quot;C-z&quot; &#39;evil-undo)<br>(map! :i &quot;C-S-z&quot; &#39;evil-redo)<br>(map! :i &quot;C-x&quot; &#39;evil-delete)<br>(map! :g &quot;C-&lt;backspace&gt;&quot; &#39;evil-delete-backward-word)<br></pre></div></section>
+<section id="linhas-visuais"><h3>
+<span class="headline">
+<span class="title">Linhas visuais</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(map! :map evil-motion-state-map<br>      &quot;j&quot; &#39;evil-next-visual-line<br>      &quot;k&quot; &#39;evil-previous-visual-line<br>      &quot;&lt;down&gt;&quot; &#39;evil-next-visual-line<br>      &quot;&lt;up&gt;&quot; &#39;evil-previous-visual-line)<br></pre></div></section>
+<section id="hydras"><h3>
+<span class="headline">
+<span class="title">Hydras</span></span></h3>
+<p>Uma história antiga.</p>
+<p>Não gosto do estilo do pop up</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(setq hydra-is-helpful nil)<br></pre></div>
+<p>Tamanho da janela</p>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(defhydra window-height-hydra (evil-window-map)<br>  &quot;window height&quot;<br>  (&quot;=&quot; evil-window-increase-height &quot;&quot;)<br>  (&quot;-&quot; evil-window-decrease-height &quot;&quot;)<br>  (&quot;&gt;&quot; evil-window-increase-width &quot;&quot;)<br>  (&quot;&lt;&quot; evil-window-decrease-width &quot;&quot;))<br><br>;; (defhydra workspace-hydra (doom-leader-workspace-map)<br>;;   &quot;workspace&quot;<br>;;   (&quot;]&quot; +workspace/switch-right &quot;&quot;)<br>;;   (&quot;[&quot; +workspace/switch-left &quot;&quot;)<br>;;   (&quot;}&quot; +workspace/swap-right &quot;&quot;)<br>;;   (&quot;{&quot; +workspace/swap-left &quot;&quot;))<br></pre></div></section>
+<section id="kitty-terminal"><h3>
+<span class="headline">
+<span class="title">Kitty (Terminal)</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(map! :prefix-map (&quot;\x80&quot; . &quot;kitty C map&quot;)<br>      :map &#39;key-translation-map<br>      &quot;/&quot; &quot;C-/&quot;)<br><br>(map! :prefix-map (&quot;\x81&quot; . &quot;kitty C-S map&quot;)<br>      :map &#39;key-translation-map<br>      &quot;z&quot; (kbd &quot;C-S-z&quot;))<br></pre></div></section>
+<section id="leader-edit-key"><h3>
+<span class="headline">
+<span class="title">Leader edit key</span></span></h3>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(map! :leader<br>      :prefix (&quot;e&quot; . &quot;edit&quot;)<br>      :desc &quot;New snipet&quot; &quot;s&quot; #&#39;+snippets/new<br>      :desc &quot;New alias&quot; &quot;a&quot; #&#39;+snippets/new-alias)<br><br>(map! :i &quot;C-M-x&quot; ctl-x-map)<br></pre></div></section></section>
+<section id="workarounds-1"><h2>
+<span class="headline">
+<span class="title">Workarounds</span></span></h2>
+<section id="doom"><h3>
+<span class="headline">
+<span class="title">Doom</span></span></h3>
+<p>Those may become obsolete in the future.</p>
+<div class="org-src-container">
+<pre class="src src-elisp">(unpin! straight)<br></pre></div>
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;; for some reason consult preview is not working in +default/p-s <br>(map! :leader &quot;/&quot; #&#39;+vertico/project-search)<br></pre></div></section></section></div>
+<div class="status" id="postamble"></div></body></html></html>
