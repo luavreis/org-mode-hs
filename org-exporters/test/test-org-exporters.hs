@@ -2,7 +2,9 @@
 
 module Main where
 
+import Data.Aeson (Value (..), toJSON)
 import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Aeson.KeyMap qualified as KM
 import Ondim (OndimNode, OndimState, Rendered, binding, callTemplate, castTo, evalOndimTWith)
 import Ondim.Extra.Exceptions (prettyException)
 import Ondim.Targets.HTML qualified as H
@@ -79,7 +81,7 @@ testFile dir = do
                 testGroup
                   "Export"
                   [ benchsFor @H.HtmlDocument tplsHtml "html" (out "html") H.defBackend stuff f
-                  , benchsFor @Pandoc tplsPandoc "md" (out "json") P.defBackend stuff encodePretty
+                  , benchsFor @Pandoc tplsPandoc "md" (out "json") P.defBackend stuff json
                   , benchsFor @[L.Node] tplsLaTeX "tex" (out "tex") L.defBackend stuff f
                   ]
             ]
@@ -92,6 +94,11 @@ testFile dir = do
     processOrg = processAll
     f :: OndimNode a => a -> Rendered
     f = mconcat . fromJust (castTo (Proxy @Rendered))
+    json = encodePretty . filt . toJSON
+      where
+        -- The API version does not tell us much.
+        filt (Object o) = Object $ KM.delete "pandoc-api-version" o
+        filt x = x
 
 main :: IO ()
 main = do

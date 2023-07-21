@@ -7616,9 +7616,5 @@
             ],
             "t": "MetaInlines"
         }
-    },
-    "pandoc-api-version": [
-        1,
-        23
-    ]
+    }
 }
