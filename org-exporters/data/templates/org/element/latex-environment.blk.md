@@ -1,3 +1,0 @@
-::: {.latex-environment affiliated=""}
-$$!(content)$$
-:::

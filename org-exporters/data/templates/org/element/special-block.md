@@ -1,3 +1,3 @@
 ::: {class="!(this.name)"}
-# {.e:content}
+# {.e:this.content}
 :::

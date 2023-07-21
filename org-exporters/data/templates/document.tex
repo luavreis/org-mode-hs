@@ -6,6 +6,19 @@
 \usepackage{hyperref}
 \usepackage[normalem]{ulem}
 \usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  breaklines=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
+
+% User header
+\@try{\@call[{doc.kw.latex_header}]}
+
+% Metadata
 \date{\today}
 \@try{%!
   \title{\@doc@kw@title}%!
@@ -14,11 +27,9 @@
   \author{\@doc@kw@author}%!
 }
 
-\lstset{
-  basicstyle=\ttfamily
-}
-
 \begin{document}
+
+\maketitle
 
 \@doc@children%!
 \@doc@sections%!
