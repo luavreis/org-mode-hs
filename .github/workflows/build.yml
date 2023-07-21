@@ -1,6 +1,6 @@
 name: Build
 
-on: [workflow_call, workflow_dispatch, pull_request]
+on: [workflow_call, workflow_dispatch, push]
 
 permissions:
   contents: read
@@ -14,7 +14,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macOS-latest]
         ghc: ['9.2', '9.4']
-        cabal: ['3.6']
+        cabal: ['3.10']
         include:
           - ghc: '9.4'
             executable: true
@@ -69,7 +69,8 @@ jobs:
         run: cabal test all
 
       - name: Run bench
-        run: cabal bench all
+        run: |
+          cabal bench all --benchmark-options="--baseline baseline.csv"
 
       - name: Output executable
         run: |
