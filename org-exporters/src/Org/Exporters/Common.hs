@@ -12,10 +12,14 @@ module Org.Exporters.Common
   , documentExp
   , parserExpObjs
   , parserExpElms
+  , queryExpElms
+  , queryExpObjs
+  , queryExpSecs
   , module Ondim
   )
 where
 
+import Data.List qualified as L
 import Data.Map qualified as Map
 import Data.Text qualified as T
 import Data.Time (TimeOfDay (..), defaultTimeLocale, formatTime, fromGregorian)
@@ -29,7 +33,7 @@ import Org.Parser (OrgOptions, OrgParser, parseOrgMaybe)
 import Org.Parser.Elements (elements)
 import Org.Parser.Objects (plainMarkupContext, standardSet)
 import Org.Types
-import Org.Walk (MWTag, MultiWalk)
+import Org.Walk (MWTag, MultiWalk, query)
 import System.FilePath (isRelative, takeExtension, (-<.>))
 
 data ExportBackend m = ExportBackend
@@ -123,6 +127,77 @@ parserExpElms bk odata = do
     (toList <$> elements)
     (elementsExp bk odata)
 
+queryExp ::
+  ( Monad m
+  , MultiWalk MWTag a
+  , MultiWalk MWTag b
+  ) =>
+  ([b] -> ExpansionMap m) ->
+  ([Attribute] -> b -> Maybe b) ->
+  a ->
+  GlobalExpansion m
+queryExp g f thing self = do
+  attrs <- attributes self
+  let f' = f attrs
+      result = query (maybeToList . f') thing
+  liftChildren self
+    `binding` do
+      "result" #. g result
+
+queryExpObjs ::
+  ( Monad m
+  , MultiWalk MWTag a
+  ) =>
+  ExportBackend m ->
+  OrgData ->
+  a ->
+  GlobalExpansion m
+queryExpObjs bk odata =
+  queryExp (objectsExp bk odata) \attrs (o :: OrgObject) ->
+    case L.lookup "type" attrs of
+      Just tag
+        | objectTag odata o == tag -> Just o
+      _ -> Nothing
+
+queryExpElms ::
+  ( Monad m
+  , MultiWalk MWTag a
+  ) =>
+  ExportBackend m ->
+  OrgData ->
+  a ->
+  GlobalExpansion m
+queryExpElms bk odata =
+  queryExp (elementsExp bk odata) \attrs el@(OrgElement kws _) ->
+    let go (x, y) = (,y) <$> T.stripPrefix "kw:" x
+        kwFils = mapMaybe go attrs
+        gop (x, y) p = (Just (ValueKeyword y) == Map.lookup x kws) && p
+     in if foldr gop True kwFils
+          then Just el
+          else Nothing
+
+queryExpSecs ::
+  ( Monad m
+  , MultiWalk MWTag a
+  ) =>
+  ExportBackend m ->
+  OrgData ->
+  a ->
+  GlobalExpansion m
+queryExpSecs bk odata =
+  queryExp (sectionsExp bk odata) \attrs sec@(OrgSection {..}) ->
+    let go (x, y) = (,y) <$> T.stripPrefix "prop:" x
+        todoNm = fromMaybe True $ liftA2 (==) (todoName <$> sectionTodo) (L.lookup "todo-name" attrs)
+        todoStName Todo = "todo"
+        todoStName Done = "done"
+        todoSt = fromMaybe True $ liftA2 (==) (todoStName . todoState <$> sectionTodo) (L.lookup "todo-state" attrs)
+        level = maybe True (sectionLevel ==) (readMaybe . toString =<< L.lookup "level" attrs)
+        kwFils = mapMaybe go attrs
+        gop (x, y) p = (Just y == Map.lookup x sectionProperties) && p
+     in if foldr gop True kwFils && todoNm && todoSt && level
+          then Just sec
+          else Nothing
+
 objectsExp ::
   Monad m =>
   ExportBackend m ->
@@ -137,6 +212,34 @@ objectsExp bk odata objs = do
         `binding` do
           "this" #. objectExp bk odata obj
 
+objectTag :: OrgData -> OrgObject -> Text
+objectTag OrgData {..} = \case
+  Plain {} -> "plain"
+  LineBreak -> "linebreak"
+  Code {} -> "code"
+  Entity {} -> "entity"
+  LaTeXFragment {} -> "latex-fragment"
+  ExportSnippet {} -> "export-snippet"
+  Src {} -> "src"
+  Target {} -> "target"
+  Italic {} -> "italic"
+  Underline {} -> "underline"
+  Bold {} -> "bold"
+  Strikethrough {} -> "strikethrough"
+  Superscript {} -> "superscript"
+  Subscript {} -> "subscript"
+  Quoted {} -> "quoted"
+  Verbatim {} -> "verbatim"
+  Link tgt []
+    | isImgTarget (orgInlineImageRules exporterSettings) tgt -> "image"
+  Link {} -> "link"
+  Timestamp {} -> "timestamp"
+  FootnoteRef {} -> "footnote-ref"
+  Cite {} -> "cite"
+  StatisticCookie {} -> "statistic-cookie"
+  Macro {} -> "macro"
+  InlBabelCall {} -> "babel-call"
+
 objectExp ::
   forall m.
   Monad m =>
@@ -145,20 +248,16 @@ objectExp ::
   OrgObject ->
   ExpansionMap m
 objectExp bk@ExportBackend {..} odata@OrgData {..} obj =
-  (`fromMaybe` customObject bk odata obj)
+  (`fromMaybe` customObject bk odata obj) do
+    "tag" #@ objectTag odata obj
     case obj of
-      (Plain txt) -> do
-        tag #@ "plain"
+      Plain txt -> do
         let specialStrings = orgExportWithSpecialStrings exporterSettings
         content #@ if specialStrings then doSpecialStrings txt else txt
-      LineBreak -> do
-        tag #@ "linebreak"
-      (Code txt) -> do
-        tag #@ "code"
-        content #@ txt
-      (Entity name)
+      LineBreak -> pass
+      Code txt -> content #@ txt
+      Entity name
         | orgExportWithEntities exporterSettings -> do
-            tag #@ "entity"
             let Data.Entity {..} = Data.defaultEntitiesMap Map.! name
             "if-math" #* ifElse latexMathP
             "latex" #@ latexReplacement
@@ -167,74 +266,49 @@ objectExp bk@ExportBackend {..} odata@OrgData {..} obj =
             "latin" #@ latin1Replacement
             "utf8" #@ utf8Replacement
         | otherwise -> objectExp bk odata (Plain $ "\\" <> name)
-      (LaTeXFragment ftype txt) -> do
-        tag #@ "latex-fragment"
+      LaTeXFragment ftype txt -> do
         content #@ txt
         "type" #@ case ftype of
           InlMathFragment -> "inline"
           DispMathFragment -> "display"
           RawFragment -> "raw"
-      (ExportSnippet backend code) -> do
-        tag #@ "export-snippet"
+      ExportSnippet backend code -> do
         "backend" #@ backend
         content #@ code
-      (Src lang _params txt) -> do
-        tag #@ "src"
+      Src lang _params txt -> do
         "language" #@ lang
         content #@ txt
-      (Target anchor name) -> do
-        tag #@ "target"
+      Target anchor name -> do
         "anchor" #@ anchor
         "name" #@ name
-      (Italic objs) -> do
-        tag #@ "italic"
-        content #. expObjs objs
-      (Underline objs) -> do
-        tag #@ "underline"
-        content #. expObjs objs
-      (Bold objs) -> do
-        tag #@ "bold"
-        content #. expObjs objs
-      (Strikethrough objs) -> do
-        tag #@ "strikethrough"
-        content #. expObjs objs
-      (Superscript objs) -> do
-        tag #@ "superscript"
-        content #. expObjs objs
-      (Subscript objs) -> do
-        tag #@ "subscript"
-        content #. expObjs objs
-      (Quoted qtype objs) -> do
-        tag #@ "quoted"
+      Italic objs -> content #. expObjs objs
+      Underline objs -> content #. expObjs objs
+      Bold objs -> content #. expObjs objs
+      Strikethrough objs -> content #. expObjs objs
+      Superscript objs -> content #. expObjs objs
+      Subscript objs -> content #. expObjs objs
+      Quoted qtype objs -> do
         content #. expObjs objs
         "type" #@ case qtype of
           SingleQuote -> "single"
           DoubleQuote -> "double"
-      (Verbatim txt) -> do
-        tag #@ "verbatim"
-        content #@ txt
-      (Link tgt [])
+      Verbatim txt -> content #@ txt
+      Link tgt []
         | isImgTarget (orgInlineImageRules exporterSettings) tgt -> do
-            tag #@ "image"
             linkTarget tgt
         | otherwise -> objectExp bk odata (Link tgt [Plain $ linkTargetToText tgt])
-      (Link tgt objs) -> do
-        tag #@ "link"
+      Link tgt objs -> do
         linkTarget tgt
         content #. expObjs objs
-      (Timestamp ts) -> do
-        tag #@ "timestamp"
-        timestamp ts
-      (FootnoteRef (FootnoteRefLabel name)) -> do
-        tag #@ "footnote-ref"
+      Timestamp ts -> timestamp ts
+      FootnoteRef (FootnoteRefLabel name) -> do
         let def = footnotes Map.!? name
         whenJust def \thing -> do
           content #. either expObjs expEls thing
         "key" #@ name
-      (FootnoteRef _) -> pass
-      (Cite _) -> pass -- TODO
-      (StatisticCookie c) -> do
-        tag #@ "statistic-cookie"
+      FootnoteRef _ -> pass
+      Cite _ -> pass -- TODO
+      StatisticCookie c ->
         case c of
           Left (show -> n, show -> d) -> do
             "type" #@ "fraction"
@@ -246,15 +320,12 @@ objectExp bk@ExportBackend {..} odata@OrgData {..} obj =
             "percentage" #@ p
             "value" #@ p <> "%"
       Macro name args -> do
-        tag #@ "macro"
         "name" #@ name
         "arguments" #. listExp textData args
         content #: macro name args
       InlBabelCall args -> do
-        tag #@ "babel-call"
         content #: babelCall args
   where
-    tag = "tag"
     content = "content"
     expObjs = objectsExp bk odata
     expEls = elementsExp bk odata
@@ -360,6 +431,10 @@ elementExp bk@ExportBackend {..} odata el@(OrgElement aff eldata) = do
     elementDataExp bk odata eldata
     affiliatedMap aff
     "akw" #. keywordsMap bk odata aff
+    "query" #. do
+      "sections" #* queryExpSecs bk odata el
+      "elements" #* queryExpElms bk odata el
+      "objects" #* queryExpObjs bk odata el
 
 sectionExp ::
   Monad m =>
@@ -367,7 +442,7 @@ sectionExp ::
   OrgData ->
   OrgSection ->
   ExpansionMap m
-sectionExp bk odata (OrgSection {..}) = do
+sectionExp bk odata sec@(OrgSection {..}) = do
   "title" #. objectsExp bk odata sectionTitle
   "tags" #. listExp textData sectionTags
   "children" #. elementsExp bk odata sectionChildren
@@ -377,6 +452,10 @@ sectionExp bk odata (OrgSection {..}) = do
   for_ sectionPriority priority
   "prop" #. mapExp textData sectionProperties
   "anchor" #@ sectionAnchor
+  "query" #. do
+    "sections" #* queryExpSecs bk odata sec
+    "elements" #* queryExpElms bk odata sec
+    "objects" #* queryExpObjs bk odata sec
   where
     todo (TodoKeyword st nm) =
       "todo" #. do
@@ -437,7 +516,7 @@ documentExp ::
   OrgData ->
   OrgDocument ->
   ExpansionMap m
-documentExp bk odata (OrgDocument {..}) = do
+documentExp bk odata doc@(OrgDocument {..}) = do
   "doc" #. do
     "kw" #. keywordsMap bk odata (keywords odata)
     "prop" #. mapExp textData documentProperties
@@ -445,6 +524,10 @@ documentExp bk odata (OrgDocument {..}) = do
     "sections" #. sectionsExp bk odata documentSections
     "footnotes" #. mapExp fnExp (footnotes odata)
     "tags" #. listExp textData (filetags odata)
+    "query" #. do
+      "sections" #* queryExpSecs bk odata doc
+      "elements" #* queryExpElms bk odata doc
+      "objects" #* queryExpObjs bk odata doc
   where
     fnExp =
       namespace
