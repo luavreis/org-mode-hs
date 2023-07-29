@@ -1,4 +1,0 @@
-::: {.center affiliated=""}
-:::: {.e:content}
-::::
-:::

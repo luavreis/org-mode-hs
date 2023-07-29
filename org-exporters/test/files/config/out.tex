@@ -27,20 +27,17 @@
 
 \maketitle
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 ;;; -*- lexical-binding: t; -*-
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq user-full-name "Lucas V. R."
       user-mail-address "redacted")
 \end{lstlisting}
 \section{Disables and unpins}
 \label{sec:disables-and-unpins}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 ;; -*- no-byte-compile: t; -*-
 ;;; $DOOMDIR/packages.el
 (package! flycheck-popup-tip :disable t)
@@ -68,15 +65,13 @@
 \label{sec:advices}
 Para desabilitar as mensagens chatas:
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defun advice--inhibit-message (f &rest r) (let ((inhibit-message t)) (apply f r)))
 \end{lstlisting}
 
 \subsubsection{List of strings predicate}
 \label{sec:list-of-strings-predicate}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defun string-list-p (x) (and (listp x) (--all? (stringp it) x)))
 \end{lstlisting}
 
@@ -92,8 +87,7 @@ Para desabilitar as mensagens chatas:
   \item Boolean variable toggle (\lstinline|setq-toggle|)
   \label{sec:boolean-variable-toggle-setq-toggle}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (defmacro setq-toggle (s)
   `(setq ,s (not ,s)))
 \end{lstlisting}
@@ -108,8 +102,7 @@ Para desabilitar as mensagens chatas:
 \label{sec:remove-all-advice-from-a-symbol}
 This was taken from \href{https://emacs.stackexchange.com/a/24658}{StackExchange} long ago.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defun advice-unadvice (sym)
   "Remove all advices from symbol SYM."
   (interactive "aFunction symbol: ")
@@ -134,15 +127,13 @@ This was taken from \href{https://emacs.stackexchange.com/a/24658}{StackExchange
   \item AAS (auto expanding snippets)
   \label{sec:aas-auto-expanding-snippets}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! aas :recipe (:host github :repo "ymarco/auto-activating-snippets"))
 \end{lstlisting}
   \item Abbrev
   \label{sec:abbrev}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (add-hook! 'text-mode-hook
            (abbrev-mode +1))
 
@@ -156,15 +147,13 @@ This was taken from \href{https://emacs.stackexchange.com/a/24658}{StackExchange
   \item Installation
   \label{sec:installation}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! cape)
 \end{lstlisting}
   \item Configuration
   \label{sec:configuration}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (use-package cape
   :after corfu
   ;; Bind dedicated completion commands
@@ -207,8 +196,7 @@ This was taken from \href{https://emacs.stackexchange.com/a/24658}{StackExchange
   \item Installation
   \label{sec:installation-1}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! corfu :recipe (:host github :repo "minad/corfu" :files ("*.el" "extensions/*.el")))
 (package! popon :recipe (:type git :repo "https://codeberg.org/akib/emacs-popon.git"))
 (package! corfu-terminal :recipe (:type git :repo "https://codeberg.org/akib/emacs-corfu-terminal.git"))
@@ -216,8 +204,7 @@ This was taken from \href{https://emacs.stackexchange.com/a/24658}{StackExchange
   \item Configuration
   \label{sec:configuration-1}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (use-package corfu
   :bind (:map corfu-map
          ("\\" . corfu-quit)
@@ -271,13 +258,11 @@ This was taken from \href{https://emacs.stackexchange.com/a/24658}{StackExchange
   \item Color picker (Zenity)
   \label{sec:color-picker-zenity}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! zenity-color-picker)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (map! :leader :n "e c" #'zenity-cp-color-at-point-dwim)
 \end{lstlisting}
   \item Yasnippet
@@ -286,16 +271,14 @@ This was taken from \href{https://emacs.stackexchange.com/a/24658}{StackExchange
   Fixes the issue where when a placeholder appeared on an empty line, no
 indentation was applied. For instance, this:
 
-\begin{lstlisting}%! Someone please complete this list for me
-
+\begin{lstlisting}
 1. bla
    quote|
 \end{lstlisting}
 
 would be expanded to this:
 
-\begin{lstlisting}%! Someone please complete this list for me
-
+\begin{lstlisting}
  1. bla
     ,#+begin_quote
 |
@@ -304,8 +287,7 @@ would be expanded to this:
 
 quite annoing…
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq yas-also-indent-empty-lines t)
 \end{lstlisting}
 \begin{enumerate}
@@ -314,8 +296,7 @@ quite annoing…
 
   Uma dessas coisas que se imagina, por que não fizeram assim?
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defadvice! my-yas--maybe-move-to-active-field (snippet)
   "Try to move to SNIPPET's active (or first) field and return it if found."
 
@@ -331,8 +312,7 @@ quite annoing…
   \item Interaction with Corfu
   \label{sec:interaction-with-corfu}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (defadvice! yas-expand-filter-corfu-a (&rest r)
   :before-while #'yas-maybe-expand-abbrev-key-filter
   (not (and (frame-live-p corfu--frame) (frame-visible-p corfu--frame))))
@@ -349,13 +329,11 @@ quite annoing…
   \item Kind-icon
   \label{sec:kind-icon}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! kind-icon)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package kind-icon
   :after corfu
   :custom
@@ -380,15 +358,13 @@ quite annoing…
   \item Installation
   \label{sec:installation-2}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (unpin! consult)
 \end{lstlisting}
   \item Configuration
   \label{sec:configuration-2}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (use-package consult
   :bind (:map doom-leader-map
               ("," . consult-buffer)))
@@ -405,8 +381,7 @@ quite annoing…
   \item Orderless
   \label{sec:orderless}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (use-package corfu
   :config
   (setq completion-styles '(basic-limited orderless basic)))
@@ -414,8 +389,7 @@ quite annoing…
 
 Também quero que tenha inicialismos (por exemplo, \texttt{hmlm -> hide-mode-line-mode}):
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq orderless-matching-styles
       '(orderless-initialism
         orderless-literal
@@ -425,8 +399,7 @@ Também quero que tenha inicialismos (por exemplo, \texttt{hmlm -> hide-mode-lin
   \item Orderless fast dispatch
   \label{sec:orderless-fast-dispatch}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (defun basic-limited-all-completions (string table pred point)
   (when (length< string 4)
     (completion-emacs21-all-completions string table pred point)))
@@ -446,8 +419,7 @@ Também quero que tenha inicialismos (por exemplo, \texttt{hmlm -> hide-mode-lin
   \item Register interaction with Evil
   \label{sec:register-interaction-with-evil}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (after! (consult evil)
   (defadvice! evil-paste--pretend-to-be-yank-a (&rest _r)
     :after #'evil-paste-after
@@ -463,8 +435,7 @@ Também quero que tenha inicialismos (por exemplo, \texttt{hmlm -> hide-mode-lin
   \item Configuration
   \label{sec:configuration-3}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (use-package vertico
   :bind (:map vertico-map
          ("M-k" . vertico-next)
@@ -485,20 +456,17 @@ Também quero que tenha inicialismos (por exemplo, \texttt{hmlm -> hide-mode-lin
 
 \subsubsection{Eldoc-box}
 \label{sec:eldoc-box}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! eldoc-box)
 \end{lstlisting}
 
 \subsubsection{Jinx (spell)}
 \label{sec:jinx-spell}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! jinx)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package jinx
   :config
   (setq jinx-languages "pt_BR en_US")
@@ -516,13 +484,11 @@ Também quero que tenha inicialismos (por exemplo, \texttt{hmlm -> hide-mode-lin
   \item Posframe\hfill{} ARCHIVE
   \label{sec:posframe}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! which-key-posframe)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package which-key-posframe
   :hook (which-key-mode . which-key-posframe-mode)
   :config
@@ -544,8 +510,7 @@ Também quero que tenha inicialismos (por exemplo, \texttt{hmlm -> hide-mode-lin
   \item Variables
   \label{sec:variables}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (setq evil-shift-round nil
       evil-cross-lines t
       evil-move-cursor-back nil
@@ -559,8 +524,7 @@ Também quero que tenha inicialismos (por exemplo, \texttt{hmlm -> hide-mode-lin
 
 This is very important. The newline at the end of a line is a character too!
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq evil-move-beyond-eol t)
 \end{lstlisting}
   \item Mouse bindings for multicursor (\texttt{evil-mc})
@@ -568,8 +532,7 @@ This is very important. The newline at the end of a line is a character too!
 
   Toggle multicursors at mouse pointer with \texttt{C-<mouse-1>}.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defun evil-mc/toggle-cursor-on-click (event)
   "Add a cursor where you click, or remove a fake cursor that is
 already there."
@@ -602,8 +565,7 @@ already there."
   \item Org headlines
   \label{sec:org-headlines}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (defun evil-org--parse-headline ()
   (save-excursion
     (end-of-line)
@@ -688,8 +650,7 @@ already there."
   \item CameL case
   \label{sec:camel-case}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (after! evil
   (evil-define-text-object evil-prog-camelcase (c &rest _)
     "Select a camelCase \"word\". For instance, if cursor is at | in
@@ -715,8 +676,7 @@ camelCase|dWord, then it selects \"Cased\"." :jump t
 
 \subsubsection{Scroll}
 \label{sec:scroll}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq mouse-wheel-scroll-amount '(3 ((shift) . 6)) ;; one line at a time
       mouse-wheel-progressive-speed nil ;; don't accelerate scrolling
       scroll-margin 0
@@ -729,8 +689,7 @@ camelCase|dWord, then it selects \"Cased\"." :jump t
 
 \subsubsection{Variables}
 \label{sec:variables-1}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq-default fill-column 80)
 
 (setq amalgamating-undo-limit 3)
@@ -749,23 +708,20 @@ camelCase|dWord, then it selects \"Cased\"." :jump t
 
 Deixa o \texttt{text-scale-mode} mais devagar.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq text-scale-mode-step 1.05)
 \end{lstlisting}
 
 \subsubsection{Shrink whitespace\hfill{} bindings}
 \label{sec:shrink-whitespace}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq doom-leader-alt-key "M-SPC")
 (map! :i "C-SPC" #'cycle-spacing)
 \end{lstlisting}
 
 \subsubsection{Highlighting (Tree-sitter)}
 \label{sec:highlighting-tree-sitter}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (global-tree-sitter-mode)
 (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
 \end{lstlisting}
@@ -774,29 +730,25 @@ Deixa o \texttt{text-scale-mode} mais devagar.
 \label{sec:saving}
 Desabilita a mensagem de salvamento.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (advice-add 'save-buffer :around #'advice--inhibit-message)
 \end{lstlisting}
 
 \subsubsection{Blink cursor}
 \label{sec:blink-cursor}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (blink-cursor-mode -1)
 \end{lstlisting}
 
 \subsubsection{Enable perl-like regex search}
 \label{sec:enable-perl-like-regex-search}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (pcre-mode +1)
 \end{lstlisting}
 
 \subsubsection{Popups}
 \label{sec:popups}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq +popup-defaults
       '(:side bottom
         :height 0.3
@@ -812,8 +764,7 @@ Desabilita a mensagem de salvamento.
 
 \subsubsection{Others}
 \label{sec:others}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (remove-hook! '(org-mode-hook text-mode-hook) #'flyspell-mode)
 (remove-hook! 'org-mode-hook #'org-cdlatex-mode)
 
@@ -829,13 +780,11 @@ Desabilita a mensagem de salvamento.
 
 \subsubsection{Apheleia}
 \label{sec:apheleia}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! apheleia)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package apheleia
   :config
   (push '(fourmolu . ("fourmolu" "--stdin-input-file" (or (buffer-file-name) (buffer-name)))) apheleia-formatters)
@@ -845,8 +794,7 @@ Desabilita a mensagem de salvamento.
 
 \subsubsection{WS butler}
 \label{sec:ws-butler}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! ws-butler
   (setq ws-butler-global-exempt-modes
         '(special-mode
@@ -866,8 +814,7 @@ Desabilita a mensagem de salvamento.
 
 \subsubsection{Expand-region\hfill{} bindings}
 \label{sec:expand-region}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package expand-region
   :config
   (map! :n "C-a" #'er/expand-region
@@ -883,8 +830,7 @@ Desabilita a mensagem de salvamento.
 \label{sec:doom-dashboard}
 Small dashboard changes:
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 ;; Disables "benchmark" echo message
 (remove-hook 'window-setup-hook #'doom-display-benchmark-h)
 \end{lstlisting}
@@ -893,8 +839,7 @@ Small dashboard changes:
   \item Banner
   \label{sec:banner}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (setq +doom-dashboard-functions '(doom-dashboard-widget-shortmenu
                                   doom-dashboard-widget-loaded))
 \end{lstlisting}
@@ -912,8 +857,7 @@ Small dashboard changes:
 
 If it works, you will see a twemoji smile: 🙂
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq doom-font                (font-spec :family "Victor Mono" :size 19 :weight 'medium)
       doom-variable-pitch-font (font-spec :family "IBM Plex Sans" :size 19 :weight 'normal)
       doom-serif-font          (font-spec :family "IBM Plex Mono" :weight 'light))
@@ -933,8 +877,7 @@ If it works, you will see a twemoji smile: 🙂
 
   Deixamos os comentários itálicas, e os \lstinline|keywords| oblíquos.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (custom-set-faces!
   '(font-lock-comment-face :slant italic :weight normal)
   '(font-lock-keyword-face :slant italic :weight normal))
@@ -942,16 +885,14 @@ If it works, you will see a twemoji smile: 🙂
   \item Child frames
   \label{sec:child-frames}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (custom-set-faces!
   `(child-frame-border :inherit default))
 \end{lstlisting}
   \item Echo area
   \label{sec:echo-area}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (defun customize-echo ()
   (with-current-buffer " *Echo Area 0*"
     (face-remap-add-relative 'default '(:family "Julia Mono"))
@@ -967,20 +908,17 @@ If it works, you will see a twemoji smile: 🙂
 
   Adjusts the icon sizes so they are a bit smaller.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq all-the-icons-scale-factor 0.88)
 \end{lstlisting}
   \item Ligatures
   \label{sec:ligatures}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! ligature :recipe (:host github :repo "mickeynp/ligature.el"))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package ligature
   :config
   (ligature-set-ligatures
@@ -999,8 +937,7 @@ If it works, you will see a twemoji smile: 🙂
   \item Mixed-pitch
   \label{sec:mixed-pitch}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (defface my-mixed-pitch-face '((t . nil))
   "Face for `mixed-pitch-mode'")
 (custom-set-faces!
@@ -1014,8 +951,7 @@ No modeline pode aparecer um trecho com fonte \lstinline|font-lock-string-face|.
 
 Além disso, \lstinline|org-drawer| não está na lista por padrão.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! mixed-pitch
   (setq mixed-pitch-fixed-pitch-faces
         (seq-difference
@@ -1026,8 +962,7 @@ Além disso, \lstinline|org-drawer| não está na lista por padrão.
   \item Yasnippet
   \label{sec:yasnippet-1}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (custom-set-faces!
   `(yas-field-highlight-face
     :inherit nil
@@ -1044,8 +979,7 @@ Além disso, \lstinline|org-drawer| não está na lista por padrão.
   \item Faces
   \label{sec:faces}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (custom-set-faces!
   '(mode-line :height 105 :family "Julia Mono")
   '(mode-line-inactive :height 105 :family "Julia Mono")
@@ -1057,14 +991,12 @@ Além disso, \lstinline|org-drawer| não está na lista por padrão.
   \item Doom mode-line
   \label{sec:doom-mode-line}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (setq doom-modeline-irc nil
       doom-modeline-icon nil)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! doom-modeline
   (doom-modeline-def-segment buffer-name
     "Display the current buffer's name, without any other information."
@@ -1108,8 +1040,7 @@ Além disso, \lstinline|org-drawer| não está na lista por padrão.
 
 \subsubsection{Tab bar}
 \label{sec:tab-bar}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (map! :n "M-z" #'toggle-frame-tab-bar)
 \end{lstlisting}
 
@@ -1123,8 +1054,7 @@ Além disso, \lstinline|org-drawer| não está na lista por padrão.
 
   Roubado do tecosaur.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defcustom treemacs-file-ignore-extensions
   '("aux" "ptc" "fdb_latexmk" "fls" "synctex.gz" "toc"         ;; LaTeX
     "glg"  "glo"  "gls"  "glsdefs"  "ist"  "acn"  "acr"  "alg" ;; LaTeX - glossary
@@ -1145,16 +1075,14 @@ which `treemacs-ignore-filter' will ensure are ignored"
 
   They only appear if this variable is set to a value \(\ge\) 7.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq doom-themes-treemacs-bitmap-indicator-width 7)
 \end{lstlisting}
 \end{enumerate}
 
 \subsubsection{Theme}
 \label{sec:theme}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq doom-theme 'ef-cherie)
 \end{lstlisting}
 
@@ -1162,16 +1090,14 @@ which `treemacs-ignore-filter' will ensure are ignored"
   \item ef-themes
   \label{sec:ef-themes}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! ef-themes)
 \end{lstlisting}
 \end{enumerate}
 
 \subsubsection{Window divisors}
 \label{sec:window-divisors}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq window-divider-default-bottom-width 2   ; default is 1
       window-divider-default-right-width  2)  ; default is 1
 \end{lstlisting}
@@ -1184,13 +1110,11 @@ which `treemacs-ignore-filter' will ensure are ignored"
 
 \subsection{LSP}
 \label{sec:lsp}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (unpin! lsp-mode)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package lsp
   :custom
   (lsp-completion-provider :none)
@@ -1205,15 +1129,13 @@ which `treemacs-ignore-filter' will ensure are ignored"
   (lsp-completion-mode . my/lsp-mode-setup-completion))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (map! :map 'lsp-mode-map :leader :n "c f" #'lsp-format-buffer)
 \end{lstlisting}
 
 \subsubsection{LSP-UI}
 \label{sec:lsp-ui}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq lsp-ui-sideline-diagnostic-max-lines 10)
 \end{lstlisting}
 
@@ -1230,8 +1152,7 @@ which `treemacs-ignore-filter' will ensure are ignored"
   \item Installation
   \label{sec:installation-3}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! eat)
 \end{lstlisting}
 \end{enumerate}
@@ -1239,8 +1160,7 @@ which `treemacs-ignore-filter' will ensure are ignored"
 
 \subsection{Calibre}
 \label{sec:calibre}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! calibredb)
 \end{lstlisting}
 
@@ -1250,20 +1170,17 @@ which `treemacs-ignore-filter' will ensure are ignored"
 
 \subsubsection{Magit Todos}
 \label{sec:magit-todos}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (put 'magit-todos-exclude-globs 'safe-local-variable #'listp)
 \end{lstlisting}
 
 \subsubsection{Git Auto Commit Mode}
 \label{sec:git-auto-commit-mode}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! git-auto-commit-mode)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (pushnew! safe-local-variable-values '(gac-automatically-push-p . t))
 \end{lstlisting}
 
@@ -1275,15 +1192,13 @@ which `treemacs-ignore-filter' will ensure are ignored"
 
 \subsection{Benchmark init}
 \label{sec:benchmark-init}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! benchmark-init :recipe (:host github :repo "kekeimiku/benchmark-init-el"))
 \end{lstlisting}
 
 \subsection{Citations and Citar}
 \label{sec:citations-and-citar}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package citar
   :custom
   (citar-file-open-functions '(("pdf" . citar-file-open-external)))
@@ -1297,21 +1212,18 @@ which `treemacs-ignore-filter' will ensure are ignored"
 
 \subsubsection{\texttt{citar-org-roam} templates}
 \label{sec:citar-org-roam-templates}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq citar-org-roam-note-title-template "${author editor}: ${title}")
 \end{lstlisting}
 
 \subsubsection{Org-cite-csl-activate}
 \label{sec:org-cite-csl-activate}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (unpin! citar) 
 (package! oc-csl-activate :recipe (:host github :repo "andras-simonyi/org-cite-csl-activate"))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package oc-csl-activate
   :after (org citar)
   :config
@@ -1325,34 +1237,29 @@ which `treemacs-ignore-filter' will ensure are ignored"
 
 \subsection{CRDT}
 \label{sec:crdt}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! crdt)
 \end{lstlisting}
 
 \subsection{Elfeed}
 \label{sec:elfeed}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! elfeed
     (setq elfeed-search-filter "@3-year-old #200"))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! elfeed-goodies :disable t)
 \end{lstlisting}
 
 \subsubsection{Elfeed-tube}
 \label{sec:elfeed-tube}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! elfeed-tube)
 (package! elfeed-tube-mpv)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package elfeed-tube
   :after elfeed
   :demand t
@@ -1377,27 +1284,23 @@ which `treemacs-ignore-filter' will ensure are ignored"
 
 \subsection{Esxml}
 \label{sec:esxml}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! esxml)
 \end{lstlisting}
 
 \subsection{Engrave Faces}
 \label{sec:engrave-faces}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! engrave-faces)
 \end{lstlisting}
 
 \subsection{Google translate}
 \label{sec:google-translate}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! google-translate)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package google-translate
   :commands (google-translate-version)
   :custom
@@ -1408,13 +1311,11 @@ which `treemacs-ignore-filter' will ensure are ignored"
 
 \subsection{{\bfseries\sffamily TODO} Olivetti}
 \label{sec:olivetti}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! olivetti)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package olivetti
   :init
   (add-hook! olivetti-mode
@@ -1463,13 +1364,11 @@ which `treemacs-ignore-filter' will ensure are ignored"
 
 \subsection{PDF Tools}
 \label{sec:pdf-tools}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (unpin! pdf-tools)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! pdf-tools
   (defvar pdf-scroll-multiplier 2)
   
@@ -1500,20 +1399,17 @@ which `treemacs-ignore-filter' will ensure are ignored"
 \label{sec:perps-mode}
 The following advice disables the annoying, big and ugly messages when auto-saving.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (advice-add 'persp-parameters-to-savelist :around #'advice--inhibit-message)
 \end{lstlisting}
 
 \subsection{Real auto-save}
 \label{sec:real-auto-save}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! real-auto-save)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package real-auto-save
   :after doom-first-file-hook
   :commands (real-auto-save-mode))
@@ -1528,13 +1424,11 @@ The following advice disables the annoying, big and ugly messages when auto-savi
 
 \subsection{Focus}
 \label{sec:focus}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! focus :type 'local :recipe (:local-repo "lisp/lib/focus.el"))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq focus-fraction 0.7)
 ;; (custom-set-faces!
 ;;   '(focus-unfocused :inherit custom-comment-tag :foreground "gray"))
@@ -1544,8 +1438,7 @@ The following advice disables the annoying, big and ugly messages when auto-savi
 \label{sec:iedit}
 Desativa uma mensagem chata quando apertamos \texttt{M-d}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq iedit-toggle-key-default nil)
 \end{lstlisting}
 
@@ -1556,22 +1449,19 @@ Desativa uma mensagem chata quando apertamos \texttt{M-d}
 
 \subsection{Dart (flutter)}
 \label{sec:dart-flutter}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq flutter-sdk-path "/opt/flutter")
 \end{lstlisting}
 
 \subsection{F\#}
 \label{sec:f}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq inferior-fsharp-program "dotnet fsi --readline-")
 \end{lstlisting}
 
 \subsection{Haskell}
 \label{sec:haskell}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq lsp-haskell-server-path "haskell-language-server-wrapper"
       lsp-haskell-formatting-provider "fourmolu"
       lsp-haskell-plugin-eval-global-on t
@@ -1584,8 +1474,7 @@ Desativa uma mensagem chata quando apertamos \texttt{M-d}
 
 Work around bad doom-emacs use of :prelude.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (remove-hook 'haskell-mode-local-vars-hook #'lsp!)
 \end{lstlisting}
 
@@ -1595,8 +1484,7 @@ Work around bad doom-emacs use of :prelude.
 
 \subsubsection{Parinfer}
 \label{sec:parinfer}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package parinfer-rust-mode
   :when (bound-and-true-p module-file-suffix)
   :hook (emacs-lisp-mode . parinfer-rust-mode)
@@ -1626,8 +1514,7 @@ touches the groups of close-parens at the end of each line.
 
 NOTE TO SELF: \texttt{smart} and \texttt{indent} won’t allow inserting unmached \}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq parinfer-rust-preferred-mode "smart")
 \end{lstlisting}
 
@@ -1637,8 +1524,7 @@ NOTE TO SELF: \texttt{smart} and \texttt{indent} won’t allow inserting unmache
 
   I don’t want to run it in all lisps, just elisp. Had some issues with \lstinline|kbd-mode|.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (remove-hook 'lisp-mode-hook #'parinfer-rust-mode)
 (add-hook! 'kbd-mode-hook (parinfer-rust-mode -1))
 \end{lstlisting}
@@ -1646,35 +1532,30 @@ NOTE TO SELF: \texttt{smart} and \texttt{indent} won’t allow inserting unmache
 
 \subsubsection{kmonad}
 \label{sec:kmonad}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! kbd-mode :recipe (:host github :repo "kmonad/kbd-mode"))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package kbd-mode)
 \end{lstlisting}
 
 
 \subsection{Lean}
 \label{sec:lean}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! lean4-mode :recipe
   (:host github
    :repo "leanprover/lean4-mode"
    :files ("*.el" "data")))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package lean4-mode
   :commands (lean4-mode))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (set-popup-rule! "^\\*Lean Goal\\*"
   :side 'right
   :ttl 10
@@ -1686,13 +1567,11 @@ NOTE TO SELF: \texttt{smart} and \texttt{indent} won’t allow inserting unmache
 
 \subsection{LaTeX}
 \label{sec:latex}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! latex-preview-pane :disable t)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! tex
   (setq TeX-save-query nil
         TeX-view-evince-keep-focus t
@@ -1720,8 +1599,7 @@ NOTE TO SELF: \texttt{smart} and \texttt{indent} won’t allow inserting unmache
 
 \subsubsection{Do not auto fill my text when I wrap it inside an environment}
 \label{sec:do-not-auto-fill-my-text-when-i-wrap-it-inside-an-environment}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defadvice! latex-environment-do-not-justify (f &rest r)
   :around 'LaTeX-environment
   (let ((auto-fill-function nil))
@@ -1735,15 +1613,13 @@ NOTE TO SELF: \texttt{smart} and \texttt{indent} won’t allow inserting unmache
 
 \subsubsection{Installation}
 \label{sec:installation-4}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (unpin! org)
 \end{lstlisting}
 
 \subsubsection{Variáveis}
 \label{sec:variaveis}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq org-directory "~/dados/org"
       org-attach-id-dir "data/"
       org-fold-core-style 'overlays
@@ -1757,8 +1633,7 @@ NOTE TO SELF: \texttt{smart} and \texttt{indent} won’t allow inserting unmache
       org-indent-indentation-per-level 2)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! org-src
   (pushnew! org-src-lang-modes
             '("html" . web)
@@ -1769,16 +1644,14 @@ NOTE TO SELF: \texttt{smart} and \texttt{indent} won’t allow inserting unmache
 \label{sec:attach-download}
 We can make \texttt{org-attach} work before the first headline:
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! org-attach
   (setq org-attach-auto-tag nil
         org-attach-id-to-path-function-list
         '(org-attach-id-ts-folder-format org-attach-id-uuid-folder-format identity)))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! org-download
   (setq org-download-image-org-width 300))
 \end{lstlisting}
@@ -1787,13 +1660,11 @@ We can make \texttt{org-attach} work before the first headline:
   \item Org-attach-extra
   \label{sec:org-attach-extra}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (add-load-path! "/home/lucas/.doom.d/lisp/lib/org-attach-extra/")
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package org-attach-extra
   :after org)
 \end{lstlisting}
@@ -1812,8 +1683,7 @@ We can make \texttt{org-attach} work before the first headline:
   \item Hide fragment delimiters\hfill{} monkey
   \label{sec:hide-fragment-delimiters}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (defadvice! my-org-do-latex-and-related (limit)
   "Highlight LaTeX snippets and environments, entities and sub/superscript.
 Stop at first highlighted object, if any.  Return t if some
@@ -1874,8 +1744,7 @@ highlighting was done, nil otherwise."
 
   Org reuses the \lstinline|org-src-font-lock-fontify-block| function to fontify LaTeX fragments natively. But this function adds the very inappropiate face \lstinline|org-block| to everything. Let’s remove it when the native block is one of our fragments.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defvar org--font-locking-latex-fragment nil)
 
 (undefadvice! signal-font-locking-latex (orig-fun &rest args)
@@ -1906,8 +1775,7 @@ highlighting was done, nil otherwise."
   \caption{After}
 \end{figure}\end{row}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defun org-add-indent-face-to-prespace ()
   (setq
    org-font-lock-extra-keywords
@@ -1932,16 +1800,14 @@ highlighting was done, nil otherwise."
 
 We can also make list bullets fixed-pitch, so they are even more aligned.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! mixed-pitch
   (add-to-list 'mixed-pitch-fixed-pitch-faces 'org-list-dt))
 \end{lstlisting}
   \item Fontify counter cookies
   \label{sec:fontify-counter-cookies}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (defun org-fontify-counter-cookies ()
   (setq
    org-font-lock-extra-keywords
@@ -1956,8 +1822,7 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
   \item Faces
   \label{sec:faces-1}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (custom-set-faces!
   '(font-latex-math-face :foreground unspecified)
   '(org-indent :inherit org-hide)
@@ -1981,8 +1846,7 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
 
 \subsubsection{Bindings\hfill{} bindings}
 \label{sec:bindings}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (map! :mode 'org-mode
       :g "C-S-s" (cmd! (org-latex-export-to-pdf nil))
       :i "C-i" (cmd! (org-emphasize ?/))
@@ -1997,8 +1861,7 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
 
   If the point is before the emphasis marker, then \lstinline|org-emphasize| should exit it.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defadvice! org-emphasize-emph-exit-ad (char)
   :before-until #'org-emphasize
   (when (eq (char-after) char)
@@ -2008,8 +1871,7 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
   \item \texttt{SPC s I} to open subtree with narrowing
   \label{sec:spc-s-i-to-open-subtree-with-narrowing}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (map! :mode 'org-mode
       :map 'doom-leader-search-map
       "I" (cmd!
@@ -2028,8 +1890,7 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
 
 \subsubsection{General config}
 \label{sec:general-config}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (add-hook! org-mode
     <<org-mode-hook>>
     nil)
@@ -2044,16 +1905,14 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
 
 \subsubsection{Linking}
 \label{sec:linking}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq +org-roam-link-to-org-use-id 'use-existing
       org-id-link-to-org-use-id 'use-existing)
 \end{lstlisting}
 
 \subsubsection{Logging}
 \label{sec:logging}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq org-log-states-order-reversed t
       org-log-done 'note
       org-log-into-drawer t)
@@ -2067,13 +1926,11 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
   \item Org-appear
   \label{sec:org-appear}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! org-appear)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package org-appear
   :after org
   :init
@@ -2095,20 +1952,17 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
   \item Org-noter
   \label{sec:org-noter}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (setq org-noter-notes-search-path (list (expand-file-name "org-noter" org-roam-directory)))
 \end{lstlisting}
   \item Org-remark
   \label{sec:org-remark}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! org-remark)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package org-remark
   :after org
   :config)
@@ -2116,15 +1970,13 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
   \item Org-roam-timestamps\hfill{} ARCHIVE
   \label{sec:org-roam-timestamps}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! org-roam-timestamps
   :recipe (:host github :repo "stites/org-roam-timestamps")
   :pin "fbbe57a7d6283624e567bd1ee46ebea3d179a321")
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package! org-roam-timestamps
   :after org-roam
   :config (org-roam-timestamps-mode))
@@ -2132,13 +1984,11 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
   \item Org-superstar
   \label{sec:org-superstar}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! org-superstar)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package org-superstar
   :after (org)
   :hook (org-mode . org-superstar-mode)
@@ -2149,13 +1999,11 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
   \item Org-transclusion\hfill{} monkey
   \label{sec:org-transclusion}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! org-transclusion)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package! org-transclusion
   :after org
   :init
@@ -2167,8 +2015,7 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
   (setq org-transclusion-exclude-elements '(property-drawer keyword)))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! org
   (defadvice! +org--recenter-after-follow-link-a (&rest _args)
     "Recenter after following a link, but only internal or file links."
@@ -2181,8 +2028,7 @@ We can also make list bullets fixed-pitch, so they are even more aligned.
           (recenter)))))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defun org-transclusion-add-better-id (link plist)
   "Return a list for Org-ID LINK object and PLIST.
 Return nil if not found."
@@ -2249,15 +2095,13 @@ Return nil if not found."
 \label{sec:gutter}
 O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (push 'org-mode git-gutter:disabled-modes)
 \end{lstlisting}
 
 \subsubsection{Hook}
 \label{sec:hook}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq-local auto-save-visited-interval 0.2
             display-line-numbers nil)
 (setq line-spacing 5)
@@ -2266,8 +2110,7 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
 
 \subsubsection{Organon}
 \label{sec:organon}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (define-minor-mode organon-follow-mode
   "Set whether organon should follow your every move in Emacs."
   :lighter " organon"
@@ -2317,8 +2160,7 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
 
 \subsubsection{Exporting}
 \label{sec:exporting}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! ox
   (add-to-list
    'org-export-smart-quotes-alist
@@ -2334,8 +2176,7 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
   \item LaTeX
   \label{sec:latex-1}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (after! org
   ;; Note to self: NEVER change this!!! You have had problems with uncompilable documents when you changed the default preamble in the past!!
   (setq org-latex-packages-alist nil
@@ -2370,8 +2211,7 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
 
   Shared with desktop and termux.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! org-roam
   (setq org-id-method 'ts
         org-roam-completion-everywhere nil))
@@ -2381,8 +2221,7 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
 
   Those aren’t shared with termux.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! org-roam
   (setq org-roam-directory "~/dados/notas"
         org-roam-node-display-template
@@ -2396,16 +2235,14 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
   \item Protocol
   \label{sec:protocol}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (after! org-roam
   (require 'org-roam-protocol))
 \end{lstlisting}
   \item Switch workspace
   \label{sec:switch-workspace}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (defadvice! yeet/org-roam-in-own-workspace-a (&rest _)
   "Open all roam buffers in their own workspace."
   :before #'org-roam-node-find
@@ -2425,8 +2262,7 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
   \item Roam
   \label{sec:roam}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (after! org-roam
   (setq org-roam-capture-templates
         '(("d" "default" plain "%?"
@@ -2444,8 +2280,7 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
   \item Roam-ref
   \label{sec:roam-ref}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (setq org-roam-capture-ref-templates
       '(("m" "math" plain "%?"
            :target (file+head "math/%<%Y%m%d%H%M%S>.org" "#+title: ${title}\n\n${body}")
@@ -2462,16 +2297,14 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
   \item Workarounds
   \label{sec:workarounds}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (defadvice! inhibit-redisplay-on-roam-autosync (fn)
   "Inhibit redisplay when syncing roam database on saves."
   :around #'org-roam-db-autosync--try-update-on-save-h
   (let ((inhibit-redisplay t)) (funcall fn)))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defadvice! org-roam-db-insert-link--remove-search-a (f link)
   :around #'org-roam-db-insert-link
   (let ((newpath (car (split-string (org-element-property :path link) "::"))))
@@ -2480,22 +2313,19 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
   \item \texttt{md-roam}
   \label{sec:md-roam}
 
-  \begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+  \begin{lstlisting}[language=Lisp]
 (package! md-roam :recipe (:host github :repo "nobiot/md-roam"))
 \end{lstlisting}
 \end{enumerate}
 
 \subsubsection{Org-roam-ui}
 \label{sec:org-roam-ui}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (unpin! org-roam)
 (package! org-roam-ui)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package! websocket
     :after org-roam-ui)
 
@@ -2510,8 +2340,7 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
 
 \subsubsection{Org-protocol}
 \label{sec:org-protocol}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (after! org-protocol
   (add-to-list 'org-protocol-protocol-alist
                '("org-file" :protocol "org-file"
@@ -2531,8 +2360,7 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
 
   Requires \href{https://extensions.gnome.org/extension/4724/window-calls/}{this extension} to be installed.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defun org-protocol/select-current-frame ()
   ;; gnome stuff
   ;;             (shell-command-to-string
@@ -2560,8 +2388,7 @@ O \texttt{git-gutter} não funciona bem com o \texttt{org-indent-mode}:
 \label{sec:unfill-instead-of-fill}
 With time, I came to the conclusion that having no line breaks inside paragraphs works better in most Org documents. So instead of \lstinline|org-fill-paragraph|, I’ll bind \texttt{M-q} to some sort of ``\lstinline|org-unfill-paragraph|''.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defun org-unfill-paragraph ()
   (interactive)
   (let ((fill-column most-positive-fixnum))
@@ -2572,21 +2399,18 @@ With time, I came to the conclusion that having no line breaks inside paragraphs
 
 \subsubsection{Vulpea}
 \label{sec:vulpea}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! vulpea)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package! vulpea
   :hook ((org-roam-db-autosync-mode . vulpea-db-autosync-enable)))
 \end{lstlisting}
 
 \subsubsection{Writing mode}
 \label{sec:writing-mode}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defvar-local org-writing-mode--previous-mixed-pitch nil)
 (defvar-local org-writing-mode--previous-line-numbers nil)
 (defvar-local org-writing-mode--previous-line-spacing 0)
@@ -2620,16 +2444,14 @@ With time, I came to the conclusion that having no line breaks inside paragraphs
 
 \subsection{Web}
 \label{sec:web}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq-default web-mode-code-indent-offset 2
               web-mode-markup-indent-offset 2)
 \end{lstlisting}
 
 \subsection{Yuck mode}
 \label{sec:yuck-mode}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! yuck-mode)
 \end{lstlisting}
 
@@ -2640,16 +2462,14 @@ With time, I came to the conclusion that having no line breaks inside paragraphs
 
 \subsection{Mamimo}
 \label{sec:mamimo}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (package! mamimo
   :type 'local
   :recipe (:local-repo "lisp/lib/mamimo"
            :files ("*.el" "snippets")))
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (use-package mamimo
   :commands (mamimo-mode
              mamimo-yas-mode
@@ -2664,8 +2484,7 @@ With time, I came to the conclusion that having no line breaks inside paragraphs
 
 \subsubsection{Language \& math predicate}
 \label{sec:language-math-predicate}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defsubst abbrev/math-text-lang-p (lang)
   (and (mamimo-notmathp)
        (-any (lambda (k) (string= lang (cadr k)))
@@ -2677,8 +2496,7 @@ With time, I came to the conclusion that having no line breaks inside paragraphs
 
 \subsubsection{Textual abbrevs}
 \label{sec:textual-abbrevs}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq abbrev/math-text-abbrevs-pt
   '(("pa" "podemos assumir")
     ("pd" "por definição")
@@ -2701,8 +2519,7 @@ With time, I came to the conclusion that having no line breaks inside paragraphs
 
 \subsubsection{Variable abbrevs}
 \label{sec:variable-abbrevs}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq abbrev/var-abbrevs-pt '(b c d f g h i j k l m n p q r s t u v w x y z))
 (setq abbrev/var-abbrevs-en '(b c d e f g h j k l m n o p q r s t u v w x y z))
 
@@ -2713,8 +2530,7 @@ With time, I came to the conclusion that having no line breaks inside paragraphs
 
 \subsubsection{Tables and mode-local tables}
 \label{sec:tables-and-mode-local-tables}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq abbrev/tables
   `((abbrev/math-text-pt-table
      ,(append
@@ -2748,8 +2564,7 @@ With time, I came to the conclusion that having no line breaks inside paragraphs
 \label{sec:comandos-familiares}
 Porque ninguém merece tantos atalhos diferentes.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (map! :g "C-s" 'save-buffer)
 ;; (map! :g "C-/" 'evilnc-comment-or-uncomment-lines)
 
@@ -2762,8 +2577,7 @@ Porque ninguém merece tantos atalhos diferentes.
 
 \subsection{Linhas visuais}
 \label{sec:linhas-visuais}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (map! :map evil-motion-state-map
       "j" 'evil-next-visual-line
       "k" 'evil-previous-visual-line
@@ -2777,15 +2591,13 @@ Uma história antiga.
 
 Não gosto do estilo do pop up
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (setq hydra-is-helpful nil)
 \end{lstlisting}
 
 Tamanho da janela
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (defhydra window-height-hydra (evil-window-map)
   "window height"
   ("=" evil-window-increase-height "")
@@ -2803,8 +2615,7 @@ Tamanho da janela
 
 \subsection{Kitty (Terminal)}
 \label{sec:kitty-terminal}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (map! :prefix-map ("\x80" . "kitty C map")
       :map 'key-translation-map
       "/" "C-/")
@@ -2816,8 +2627,7 @@ Tamanho da janela
 
 \subsection{Leader edit key}
 \label{sec:leader-edit-key}
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (map! :leader
       :prefix ("e" . "edit")
       :desc "New snipet" "s" #'+snippets/new
@@ -2835,13 +2645,11 @@ Tamanho da janela
 \label{sec:doom}
 Those may become obsolete in the future.
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 (unpin! straight)
 \end{lstlisting}
 
-\begin{lstlisting}[language=Lisp]%! Someone please complete this list for me
-
+\begin{lstlisting}[language=Lisp]
 ;; for some reason consult preview is not working in +default/p-s 
 (map! :leader "/" #'+vertico/project-search)
 \end{lstlisting}

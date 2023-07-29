@@ -217,7 +217,7 @@
 <span class="title">O que são tensores?</span></span></h2>
 <p>Em várias partes da ciência e da matemática, precisamos lidar com um conjunto de vetores e obter um outro vetor ou escalar como resultado; um dos exemplos mais simples é o de calcular o volume de paralelogramos, paralelepípedos e seus correspondentes em dimensões maiores. Por conta da estrutura linear dos espaços vetoriais, é natural considerar que a transformação envolvida seja multilinear, agindo como uma transformação linear quando são fixadas todas menos uma das entradas. Por exemplo, uma função \(f:\R^2\times\R^2\to\R\) que calcula o volume do paralelogramo gerado por dois vetores em \(\R^2\) é 2-linear, e na segunda entrada isso significa que \(f(u,v+\lambda w)=f(u,v)+\lambda f(u,w)\).</p>
 <p>A ideia dos tensores é construir uma correspondência entre as funções multilineares, que têm domínios em produtos cartesianos de espaços vetoriais, e funções lineares, com domínio no <i>produto tensorial</i> desses espaços. Com isso em mente, definimos este produto especificando as propriedades que ele deve ter: se \(V_1,\dots,V_k\) são espaços vetoriais, o seu produto tensorial constitui uma dupla \((\otimes,V)\) de um espaço vetorial \(V\) e uma função \(k~\)-linear \(\otimes:\prod_{i=1}^k V_i\to V\) que satisfazem uma <q>propriedade universal</q>: para toda função \(k~\)-linear \(\psi:\prod_{i=1}^k V_i\to W\), existe uma única função linear \(\tilde\psi:V\to W\) tal que \(\psi=\tilde\psi\circ\otimes\). Podemos mostrar que a imagem de \(\otimes\) gera \(V\) (mesmo sendo, em geral, menor que \(V\)), os elementos de \(V\) são chamados de tensores, e \(V\) é denotado por \(V_1\otimes...\otimes V_k\). A correspondência entre formas multilineares e mapas lineares com domínio no produto tensorial fica condensada na seguinte preposição:</p>
-<div class="!(this.name)">
+<div class="proposition">
 <p>Para todo espaço vetorial \(W\), a função</p><div class="latex-environment">
   \[\begin{equation*}
   \Gamma:\Hom_{\F}^k(V_1,...,V_k, W)\to\Hom_{\F}(V_1\otimes...\otimes V_k,W)
@@ -229,7 +229,7 @@
 <span class="title">Uma pequena motivação: teoria quântica</span></span></h3>
 <p>É bem sabido que o produto tensorial tem um papel bastante relevante na teoria quântica. Na teoria, os estados de um sistema são vetores em um espaço vetorial complexo com produto interno (um espaço de Hilbert). Quando queremos <q>juntar</q> vários sistemas quânticos para formar um novo sistema, o sistema resultante tem como espaço de estados o produto tensorial dos espaços originais. Nesse espaço produto, aparecem os tensores não puros, tensores que não estão na imagem da função \(\otimes\): vistos assim, eles são justamente os estados que não podem ser formados pelo produto de um estado de cada componente, e são chamados de estados <i>emaranhados</i>.</p>
 <p>Transformações em um sistema quântico são representadas por operadores lineares unitários (operadores sobrejetivos que preservam o produto interno). Se temos dois sistemas \(\cat{H}_1,\cat{H}_2\) com operatores \(f:\cat{H}_1\to\cat{H}_1\) e \(g:\cat{H}_2\to\cat{H}_2\), podemos nos perguntar se faz sentido existir uma transformação em \(\cat{H}_1\otimes\cat{H}_2\) que representa as duas transformações sendo feitas em paralelo, ao mesmo tempo:</p>
-<div class="!(this.name)">
+<div class="proposition">
 <p>Sejam \(V_1,V_2,W_1,W_2\) espaços vetoriais. Então existe e é única uma transformação linear injetora</p><div class="latex-environment">
   \[\begin{equation*}
 \Omega :\Hom_{\F}(V_1,W_1) \otimes \Hom_{\F}(V_2,W_2)\to\Hom_{\F}(V_1\otimes W_1,V_2\otimes W_2)
@@ -401,7 +401,7 @@
 </div>
 <p>Mas basta considerar diagramas com mais de duas colunas que vemos que outros detalhes do formalismo também ficam escondidos na maneira que representamos os diagramas; por exemplo, quando colocamos três funções \(f,g\) e \(h\) lado a lado, subentende-se ser possível identificar as funções \(f\ot (g\ot h)\) e \((f\ot g)\ot h\) entre si de <q>maneira natural</q>, mesmo que elas atuem em espaços diferentes. Por enquanto, vamos subentender que sempre que preciso, aplicamos os isomorfismos canônicos entre esses espaços para que se adequem aos domínios e contradomínios das funções – é possível abordar essas noções de maneira um pouco mais formal a partir de transformações naturais e outros conceitos da teoria das categorias, mas não faremos isso aqui.</p>
 <p>Podemos representar um escalar \(\lambda\in\F\) ou um vetor \(v\in V\) como na figura abaixo:</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \centering
     \matrix (c) {
@@ -415,7 +415,7 @@
 </div></div>
 <p>Por que falamos de transformações antes de escalares ou vetores? A razão para isso é que do ponto de vista formal, as coisas ficam um pouco mais simples se pensarmos que escalares e vetores também são funções lineares: cada escalar \(\lambda\) pode ser visto como a transformação \(\lambda:\F\to\F\) dada por \(t\mapsto\lambda t\), e cada vetor \(v\) pode ser representado pela função \(v:\F\to V\) definida por \(t\mapsto tv\). Com essa mudança, todos os elementos dos diagramas serão transformações lineares, e os fios que carregam escalares ficam invisíveis. Não precisamos nos preocupar com eles pois sempre que preciso, lançamos mão do isomorfismo canônico \(\F\otimes V\cong V\) dado por \(\lambda\otimes v\mapsto\lambda v\).</p>
 <p>No mundo dos produtos tensoriais, existe um único isomorfismo \(B_{V,W}:V\ot W\to W\ot V\) que troca os vetores \(v\ot w\mapsto w\ot v\). Nos diagramas, ele é desenhado como um par  de fios trocados. Assim, o diagrama</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix (c) {
       \draw[oes={-&gt;-l}]
@@ -433,7 +433,7 @@
 </div></div>
 <p>expressa a igualdade \(B_{V,W}\comp{}B_{W,V}=\id_{V\ot{}W}\). Como os diagramas são em si funções lineares, também podemos fazer com eles as operações usuais de um espaço vetorial. Por exemplo, se \(\car(\F)\neq2\), o diagrama abaixo é uma função linear:</p>
 <p>e o leitor curioso pode checar que \(s_2\comp s_2=s_2\) usando a identidade que vimos logo acima. Outra transformação interessante é o funcional avaliação \(\ev{V}: V\ot{}V^*\to\F\) definido por \(\ev{V}(v\ot{f})=f(v)\). Nos inspirando na existência desse funcional, introduziremos a partir daqui uma notação para fios que carregam o espaço dual \(V^*\) de um espaço \(V\) ao representá-los como um fio também etiquetado por \(V\), mas com a orientação (a seta) invertida. Com essa notação e com a justificativa de que \(\ev{V}\) é o funcional <q>canônico</q> nesse espaço, passaremos a escrever o mapa \(\ev{V}\) como um simples fio dobrado:</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix (c0) {
       \node[vec] (f) {$f$};
@@ -484,7 +484,7 @@
 \end{equation*}\]
 </div>
 <p>Com isso em mente, passaremos a representar \(\coev{V}\) nos diagramas da seguinte forma:</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix (c) {
       \tcoev{1,0}\\
@@ -567,7 +567,7 @@
 </div>
 <p>e similarmente, podemos obter outras duas identidades zig-zag com essas versões. Observe que a notação também sugere uma identificação do bidual \((V^*)^*\) com o espaço \(V\). Isso se justifica pela existência de um isomorfismo \(\Phi:V\to (V^*)^*\) dado por \(\Phi(v)(g)=g(v)\), que é canônico no sentido que não depende de uma escolha de base do espaço. O mesmo não vale para \(V^*\), entretanto. Na linguagem categórica, os espaços vetoriais de dimensão finita formam uma <i>categoria fechada compacta</i>.</p>
 <p>Poderíamos provar algumas igualdades apenas substituindo pedaços do diagrama por identidades anteriores, por exemplo:</p>
-<div class="!(this.name)"><div class="latex-environment" id="prettypic">
+<div class="latexfigure"><div class="latex-environment" id="prettypic">
   \[\begin{tikzpicture}[disp]
     \matrix[matd,column sep=7mm] (m) {
       &amp;&amp;\\&amp;&amp;\\&amp;&amp;\\&amp;&amp;\\
@@ -634,7 +634,7 @@
 <p>Mas de forma mais geral, é possível demonstrar que é sempre permitido
 <q>desembaraçar</q> os diagramas. Faremos isso com algums lemas que mostram como uma
 função \(f\) comuta com os fios dobrados. Por exemplo, é simples ver que:</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix[matd,row sep=1.2cm] (m) {
       &amp;\\&amp;\\
@@ -662,7 +662,7 @@ função \(f\) comuta com os fios dobrados. Por exemplo, é simples ver que:</p>
   \end{tikzpicture}\]
 </div></div>
 <p>Definimos a <i>transposta</i> de funções lineares \(f:V\to W\), \(g:W^*\to V^*\) pelos diagramas:</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix (c) {
       \node[box] (ft) {$f^t$};
@@ -700,7 +700,7 @@ função \(f\) comuta com os fios dobrados. Por exemplo, é simples ver que:</p>
 <p>Podemos checar que a primeira transposta \(f^t\) concorda com a transposta usual
 ao aplicá-la a um vetor \(w\in W^*\). Pelas definições do diagrama acima e de
 \(\ev{V}\), sabemos que para todo \(v\in V\), \((f^t(w))(v)\) é igual a:</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix (c) {
       \node[vec] (w) {$w$};
@@ -736,7 +736,7 @@ ao aplicá-la a um vetor \(w\in W^*\). Pelas definições do diagrama acima e de
   \end{tikzpicture}\]
 </div></div>
 <p>Como isso vale para todos \(v\) e \(w\), \(f^t\) concorda com a transposta usual. Para \(g^t\), isso é apenas parcialmente verdade; ela é a transposta usual <q>a menos</q> do isomorfismo canônico \(\Phi\). Com a transposta, andamos pelos fios com os <i>lemas do deslizamento</i>:</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix[matd] (m) {
       &amp;\\&amp;\\&amp;\\
@@ -770,7 +770,7 @@ ao aplicá-la a um vetor \(w\in W^*\). Pelas definições do diagrama acima e de
   \end{tikzpicture}\]
 </div></div>
 <p>Usando o mesmo argumento,</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix[matd] (m) {
       &amp;\\&amp;\\&amp;\\
@@ -804,7 +804,7 @@ ao aplicá-la a um vetor \(w\in W^*\). Pelas definições do diagrama acima e de
   \end{tikzpicture}\]
 </div></div>
 <p>e também:</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
   \matrix[matd] (m) {
     &amp;\\&amp;\\&amp;\\
@@ -871,7 +871,7 @@ inverter as setas. Mas também note que poderíamos ter definido as transpostas 
 uma forma diferente, dobrando os fios na direção oposta. Porém, usando os lemas
 anteriores, provar que essa transposta alternativa é igual a que já foi definida
 é uma tarefa simples de <q>deslizar</q> a função:</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix[matd] (m) {
       &amp;&amp;\\&amp;&amp;\\&amp;&amp;\\
@@ -914,7 +914,7 @@ fios trocam a função para sua transposta ou vice-versa.</p></section>
 <span class="headline">
 <span class="title">Calculando com os diagramas</span></span></h3>
 <p>Até então, nós aprendemos um formalismo relativamente abstrato para os diagramas, mas ainda não é fácil calcular valores numéricos. Para nos ajudar nisso, vamos escolher uma base \((e_i)_{i=1}^n\) do espaço \(V\), e denotar \(e^i=e_i^*\) para todo \(i\in\{0,...,n\}\). O truque principal é uma decomposição da função identidade:</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix (m) {
       \draw[-&gt;-] (0,1.4) to (0,0);\\
@@ -931,7 +931,7 @@ fios trocam a função para sua transposta ou vice-versa.</p></section>
   \end{tikzpicture}\]
 </div></div>
 <p>Estaremos sempre identificando \(\F^*\cong\F\), de forma que \((e_i)^t=\Phi(e_i): V^*\to\F\) e \((e^i)^t=e^i : \F\to V^*\) (lembrando: os vetores estão sendo vistos como funções). As transpostas desses elementos serão representadas com a mesma etiqueta, mas com um fio na direção oposta (já que são essencialmente os mesmos). Por exemplo, um diagrama curioso:</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix (c) {
       \node[tbox] (f) {$f$};
@@ -970,7 +970,7 @@ fios trocam a função para sua transposta ou vice-versa.</p></section>
   \end{tikzpicture}\]
 </div></div>
 <p>Com isso, fica bastante simples mostrar que \(\tr(f\circ g)=\tr(g\circ f)\):</p>
-<div class="!(this.name)"><div class="latex-environment">
+<div class="latexfigure"><div class="latex-environment">
   \[\begin{tikzpicture}[disp]
     \matrix[matd] (m) {
       &amp;\\&amp;\\
