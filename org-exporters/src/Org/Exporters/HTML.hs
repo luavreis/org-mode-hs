@@ -12,7 +12,7 @@ import Org.Types
 defBackend :: Monad m => ExportBackend m
 defBackend =
   let affiliatedMap kws =
-        "affiliated" ## const $ pure affAttrs
+        "affiliated" #% affAttrs
         where
           affAttrs :: [(Text, Text)]
           affAttrs = join $ mapMaybe getHtmlAttrs (Map.toList kws)
