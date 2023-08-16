@@ -5,12 +5,12 @@ module Main where
 import Data.Aeson (Value (..), toJSON)
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Data.Aeson.KeyMap qualified as KM
-import Ondim (OndimNode, OndimState, Rendered, binding, callTemplate, castTo, evalOndimTWith)
+import Ondim (OndimNode, OndimState, binding, callTemplate, evalOndimTWith)
 import Ondim.Extra.Exceptions (prettyException)
 import Ondim.Targets.HTML qualified as H
 import Ondim.Targets.LaTeX qualified as L
 import Ondim.Targets.Pandoc qualified as P
-import Org.Exporters.Common (ExportBackend, documentExp)
+import Org.Exporters.Common (ExportBackend, documentExp, renderNode)
 import Org.Exporters.Data.Templates (templatesEmbed)
 import Org.Exporters.HTML qualified as H
 import Org.Exporters.LaTeX qualified as L
@@ -43,7 +43,7 @@ benchsFor ::
   String ->
   ExportBackend IO ->
   IO (OrgDocument, OrgData) ->
-  (a -> Rendered) ->
+  (a -> LByteString) ->
   Benchmark
 benchsFor tpls ext out bk bundle pf =
   testGroup
@@ -64,7 +64,7 @@ benchsFor tpls ext out bk bundle pf =
         evalOndimTWith tpls $
           callTemplate @a ("document." <> ext)
             `binding` documentExp bk datum doc
-    f = fromJust (castTo (Proxy @Rendered))
+    f = fromJust renderNode
     toRight = (either (error . prettyException) return =<<)
 
 testFile :: FilePath -> Benchmark
@@ -92,8 +92,8 @@ testFile dir = do
     loadOrg :: IO Text = decodeUtf8 <$> readFileBS file
     parseOrg = parseOrgDoc defaultOrgOptions file
     processOrg = processAll
-    f :: OndimNode a => a -> Rendered
-    f = mconcat . fromJust (castTo (Proxy @Rendered))
+    f :: OndimNode a => a -> LByteString
+    f = fromJust renderNode
     json = encodePretty . filt . toJSON
       where
         -- The API version does not tell us much.
