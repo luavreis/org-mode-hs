@@ -69,6 +69,10 @@ withTargetDescription descr x = do
   modify1 \s -> s {targetDescriptionCtx = Just descr}
   x <* modify1 \s -> s {targetDescriptionCtx = oldCtx}
 
+-- | Takes a raw title string and produces a suitable anchor.
+sectionTitleToAnchor :: Text -> Text
+sectionTitleToAnchor = T.dropWhile (not . isAlpha) . slugify
+
 -- | Create anchors for sections
 resolveSection :: WalkM (Compose M F) -> OrgSection -> Compose M F OrgSection
 resolveSection r s@OrgSection {..} = Compose $ do
@@ -81,7 +85,7 @@ resolveSection r s@OrgSection {..} = Compose $ do
       registerAnchorTarget ("*" <> sectionRawTitle) a title
       pure a
     Nothing -> do
-      a <- makeAnchorUnique $ T.dropWhile (not . isAlpha) $ slugify sectionRawTitle
+      a <- makeAnchorUnique $ sectionTitleToAnchor sectionRawTitle
       registerAnchorTarget ("*" <> sectionRawTitle) a title
       pure a
   return do
