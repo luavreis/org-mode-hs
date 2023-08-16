@@ -187,10 +187,10 @@ queryExpSecs ::
 queryExpSecs bk odata =
   queryExp (sectionsExp bk odata) \attrs sec@(OrgSection {..}) ->
     let go (x, y) = (,y) <$> T.stripPrefix "prop:" x
-        todoNm = fromMaybe True $ liftA2 (==) (todoName <$> sectionTodo) (L.lookup "todo-name" attrs)
+        todoNm = maybe True ((todoName <$> sectionTodo ==) . Just) (L.lookup "todo-name" attrs)
         todoStName Todo = "todo"
         todoStName Done = "done"
-        todoSt = fromMaybe True $ liftA2 (==) (todoStName . todoState <$> sectionTodo) (L.lookup "todo-state" attrs)
+        todoSt = maybe True ((todoStName . todoState <$> sectionTodo ==) . Just) (L.lookup "todo-state" attrs)
         level = maybe True (sectionLevel ==) (readMaybe . toString =<< L.lookup "level" attrs)
         kwFils = mapMaybe go attrs
         gop (x, y) p = (Just y == Map.lookup x sectionProperties) && p
