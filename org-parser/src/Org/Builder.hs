@@ -23,7 +23,7 @@ instance One (Many a) where
 instance IsList (Many a) where
   type Item (Many a) = a
   fromList = Many . fromList
-  toList = toList . unMany
+  toList = toList . (.unMany)
 
 deriving instance Generic (Many a)
 
@@ -62,10 +62,10 @@ instance Monoid OrgObjects where
   mappend = (<>)
 
 instance IsString OrgObjects where
-  fromString = plain . T.pack
+  fromString = object . plain . T.pack
 
 instance IsString OrgElements where
-  fromString = element . para . plain . T.pack
+  fromString = element . para . object . plain . T.pack
 
 -- * Element builders
 
@@ -163,7 +163,7 @@ keyword ::
   OrgElementData
 keyword = Keyword
 
-clock :: TimestampData -> Maybe Time -> OrgElementData
+clock :: TimestampData -> Maybe OrgTime -> OrgElementData
 clock = Clock
 
 footnoteDef :: Text -> OrgElements -> OrgElementData
@@ -180,94 +180,97 @@ standardRow = StandardRow . map toList
 
 -- * Object builders
 
-plain :: Text -> OrgObjects
-plain = one . Plain
+object :: OrgObjectData -> OrgObjects
+object = one . OrgObject mempty
 
-italic :: OrgObjects -> OrgObjects
-italic = one . Italic . toList
+plain :: Text -> OrgObjectData
+plain = Plain
 
-underline :: OrgObjects -> OrgObjects
-underline = one . Underline . toList
+italic :: OrgObjects -> OrgObjectData
+italic = Italic . toList
 
-bold :: OrgObjects -> OrgObjects
-bold = one . Bold . toList
+underline :: OrgObjects -> OrgObjectData
+underline = Underline . toList
 
-strikethrough :: OrgObjects -> OrgObjects
-strikethrough = one . Strikethrough . toList
+bold :: OrgObjects -> OrgObjectData
+bold = Bold . toList
 
-superscript :: OrgObjects -> OrgObjects
-superscript = one . Superscript . toList
+strikethrough :: OrgObjects -> OrgObjectData
+strikethrough = Strikethrough . toList
 
-subscript :: OrgObjects -> OrgObjects
-subscript = one . Subscript . toList
+superscript :: OrgObjects -> OrgObjectData
+superscript = Superscript . toList
 
-singleQuoted :: OrgObjects -> OrgObjects
+subscript :: OrgObjects -> OrgObjectData
+subscript = Subscript . toList
+
+singleQuoted :: OrgObjects -> OrgObjectData
 singleQuoted = quoted SingleQuote
 
-doubleQuoted :: OrgObjects -> OrgObjects
+doubleQuoted :: OrgObjects -> OrgObjectData
 doubleQuoted = quoted DoubleQuote
 
-quoted :: QuoteType -> OrgObjects -> OrgObjects
-quoted qt = one . Quoted qt . toList
+quoted :: QuoteType -> OrgObjects -> OrgObjectData
+quoted qt = Quoted qt . toList
 
-citation :: Citation -> OrgObjects
-citation = one . Cite
+citation :: Citation -> OrgObjectData
+citation = Cite
 
-citation' :: Text -> Text -> OrgObjects -> OrgObjects -> [CiteReference] -> OrgObjects
-citation' style variant prefix suffix = one . Cite . Citation style variant (toList prefix) (toList suffix)
+citation' :: Text -> Text -> OrgObjects -> OrgObjects -> [CiteReference] -> OrgObjectData
+citation' style variant prefix suffix = Cite . Citation style variant (toList prefix) (toList suffix)
 
-timestamp :: TimestampData -> OrgObjects
-timestamp = one . Timestamp
+timestamp :: TimestampData -> OrgObjectData
+timestamp = Timestamp
 
 -- | Plain inline code.
-code :: Text -> OrgObjects
-code = one . Code
+code :: Text -> OrgObjectData
+code = Code
 
 -- | Inline verbatim.
-verbatim :: Text -> OrgObjects
-verbatim = one . Verbatim
+verbatim :: Text -> OrgObjectData
+verbatim = Verbatim
 
-linebreak :: OrgObjects
-linebreak = one LineBreak
+linebreak :: OrgObjectData
+linebreak = LineBreak
 
-entity :: Text -> OrgObjects
-entity = one . Entity
+entity :: Text -> OrgObjectData
+entity = Entity
 
-fragment :: Text -> OrgObjects
-fragment = one . LaTeXFragment RawFragment
+fragment :: Text -> OrgObjectData
+fragment = LaTeXFragment RawFragment
 
-inlMath :: Text -> OrgObjects
-inlMath = one . LaTeXFragment InlMathFragment
+inlMath :: Text -> OrgObjectData
+inlMath = LaTeXFragment InlMathFragment
 
-dispMath :: Text -> OrgObjects
-dispMath = one . LaTeXFragment DispMathFragment
+dispMath :: Text -> OrgObjectData
+dispMath = LaTeXFragment DispMathFragment
 
-exportSnippet :: Text -> Text -> OrgObjects
-exportSnippet backend = one . ExportSnippet backend
+exportSnippet :: Text -> Text -> OrgObjectData
+exportSnippet = ExportSnippet
 
-inlBabel :: Text -> Text -> Text -> Text -> OrgObjects
-inlBabel name h1 h2 args = one $ InlBabelCall (BabelCall name h1 h2 args)
+inlBabel :: Text -> Text -> Text -> Text -> OrgObjectData
+inlBabel name h1 h2 args = InlBabelCall (BabelCall name h1 h2 args)
 
-macro :: Text -> [Text] -> OrgObjects
-macro = (one .) . Macro
+macro :: Text -> [Text] -> OrgObjectData
+macro = Macro
 
-inlSrc :: Text -> Text -> Text -> OrgObjects
-inlSrc name headers = one . Src name headers
+inlSrc :: Text -> Text -> Text -> OrgObjectData
+inlSrc = Src
 
-link :: LinkTarget -> OrgObjects -> OrgObjects
-link tgt = one . Link tgt . toList
+link :: LinkTarget -> OrgObjects -> OrgObjectData
+link tgt = Link tgt . toList
 
-uriLink :: Text -> Text -> OrgObjects -> OrgObjects
-uriLink protocol tgt = one . Link (URILink protocol tgt) . toList
+uriLink :: Text -> Text -> OrgObjects -> OrgObjectData
+uriLink protocol tgt = Link (URILink protocol tgt) . toList
 
-target :: Id -> Text -> OrgObjects
-target a = one . Target a
+target :: Text -> OrgObjectData
+target = Target
 
-footnoteLabel :: Text -> OrgObjects
-footnoteLabel = one . FootnoteRef . FootnoteRefLabel
+footnoteLabel :: Text -> OrgObjectData
+footnoteLabel = FootnoteRef . FootnoteRefLabel
 
-footnoteInlDef :: Maybe Text -> OrgObjects -> OrgObjects
-footnoteInlDef l = one . FootnoteRef . FootnoteRefDef l . toList
+footnoteInlDef :: Maybe Text -> OrgObjects -> OrgObjectData
+footnoteInlDef l = FootnoteRef . FootnoteRefDef l . toList
 
-statisticCookie :: Either (Int, Int) Int -> OrgObjects
-statisticCookie = one . StatisticCookie
+statisticCookie :: Either (Int, Int) Int -> OrgObjectData
+statisticCookie = StatisticCookie

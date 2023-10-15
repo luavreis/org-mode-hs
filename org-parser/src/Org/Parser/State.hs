@@ -40,26 +40,26 @@ defaultOrgOptions =
 
 -- | Org-mode parser state
 data OrgParserEnv = OrgParserEnv
-  { orgEnvOptions :: OrgOptions
-  , orgEnvIndentLevel :: Int
+  { options :: OrgOptions
+  , indentLevel :: Int
   }
 
 -- | Org-mode parser state
 newtype OrgParserState = OrgParserState
-  { orgStateLastChar :: Maybe Char
+  { lastChar :: Maybe Char
   }
 
 defaultState :: OrgParserState
 defaultState =
   OrgParserState
-    { orgStateLastChar = Nothing
+    { lastChar = Nothing
     }
 
 defaultEnv :: OrgParserEnv
 defaultEnv =
   OrgParserEnv
-    { orgEnvOptions = defaultOrgOptions
-    , orgEnvIndentLevel = 0
+    { options = defaultOrgOptions
+    , indentLevel = 0
     }
 
 aesonOptions :: Aeson.Options

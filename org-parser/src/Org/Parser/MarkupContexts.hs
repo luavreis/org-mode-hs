@@ -125,7 +125,7 @@ markupContext ::
 markupContext f elems = go
   where
     go = try $ do
-      let specials :: Set Char = fromList $ getMarks elems
+      let specials :: Set Char = fromList $ elems.marks
       str <-
         optional $
           takeWhile1P
@@ -138,7 +138,7 @@ markupContext f elems = go
       where
         finishSelf = eof $> mempty
         anotherEl = try $ do
-          el <- getParser elems
+          el <- elems.parser
           rest <- go
           pure $ el <> rest
         nextChar = try $ do

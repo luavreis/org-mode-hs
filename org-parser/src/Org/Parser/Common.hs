@@ -13,11 +13,11 @@ headingStart =
       <* char ' '
       <* skipSpaces
 
-parseTime :: OrgParser Time
+parseTime :: OrgParser OrgTime
 parseTime = do
   hour <- (number 2 <|> number 1) <* char ':'
   minute <- number 2
-  pure (hour, minute)
+  pure $ OrgTime hour minute
 
 -- | The same as 'string'', but cheaper (?)
 string'' :: MonadParser m => Text -> m Text
@@ -112,12 +112,12 @@ countSpaces tabWidth = T.foldr go 0
 
 spacesOrTabs :: OrgParser Int
 spacesOrTabs = do
-  tw <- getsO orgSrcTabWidth
+  tw <- getsO (.orgSrcTabWidth)
   countSpaces tw <$> skipSpaces
 
 spacesOrTabs1 :: OrgParser Int
 spacesOrTabs1 = do
-  tw <- getsO orgSrcTabWidth
+  tw <- getsO (.orgSrcTabWidth)
   countSpaces tw <$> skipSpaces1
 
 -- | Skips one or more spaces or tabs.
@@ -128,8 +128,9 @@ skipSpaces1 = takeWhile1P (Just "at least one space or tab whitespace") isSpaceO
 skipSpaces :: MonadParser m => m Text
 skipSpaces = takeWhileP (Just "spaces or tabs") isSpaceOrTab
 
--- | Makes sure a value is Just, else fail with a custom
--- error message.
+{- | Makes sure a value is Just, else fail with a custom
+error message.
+-}
 guardMaybe :: (MonadFail m, MonadParser m) => String -> Maybe a -> m a
 guardMaybe _ (Just x) = pure x
 guardMaybe err _ = fail err
@@ -145,8 +146,9 @@ anyLine =
     <* newline
 {-# INLINE anyLine #-}
 
--- | Parse the rest of line, returning the contents without the final newline or EOF.
--- Consumes no input at EOF!
+{- | Parse the rest of line, returning the contents without the final newline or EOF.
+Consumes no input at EOF!
+-}
 anyLine' :: MonadParser m => m (Tokens Text)
 anyLine' =
   takeWhileP (Just "rest of line") (/= '\n')
@@ -160,8 +162,9 @@ takeInput = takeWhileP Nothing (const True)
 blankline :: MonadParser m => m ()
 blankline = try $ hspace <* newline
 
--- | Parse a line with whitespace contents, line may end with EOF. CAUTION: this
--- function may consume NO INPUT! Be mindful of infinite loops!
+{- | Parse a line with whitespace contents, line may end with EOF. CAUTION: this
+function may consume NO INPUT! Be mindful of infinite loops!
+-}
 blankline' :: MonadParser m => m ()
 blankline' = try $ hspace <* newline'
 
@@ -169,8 +172,8 @@ parseFromText :: FullState -> Text -> OrgParser b -> OrgParser b
 parseFromText (prevPS, prevOS) txt parser = do
   (cPS, cOS) <- getFullState
   setFullState
-    ( prevPS {stateInput = txt},
-      -- NOTE: using cOS instead of prevOS
+    ( prevPS {stateInput = txt}
+    , -- NOTE: using cOS instead of prevOS
       -- is an implementation quirk. We
       -- don't want neither the changes of
       -- state done by the end parser in
@@ -188,21 +191,16 @@ parseFromText (prevPS, prevOS) txt parser = do
       -- order in which title keywords are
       -- concatenated) or must be handled
       -- manually like affiliated keywords.
-      cOS
-        { orgStateLastChar = orgStateLastChar prevOS
-        }
+      prevOS
     )
   result <- parser
-  (aPS, aOS) <- getFullState
+  aPS <- getParserState
   setFullState
     ( cPS
         { stateParseErrors =
             stateParseErrors cPS
               ++ stateParseErrors aPS
-        },
-      aOS
-        { orgStateLastChar =
-            orgStateLastChar cOS
         }
+    , cOS
     )
   pure result

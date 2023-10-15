@@ -47,13 +47,20 @@ common common-options
 
   ghc-options:        -Wall
   default-extensions:
+    NoFieldSelectors
     BlockArguments
     ConstraintKinds
+    DeriveAnyClass
+    DeriveDataTypeable
     DeriveGeneric
+    DerivingStrategies
+    DuplicateRecordFields
     FlexibleContexts
     ImportQualifiedPost
     LambdaCase
     MultiWayIf
+    OverloadedLabels
+    OverloadedRecordDot
     OverloadedStrings
     ScopedTypeVariables
     TupleSections
@@ -71,6 +78,9 @@ library
     Org.Parser.Elements
     Org.Parser.Objects
     Org.Types
+    Org.Types.Elements
+    Org.Types.Objects
+    Org.Types.StandardProperties
     Org.Walk
 
   other-modules:

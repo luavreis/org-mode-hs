@@ -59,6 +59,7 @@ instance MultiTag MWTag where
        , ListItem
        , -- Object stuff
          OrgObject
+       , OrgObjectData
        , Citation
        ]
 
@@ -109,6 +110,13 @@ instance MultiSub MWTag OrgSection where
 instance MultiSub MWTag OrgObject where
   type
     SubTypes MWTag OrgObject =
+      'SpecList
+        '[ ToSpec OrgObjectData
+         ]
+
+instance MultiSub MWTag OrgObjectData where
+  type
+    SubTypes MWTag OrgObjectData =
       'SpecList
         '[ ToSpec (List OrgObject)
          , ToSpec (Under FootnoteRefData 'NoSel (List OrgElement))
