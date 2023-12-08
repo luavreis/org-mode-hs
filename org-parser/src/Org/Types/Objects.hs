@@ -11,7 +11,7 @@ newtype OrgObject = OrgObject {objectData :: OrgObjectData OrgObject}
   deriving anyclass (NFData)
 
 -- | Objects (inline elements).
-data OrgObjectPosed = OrgObjectPosed {objectPos :: Pos, objectData :: OrgObjectData OrgObjectPosed}
+data OrgObjectWPos = OrgObjectWPos {objectPos :: Pos, objectData :: OrgObjectData OrgObjectWPos}
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 

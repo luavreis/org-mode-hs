@@ -9,11 +9,11 @@ import Org.Types.Objects (OrgObject, OrgTime, TimestampData)
 -- * Elements
 
 -- | Org element. Like a Pandoc Block.
-data OrgElement = OrgElement {affiliatedKeywords :: Keywords, elementData :: OrgElementData}
+data OrgElement = OrgElement {affiliatedKeywords :: Keywords OrgObject, elementData :: OrgElementData OrgObject OrgElement}
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
-data OrgElementData
+data OrgElementData o e
   = -- | Clock
     Clock
       TimestampData
@@ -24,21 +24,21 @@ data OrgElementData
     GreaterBlock
       { blkType :: GreaterBlockType
       -- ^ Greater block type
-      , blkElements :: [OrgElement]
+      , blkElements :: [e]
       -- ^ Greater block elements
       }
   | -- | Drawer
     Drawer
       { drawerName :: Text
       -- ^ Drawer name
-      , drawerElements :: [OrgElement]
+      , drawerElements :: [e]
       -- ^ Drawer elements
       }
   | -- | Plain list
     PlainList
       { listType :: ListType
       -- ^ List types
-      , listItems :: [ListItem]
+      , listItems :: [ListItem o e]
       -- ^ List items
       }
   | -- | Export block
@@ -64,23 +64,23 @@ data OrgElementData
       , srcBlkLines :: [SrcLine]
       -- ^ Contents
       }
-  | VerseBlock [[OrgObject]]
+  | VerseBlock [[o]]
   | HorizontalRule
   | Keyword
       { keywordKey :: Text
-      , keywordValue :: KeywordValue
+      , keywordValue :: KeywordValue o
       }
   | LaTeXEnvironment
       Text
       -- ^ Environment name
       Text
       -- ^ Environment contents
-  | Paragraph [OrgObject]
-  | Table [TableRow]
+  | Paragraph [o]
+  | Table [TableRow o]
   | FootnoteDef
       Text
       -- ^ Footnote name
-      [OrgElement]
+      [e]
       -- ^ Footnote content
   | Comment
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -109,37 +109,37 @@ srcLineMap f (RefLine i c) = RefLine i (f c)
 
 -- Keywords
 
-data KeywordValue
+data KeywordValue o
   = ValueKeyword Text
-  | ParsedKeyword [OrgObject]
+  | ParsedKeyword [o]
   | BackendKeyword [(Text, Text)]
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
-instance Semigroup KeywordValue where
+instance Semigroup (KeywordValue o) where
   (ValueKeyword t1) <> (ValueKeyword t2) = ValueKeyword (t1 <> "\n" <> t2)
   (ParsedKeyword t1) <> (ParsedKeyword t2) = ParsedKeyword (t1 <> t2)
   (BackendKeyword b1) <> (BackendKeyword b2) = BackendKeyword (b1 <> b2)
   _ <> x = x
 
-type Keywords = Map Text KeywordValue
+type Keywords o = Map Text (KeywordValue o)
 
-lookupValueKeyword :: Text -> Keywords -> Text
+lookupValueKeyword :: Text -> Keywords o -> Text
 lookupValueKeyword key kws = fromMaybe mempty do
   ValueKeyword x <- M.lookup key kws
   return x
 
-lookupParsedKeyword :: Text -> Keywords -> [OrgObject]
+lookupParsedKeyword :: Text -> Keywords o -> [o]
 lookupParsedKeyword key kws = fromMaybe mempty do
   ParsedKeyword x <- M.lookup key kws
   return x
 
-lookupBackendKeyword :: Text -> Keywords -> [(Text, Text)]
+lookupBackendKeyword :: Text -> Keywords o -> [(Text, Text)]
 lookupBackendKeyword key kws = fromMaybe mempty do
   BackendKeyword x <- M.lookup key kws
   return x
 
-keywordsFromList :: [(Text, KeywordValue)] -> Keywords
+keywordsFromList :: [(Text, KeywordValue o)] -> Keywords o
 keywordsFromList = M.fromListWith (flip (<>))
 
 -- Greater Blocks
@@ -165,7 +165,7 @@ orderedStyle _ = OrderedAlpha
 {- | One item of a list. Parameters are bullet, counter cookie, checkbox and
 tag.
 -}
-data ListItem = ListItem Bullet (Maybe Int) (Maybe Checkbox) [OrgObject] [OrgElement]
+data ListItem o e = ListItem Bullet (Maybe Int) (Maybe Checkbox) [o] [e]
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
@@ -177,21 +177,21 @@ data Checkbox = BoolBox Bool | PartialBox
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
-listItemType :: ListItem -> ListType
+listItemType :: ListItem o e -> ListType
 listItemType (ListItem (Counter t _) _ _ _ _) = Ordered (orderedStyle t)
 listItemType (ListItem (Bullet _) _ _ (_ : _) _) = Descriptive
 listItemType (ListItem (Bullet c) _ _ _ _) = Unordered c
 
 -- Tables
 
-data TableRow
-  = StandardRow [TableCell]
+data TableRow o
+  = StandardRow [TableCell o]
   | ColumnPropsRow [Maybe ColumnAlignment]
   | RuleRow
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
-type TableCell = [OrgObject]
+type TableCell o = [o]
 
 data ColumnAlignment = AlignLeft | AlignCenter | AlignRight
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
