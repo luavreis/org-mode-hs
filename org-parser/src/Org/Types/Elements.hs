@@ -4,34 +4,51 @@ import Data.Char (isDigit)
 import Data.Data (Data)
 import Data.Map qualified as M
 import Data.Text qualified as T
-import Org.Types.Objects (OrgObject, OrgTime, TimestampData)
+import Org.Types.Objects (OrgObject, OrgObjectWPos, OrgTime, TimestampData)
+import Org.Types.StandardProperties (Pos)
 
 -- * Elements
 
 -- | Org element. Like a Pandoc Block.
-data OrgElement = OrgElement {affiliatedKeywords :: Keywords OrgObject, elementData :: OrgElementData OrgObject OrgElement}
+data OrgElement = OrgElement
+  { affKeywords :: Keywords [OrgObject]
+  , element :: OrgElementData [OrgObject] [OrgElement]
+  }
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
+
+type OrgElementD =  OrgElementData OrgObject OrgElement
+
+-- | Org element. Like a Pandoc Block.
+data OrgElementWPos = OrgElementWPos
+  { pos :: Pos
+  , affKeywords :: Keywords [OrgObjectWPos]
+  , element :: OrgElementData [OrgObjectWPos] [OrgElementWPos]
+  }
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
+
+type OrgElementWPosD =  OrgElementData OrgObjectWPos OrgElementWPos
 
 data OrgElementData o e
   = -- | Clock
     Clock
+      -- | Clock timestamp
       TimestampData
-      -- ^ Clock timestamp
+      -- | Duration
       (Maybe OrgTime)
-      -- ^ Duration
   | -- | Greater block
     GreaterBlock
       { blkType :: GreaterBlockType
       -- ^ Greater block type
-      , blkElements :: [e]
+      , blkElements :: e
       -- ^ Greater block elements
       }
   | -- | Drawer
     Drawer
       { drawerName :: Text
       -- ^ Drawer name
-      , drawerElements :: [e]
+      , drawerElements :: e
       -- ^ Drawer elements
       }
   | -- | Plain list
@@ -43,16 +60,16 @@ data OrgElementData o e
       }
   | -- | Export block
     ExportBlock
+      -- | Format
       Text
-      -- ^ Format
+      -- | Contents
       Text
-      -- ^ Contents
   | -- | Example block
     ExampleBlock
+      -- | Switches
       (Map Text Text)
-      -- ^ Switches
+      -- | Contents
       [SrcLine]
-      -- ^ Contents
   | -- | Source blocks
     SrcBlock
       { srcBlkLang :: Text
@@ -64,24 +81,24 @@ data OrgElementData o e
       , srcBlkLines :: [SrcLine]
       -- ^ Contents
       }
-  | VerseBlock [[o]]
+  | VerseBlock [o]
   | HorizontalRule
   | Keyword
       { keywordKey :: Text
       , keywordValue :: KeywordValue o
       }
   | LaTeXEnvironment
+      -- | Environment name
       Text
-      -- ^ Environment name
+      -- | Environment contents
       Text
-      -- ^ Environment contents
-  | Paragraph [o]
+  | Paragraph o
   | Table [TableRow o]
   | FootnoteDef
+      -- | Footnote name
       Text
-      -- ^ Footnote name
-      [e]
-      -- ^ Footnote content
+      -- | Footnote content
+      e
   | Comment
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
@@ -89,10 +106,10 @@ data OrgElementData o e
 data SrcLine
   = SrcLine Text
   | RefLine
+      -- | Reference name (how it appears)
       Text
-      -- ^ Reference name (how it appears)
+      -- | Line contents
       Text
-      -- ^ Line contents
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
@@ -111,12 +128,12 @@ srcLineMap f (RefLine i c) = RefLine i (f c)
 
 data KeywordValue o
   = ValueKeyword Text
-  | ParsedKeyword [o]
+  | ParsedKeyword o
   | BackendKeyword [(Text, Text)]
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
-instance Semigroup (KeywordValue o) where
+instance Semigroup o => Semigroup (KeywordValue o) where
   (ValueKeyword t1) <> (ValueKeyword t2) = ValueKeyword (t1 <> "\n" <> t2)
   (ParsedKeyword t1) <> (ParsedKeyword t2) = ParsedKeyword (t1 <> t2)
   (BackendKeyword b1) <> (BackendKeyword b2) = BackendKeyword (b1 <> b2)
@@ -129,7 +146,7 @@ lookupValueKeyword key kws = fromMaybe mempty do
   ValueKeyword x <- M.lookup key kws
   return x
 
-lookupParsedKeyword :: Text -> Keywords o -> [o]
+lookupParsedKeyword :: Monoid o => Text -> Keywords o -> o
 lookupParsedKeyword key kws = fromMaybe mempty do
   ParsedKeyword x <- M.lookup key kws
   return x
@@ -139,7 +156,7 @@ lookupBackendKeyword key kws = fromMaybe mempty do
   BackendKeyword x <- M.lookup key kws
   return x
 
-keywordsFromList :: [(Text, KeywordValue o)] -> Keywords o
+keywordsFromList :: Semigroup o => [(Text, KeywordValue o)] -> Keywords o
 keywordsFromList = M.fromListWith (flip (<>))
 
 -- Greater Blocks
@@ -165,7 +182,7 @@ orderedStyle _ = OrderedAlpha
 {- | One item of a list. Parameters are bullet, counter cookie, checkbox and
 tag.
 -}
-data ListItem o e = ListItem Bullet (Maybe Int) (Maybe Checkbox) [o] [e]
+data ListItem o e = ListItem Bullet (Maybe Int) (Maybe Checkbox) (Maybe o) e
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
@@ -179,19 +196,17 @@ data Checkbox = BoolBox Bool | PartialBox
 
 listItemType :: ListItem o e -> ListType
 listItemType (ListItem (Counter t _) _ _ _ _) = Ordered (orderedStyle t)
-listItemType (ListItem (Bullet _) _ _ (_ : _) _) = Descriptive
+listItemType (ListItem Bullet {} _ _ Just {} _) = Descriptive
 listItemType (ListItem (Bullet c) _ _ _ _) = Unordered c
 
 -- Tables
 
 data TableRow o
-  = StandardRow [TableCell o]
+  = StandardRow [o]
   | ColumnPropsRow [Maybe ColumnAlignment]
   | RuleRow
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
-
-type TableCell o = [o]
 
 data ColumnAlignment = AlignLeft | AlignCenter | AlignRight
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)

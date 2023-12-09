@@ -6,12 +6,15 @@ import Org.Types.StandardProperties (Pos)
 -- * Objects (inline elements)
 
 -- | Objects (inline elements).
-newtype OrgObject = OrgObject {objectData :: OrgObjectData OrgObject}
+newtype OrgObject = OrgObject {object :: OrgObjectData OrgObject}
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
 -- | Objects (inline elements).
-data OrgObjectWPos = OrgObjectWPos {objectPos :: Pos, objectData :: OrgObjectData OrgObjectWPos}
+data OrgObjectWPos = OrgObjectWPos
+  { pos :: Pos
+  , object :: OrgObjectData OrgObjectWPos
+  }
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
@@ -31,42 +34,42 @@ data OrgObjectData o
   | Timestamp TimestampData
   | -- | Entity (e.g. @\\alpha{}@)
     Entity
+      -- | Name (e.g. @alpha@)
       Text
-      -- ^ Name (e.g. @alpha@)
   | LaTeXFragment FragmentType Text
   | -- | Inline export snippet (e.g. @\@\@html:\<br/\>\@\@@)
     ExportSnippet
+      -- | Back-end (e.g. @html@)
       Text
-      -- ^ Back-end (e.g. @html@)
+      -- | Value (e.g. @\<br/\>@)
       Text
-      -- ^ Value (e.g. @\<br/\>@)
   | -- | Footnote reference.
     FootnoteRef (FootnoteRefData o)
   | Cite (Citation o)
   | InlBabelCall BabelCall
   | -- | Inline source (e.g. @src_html[:foo bar]{\<br/\>}@)
     Src
+      -- | Language (e.g. @html@)
       Text
-      -- ^ Language (e.g. @html@)
+      -- | Parameters (e.g. @:foo bar@)
       Text
-      -- ^ Parameters (e.g. @:foo bar@)
+      -- | Value (e.g. @\<br/\>@)
       Text
-      -- ^ Value (e.g. @\<br/\>@)
   | Link LinkTarget [o]
   | -- | Inline target (e.g. @\<\<\<foo\>\>\>@)
     Target
+      -- | Name
       Text
-      -- ^ Name
   | -- | Org inline macro (e.g. @{{{poem(red,blue)}}}@)
     Macro
+      -- | Macro name (e.g. @"poem"@)
       Text
-      -- ^ Macro name (e.g. @"poem"@)
+      -- | Arguments (e.g. @["red", "blue"]@)
       [Text]
-      -- ^ Arguments (e.g. @["red", "blue"]@)
   | -- | Statistic cookies.
     StatisticCookie
+      -- | Either @[num1/num2]@ or @[percent%]@.
       (Either (Int, Int) Int)
-      -- ^ Either @[num1/num2]@ or @[percent%]@.
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
@@ -74,14 +77,14 @@ data OrgObjectData o
 data FootnoteRefData o
   = -- | Label-only footnote reference (e.g. @[fn:foo]@)
     FootnoteRefLabel
+      -- | Label (e.g. @foo@)
       Text
-      -- ^ Label (e.g. @foo@)
   | -- | Inline footnote definition (e.g. @[fn:foo::bar]@)
     FootnoteRefDef
+      -- | Label (if present, e.g. @foo@)
       (Maybe Text)
-      -- ^ Label (if present, e.g. @foo@)
+      -- | Content (e.g. @bar@)
       [o]
-      -- ^ Content (e.g. @bar@)
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
@@ -118,8 +121,8 @@ data FragmentType
 data Citation o = Citation
   { style :: Text
   , variant :: Text
-  , prefix :: [o]
-  , suffix :: [o]
+  , prefix :: o
+  , suffix :: o
   , references :: [CiteReference o]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
@@ -127,8 +130,8 @@ data Citation o = Citation
 
 data CiteReference o = CiteReference
   { id :: Text
-  , prefix :: [o]
-  , suffix :: [o]
+  , prefix :: o
+  , suffix :: o
   }
   deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
   deriving anyclass (NFData)
@@ -162,4 +165,3 @@ data BabelCall = BabelCall
   }
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
-

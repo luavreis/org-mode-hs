@@ -6,34 +6,24 @@
 
 module Org.Types
   ( -- * Document
-    OrgDocument (..)
+    OrgDocumentData (..)
   , Properties
 
-    -- ** Helpers
-  , lookupProperty
-
     -- * Sections
-  , OrgSection (..)
+  , OrgSection
+  , OrgSectionWPos
+  , OrgSectionData (..)
   , TodoKeyword (..)
   , TodoState (..)
   , Tag
   , Priority (..)
   , PlanningInfo (..)
 
-    -- ** Helpers
-  , lookupSectionProperty
-
-    -- * OrgContent
-  , OrgContent
-  , documentContent
-  , mapContentM
-  , mapContent
-  , sectionContent
-  , mapSectionContentM
-  , mapSectionContent
-
     -- * Elements
   , OrgElement (..)
+  , OrgElementD
+  , OrgElementWPos (..)
+  , OrgElementWPosD
   , OrgElementData (..)
 
     -- ** Greater blocks
@@ -64,11 +54,11 @@ module Org.Types
 
     -- ** Tables
   , TableRow (..)
-  , TableCell
   , ColumnAlignment (..)
 
     -- * Objects
   , OrgObject (..)
+  , OrgObjectWPos (..)
   , OrgObjectData (..)
 
     -- ** Links
@@ -98,71 +88,58 @@ module Org.Types
 
     -- * Babel
   , BabelCall (..)
+  , module Org.Types.StandardProperties
   ) where
 
 import Data.Aeson
 import Data.Aeson.Encoding (text)
 import Data.Char (toLower)
 import Data.Data (Data)
-import Data.Map qualified as M
 import Org.Types.Elements
 import Org.Types.Objects
+import Org.Types.StandardProperties
 
 -- * Document, Sections and Headings
 
-data OrgDocument = OrgDocument
-  { properties :: Properties
-  , children :: [OrgElement]
-  , sections :: [OrgSection]
-  }
-  deriving (Eq, Ord, Read, Show, Generic)
+newtype OrgDocument = OrgDocument (OrgDocumentData OrgElement OrgSection)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
 
-lookupProperty :: Text -> OrgDocument -> Maybe Text
-lookupProperty k = M.lookup k . (.properties)
+newtype OrgDocumentWPos = OrgDocumentWPos (OrgDocumentData OrgElementWPos OrgSectionWPos)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
 
-data OrgSection = OrgSection
+data OrgDocumentData e s = OrgDocumentData
+  { properties :: Properties
+  , children :: [e]
+  , sections :: [s]
+  }
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
+
+newtype OrgSection = OrgSection (OrgSectionData OrgObject OrgElement OrgSection)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
+
+newtype OrgSectionWPos = OrgSectionWPos (OrgSectionData OrgObjectWPos OrgElementWPos OrgSectionWPos)
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving anyclass (NFData)
+
+data OrgSectionData o e s = OrgSectionData
   { level :: Int
   , properties :: Properties
   , todo :: Maybe TodoKeyword
   , comment :: Bool
   , priority :: Maybe Priority
-  , title :: [OrgObject]
+  , title :: [o]
   , rawTitle :: Text
   , tags :: [Tag]
   , planning :: PlanningInfo
-  , children :: [OrgElement]
-  , subsections :: [OrgSection]
+  , children :: [e]
+  , subsections :: [s]
   }
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
   deriving anyclass (NFData)
-
-lookupSectionProperty :: Text -> OrgSection -> Maybe Text
-lookupSectionProperty k = M.lookup k . (.properties)
-
-type OrgContent = ([OrgElement], [OrgSection])
-
-documentContent :: OrgDocument -> OrgContent
-documentContent doc = (doc.children, doc.sections)
-
-mapContentM :: Monad m => (OrgContent -> m OrgContent) -> OrgDocument -> m OrgDocument
-mapContentM f d = do
-  (c', s') <- f (documentContent d)
-  pure $ d {children = c', sections = s'}
-
-mapContent :: (OrgContent -> OrgContent) -> OrgDocument -> OrgDocument
-mapContent f = runIdentity . mapContentM (Identity . f)
-
-sectionContent :: OrgSection -> OrgContent
-sectionContent sec = (sec.children, sec.subsections)
-
-mapSectionContentM :: Monad m => (OrgContent -> m OrgContent) -> OrgSection -> m OrgSection
-mapSectionContentM f d = do
-  (c', s') <- f (sectionContent d)
-  pure $ d {children = c', subsections = s'}
-
-mapSectionContent :: (OrgContent -> OrgContent) -> OrgSection -> OrgSection
-mapSectionContent f = runIdentity . mapSectionContentM (Identity . f)
 
 type Tag = Text
 
