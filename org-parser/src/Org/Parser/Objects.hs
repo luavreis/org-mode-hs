@@ -47,7 +47,6 @@ where
 
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Org.Builder qualified as B
 import Org.Data.Entities (defaultEntitiesNames)
 import Org.Parser.Common
 import Org.Parser.Definitions
@@ -100,7 +99,7 @@ standardSet =
 @
 -}
 plainMarkupContext :: Marked OrgParser OrgObjects -> OrgParser OrgObjects
-plainMarkupContext = markupContext B.plain
+plainMarkupContext = markupContext Plain
 
 newlineAndClear :: OrgParser Char
 newlineAndClear = newline <* clearLastChar
@@ -113,7 +112,7 @@ emphPreChar c = isSpace c || c `Set.member` emphasisPreChars
 
 emphasisPre :: Char -> OrgParser ()
 emphasisPre s = try $ do
-  lchar <- gets orgStateLastChar
+  lchar <- gets (.lastChar)
   for_ lchar $ guard . emphPreChar
   _ <- char s
   notFollowedBy spaceChar
@@ -126,7 +125,7 @@ emphPostChar c = isSpace c || c `Set.member` emphasisPostChars
 
 emphasisPost :: Char -> OrgParser ()
 emphasisPost e = try $ do
-  lchar <- gets orgStateLastChar
+  lchar <- gets (.lastChar)
   for_ lchar $ guard . not . isSpace
   _ <- char e
   putLastChar e
@@ -142,8 +141,9 @@ markup ::
   (OrgObjects -> OrgObjects) ->
   Char ->
   Marked OrgParser OrgObjects
-markup f c = Marked [c] $
-  try $ do
+markup f c = Marked [c]
+  $ try
+  $ do
     emphasisPre c
     st <- getFullState
     s <- anySingle
@@ -154,8 +154,9 @@ rawMarkup ::
   (Text -> OrgObjects) ->
   Char ->
   Marked OrgParser OrgObjects
-rawMarkup f d = Marked [d] $
-  try $ do
+rawMarkup f d = Marked [d]
+  $ try
+  $ do
     emphasisPre d
     f . fst <$> skipManyTill' (emphasisSkip d) (emphasisPost d)
 
@@ -194,11 +195,11 @@ doubleQuoted = markup B.doubleQuoted '"'
 -- | An endline character that can be treated as a space, not a line break.
 endline :: Marked OrgParser OrgObjects
 endline =
-  Marked "\n" $
-    try $
-      newlineAndClear
-        *> hspace
-        $> B.plain "\n"
+  Marked "\n"
+    $ try
+    $ newlineAndClear
+    *> hspace
+    $> B.object (B.plain "\n")
 
 -- * Entities and LaTeX fragments
 
@@ -208,7 +209,7 @@ entity = Marked "\\" $ try $ do
   _ <- char '\\'
   name <- choice (map string defaultEntitiesNames)
   void (string "{}") <|> notFollowedBy asciiAlpha
-  pure $ B.entity name
+  pure $ B.object $ B.entity name
 
 -- | Parse a LaTeX fragment object.
 latexFragment :: Marked OrgParser OrgObjects
@@ -218,24 +219,27 @@ latexFragment = Marked "\\" $ try do
   where
     mathFragment = try do
       inline <-
-        char '(' $> True
-          <|> char '[' $> False
+        char '('
+          $> True
+          <|> char '['
+          $> False
       (str, _) <-
         findSkipping
           (/= '\\')
           (try $ char '\\' *> char if inline then ')' else ']')
-      pure $
-        if inline
+      pure
+        $ B.object
+        $ if inline
           then B.inlMath str
           else B.dispMath str
 
-    rawFragment :: MonadParser m => m OrgObjects
+    rawFragment :: (MonadParser m) => m OrgObjects
     rawFragment = try $ do
       name <- someAsciiAlpha
       text <- (name <>) <$> option "" brackets
-      pure $ B.fragment ("\\" <> text)
+      pure $ B.object $ B.fragment ("\\" <> text)
 
-    brackets :: MonadParser m => m Text
+    brackets :: (MonadParser m) => m Text
     brackets = try $ do
       open <- satisfy (\c -> c == '{' || c == '[')
       let close = if open == '{' then '}' else ']'
@@ -253,21 +257,22 @@ texMathFragment = Marked "$" $ try $ display <|> inline
         findSkipping
           (/= '$')
           (string "$$")
-      pure $ B.dispMath str
+      pure $ B.object $ B.dispMath str
 
     post = do
       _ <- char '$'
       eof
-        <|> ( void . lookAhead $
-                satisfy (\x -> isPunctuation x || isSpace x || x == '"')
+        <|> ( void
+                . lookAhead
+                $ satisfy (\x -> isPunctuation x || isSpace x || x == '"')
             )
 
     inline = try $ do
-      lchar <- gets orgStateLastChar
+      lchar <- gets (.lastChar)
       for_ lchar $ guard . (/= '$')
       _ <- char '$'
       str <- singleChar <|> moreChars
-      pure $ B.inlMath str
+      pure $ B.object $ B.inlMath str
 
     moreChars = try $ do
       str <- takeWhile1P (Just "inside of inline math") (/= '$')
@@ -290,15 +295,18 @@ texMathFragment = Marked "$" $ try $ display <|> inline
 
 -- | Parse an export snippet object.
 exportSnippet :: Marked OrgParser OrgObjects
-exportSnippet = Marked "@" $
-  try $ do
+exportSnippet = Marked "@"
+  $ try
+  $ do
     _ <- string "@@"
     backend <-
       takeWhile1P
         (Just "export snippet backend")
         (\c -> isAsciiAlpha c || isDigit c || c == '-')
     _ <- char ':'
-    B.exportSnippet backend . fst
+    B.object
+      . B.exportSnippet backend
+      . fst
       <$> findSkipping (/= '@') (string "@@")
 
 -- * Citations
@@ -308,11 +316,13 @@ exportSnippet = Marked "@" $
 -- | Parse a citation object.
 citation :: Marked OrgParser OrgObjects
 citation =
-  Marked "[" $
-    B.citation <$> withBalancedContext '[' ']' (const True) orgCite
+  Marked "["
+    $ B.object
+    . B.citation
+    <$> withBalancedContext '[' ']' (const True) orgCite
 
 -- | A citation in org-cite style
-orgCite :: OrgParser Citation
+orgCite :: OrgParser (Citation OrgObjects)
 orgCite = try $ do
   _ <- string "cite"
   (style, variant) <- citeStyle
@@ -325,11 +335,11 @@ orgCite = try $ do
   eof
   return
     Citation
-      { citationStyle = style
-      , citationVariant = variant
-      , citationPrefix = toList globalPrefix
-      , citationSuffix = toList globalSuffix
-      , citationReferences = items
+      { style = style
+      , variant = variant
+      , prefix = toList globalPrefix
+      , suffix = toList globalSuffix
+      , references = items
       }
 
 citeStyle :: OrgParser (Tokens Text, Tokens Text)
@@ -349,21 +359,21 @@ citeStyle = do
           (Just "alphaNum, '_', '-' or '/' characters")
           (\c -> isAlphaNum c || c == '_' || c == '-' || c == '/')
 
-citeItems :: OrgParser [CiteReference]
+citeItems :: OrgParser [CiteReference OrgObjects]
 citeItems = citeItem `sepBy1'` char ';'
   where
     sepBy1' p sep = (:) <$> p <*> many (try $ sep >> p)
 
-citeItem :: OrgParser CiteReference
+citeItem :: OrgParser (CiteReference OrgObjects)
 citeItem = do
   pref <- option mempty citePrefix
   itemKey <- orgCiteKey
   suff <- option mempty citeSuffix
   return
     CiteReference
-      { refId = itemKey
-      , refPrefix = toList pref
-      , refSuffix = toList suff
+      { id = itemKey
+      , prefix = toList pref
+      , suffix = toList suff
       }
 
 citePrefix :: OrgParser OrgObjects
@@ -404,7 +414,7 @@ inlBabel = Marked "c" . try $ do
   header1 <- option "" header
   args <- arguments
   header2 <- option "" header
-  return $ B.inlBabel name header1 header2 args
+  return $ B.object $ B.inlBabel name header1 header2 args
   where
     header = withBalancedContext '[' ']' (/= '\n') getInput
     arguments = withBalancedContext '(' ')' (/= '\n') getInput
@@ -420,7 +430,7 @@ inlSrc = Marked "s" . try $ do
       (Just "babel call name")
       (\c -> not (isSpace c) && c /= '{' && c /= '[')
   headers <- option "" header
-  B.inlSrc name headers <$> body
+  B.object . B.inlSrc name headers <$> body
   where
     header = withBalancedContext '[' ']' (/= '\n') getInput
     body = withBalancedContext '{' '}' (/= '\n') getInput
@@ -430,8 +440,12 @@ inlSrc = Marked "s" . try $ do
 -- | Parse a linebreak object.
 linebreak :: Marked OrgParser OrgObjects
 linebreak =
-  Marked "\\" . try $
-    B.linebreak <$ string "\\\\" <* blankline' <* clearLastChar
+  Marked "\\"
+    . try
+    $ B.object B.linebreak
+    <$ string "\\\\"
+    <* blankline'
+    <* clearLastChar
 
 -- * Links
 
@@ -446,30 +460,38 @@ angleLink = Marked "<" . try $ do
       takeWhile1P
         (Just "angle link target")
         (\c -> c /= '\n' && c /= '>')
-    char '>' $> partial
-      <|> newline *> hspace *> ((T.stripEnd partial <>) <$> search)
-  return $ B.uriLink protocol tgt (B.plain $ protocol <> ":" <> tgt)
+    char '>'
+      $> partial
+      <|> newline
+      *> hspace
+      *> ((T.stripEnd partial <>) <$> search)
+  return $ B.object $ B.uriLink protocol tgt (B.object $ B.plain $ protocol <> ":" <> tgt)
 
 -- | Parse a regular link object.
 regularLink :: Marked OrgParser OrgObjects
 regularLink =
-  Marked "[" . try $
-    do
+  Marked "["
+    . try
+    $ do
       _ <- string "[["
       str <- linkTarget
       descr <- linkDescr <|> char ']' $> mempty
       putLastChar ']'
-      return $ B.link (linkToTarget str) descr
+      return $ B.object $ B.link (linkToTarget str) descr
   where
-    linkTarget :: MonadParser m => m Text
+    linkTarget :: (MonadParser m) => m Text
     linkTarget = fix $ \rest -> do
       partial <-
         takeWhileP
           (Just "link target")
           (\c -> c /= ']' && c /= '[' && c /= '\\' && c /= '\n')
-      oneOf ['[', ']'] $> partial
-        <|> char '\\' *> liftA2 T.cons (option '\\' $ oneOf ['[', ']']) rest
-        <|> newline *> hspace *> ((T.stripEnd partial `T.snoc` ' ' <>) <$> rest)
+      oneOf ['[', ']']
+        $> partial
+        <|> char '\\'
+        *> liftA2 T.cons (option '\\' $ oneOf ['[', ']']) rest
+        <|> newline
+        *> hspace
+        *> ((T.stripEnd partial `T.snoc` ' ' <>) <$> rest)
 
     linkDescr :: OrgParser OrgObjects
     linkDescr = try $ do
@@ -502,41 +524,41 @@ target = Marked "<" $ try do
   guard (not (isSpace $ T.head str))
   guard (not (isSpace $ T.last str))
   _ <- string ">>"
-  return $ B.target "" str
+  return $ B.object $ B.target str
 
 -- * Subscripts and superscripts
 
 -- | Parse a subscript or a superscript object.
 suscript :: Marked OrgParser OrgObjects
 suscript = Marked "_^" $ try do
-  lchar <- gets orgStateLastChar
+  lchar <- gets (.lastChar)
   for_ lchar $ guard . not . isSpace
   start <- satisfy \c -> c == '_' || c == '^'
   contents <- asterisk <|> balanced <|> plain
-  pure $
-    if start == '_'
-      then B.subscript contents
-      else B.superscript contents
+  pure
+    $ if start == '_'
+      then B.object $ B.subscript contents
+      else B.object $ B.superscript contents
   where
-    asterisk = B.plain . one <$> char '*'
+    asterisk = B.object . B.plain . one <$> char '*'
 
     balanced =
-      withBalancedContext '{' '}' (const True) $
-        plainMarkupContext minimalSet
+      withBalancedContext '{' '}' (const True)
+        $ plainMarkupContext minimalSet
 
-    sign = option mempty (B.plain . one <$> oneOf ['+', '-'])
+    sign = option mempty (B.object . B.plain . one <$> oneOf ['+', '-'])
 
     plain =
-      liftA2 (<>) sign $
-        withMContext (const True) isAlphaNum plainEnd $
-          plainMarkupContext (entity <> latexFragment)
+      liftA2 (<>) sign
+        $ withMContext (const True) isAlphaNum plainEnd
+        $ plainMarkupContext (entity <> latexFragment)
 
     plainEnd :: OrgParser ()
     plainEnd = try do
-      lookAhead $
-        eof
-          <|> try (some (oneOf [',', '.', '\\']) *> notFollowedBy (satisfy isAlphaNum))
-          <|> void (noneOf [',', '.', '\\'])
+      lookAhead
+        $ eof
+        <|> try (some (oneOf [',', '.', '\\']) *> notFollowedBy (satisfy isAlphaNum))
+        <|> void (noneOf [',', '.', '\\'])
 
 -- * Macros
 
@@ -551,7 +573,7 @@ macro = Marked "{" $ try do
       _ <- char '('
       t <- fst <$> findSkipping (/= ')') (string ")}}}")
       return $ T.split (== ',') t
-  return $ B.macro key args
+  return $ B.object $ B.macro key args
   where
     allowedKeyChar c = isAsciiAlpha c || isDigit c || c == '-' || c == '_'
 
@@ -559,12 +581,12 @@ macro = Marked "{" $ try do
 
 -- | Parse a footnote reference object.
 footnoteReference :: Marked OrgParser OrgObjects
-footnoteReference = Marked "[" $
-  withBalancedContext '[' ']' (const True) do
+footnoteReference = Marked "["
+  $ withBalancedContext '[' ']' (const True) do
     _ <- string "fn:"
     lbl <-
-      optional $
-        takeWhile1P
+      optional
+        $ takeWhile1P
           (Just "footnote ref label")
           (\c -> isAlphaNum c || c == '-' || c == '_')
     def <-
@@ -574,15 +596,15 @@ footnoteReference = Marked "[" $
     case (lbl, def) of
       (Nothing, Nothing) -> empty
       (Just lbl', Nothing) ->
-        return $ B.footnoteLabel lbl'
+        return $ B.object $ B.footnoteLabel lbl'
       (_, Just def') ->
-        return $ B.footnoteInlDef lbl def'
+        return $ B.object $ B.footnoteInlDef lbl def'
 
 -- * Timestamps
 
 -- | Parse a timestamp object.
 timestamp :: Marked OrgParser OrgObjects
-timestamp = Marked "<[" $ B.timestamp <$> parseTimestamp
+timestamp = Marked "<[" $ B.object . B.timestamp <$> parseTimestamp
 
 -- | Parse a timestamp.
 parseTimestamp :: OrgParser TimestampData
@@ -616,7 +638,7 @@ parseTimestamp = try $ do
       _ <- char (snd delims)
       pure (date, time, repeater, warning)
 
-    parseDate :: OrgParser Date
+    parseDate :: OrgParser OrgDate
     parseDate = do
       year <- number 4 <* char '-'
       month <- number 2 <* char '-'
@@ -624,7 +646,7 @@ parseTimestamp = try $ do
       dayName <- optional $ try do
         hspace1
         takeWhile1P (Just "dayname characters") isLetter
-      pure (year, month, day, dayName)
+      pure $ OrgDate year month day dayName
 
     repeaterMark = tsmark ["++", ".+", "+"]
 
@@ -643,7 +665,7 @@ statisticCookie = Marked "[" $ try do
   _ <- char '['
   res <- Left <$> fra <|> Right <$> pct
   _ <- char ']'
-  return $ B.statisticCookie res
+  return $ B.object $ B.statisticCookie res
   where
     fra = try $ liftA2 (,) integer (char '/' *> integer)
     pct = try $ integer <* char '%'

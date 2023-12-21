@@ -16,7 +16,7 @@ defBackend =
         where
           affAttrs :: [(Text, Text)]
           affAttrs = join $ mapMaybe getHtmlAttrs (Map.toList kws)
-          getHtmlAttrs ("html", BackendKeyword v) = Just v
+          getHtmlAttrs ("attr_html", BackendKeyword v) = Just v
           getHtmlAttrs ("name", ValueKeyword v) = Just [("id", v)]
           getHtmlAttrs _ = Nothing
       srcPretty _ _ _ = namespace pass

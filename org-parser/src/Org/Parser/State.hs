@@ -3,7 +3,8 @@
 module Org.Parser.State where
 
 import Data.Aeson qualified as Aeson
-import Org.Types
+import Org.Types.Aeson (aesonOptions)
+import Org.Types.Data.Section (TodoKeyword (..), TodoState (..))
 
 -- | Collection of todo markers in the order in which items should progress
 type TodoSequence = [TodoKeyword]
@@ -60,10 +61,4 @@ defaultEnv =
   OrgParserEnv
     { options = defaultOrgOptions
     , indentLevel = 0
-    }
-
-aesonOptions :: Aeson.Options
-aesonOptions =
-  Aeson.defaultOptions
-    { Aeson.fieldLabelModifier = Aeson.camelTo2 '-'
     }

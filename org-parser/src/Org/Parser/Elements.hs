@@ -24,7 +24,6 @@ module Org.Parser.Elements
   ) where
 
 import Data.Text qualified as T
-import Org.Builder qualified as B
 import Org.Parser.Common
 import Org.Parser.Definitions
 import Org.Parser.MarkupContexts

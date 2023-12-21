@@ -19,3 +19,8 @@ source-repository-package
   type: git
   location: https://github.com/lucasvreis/ondim.git
   tag: 6bbb553d1e75f1a2f45db915804292e80ce01396
+
+source-repository-package
+  type: git
+  location: https://github.com/lucasvreis/ix-cat.git
+  tag: 16d69a7187bdaf00cd0b12ffdadfd52f63608e30

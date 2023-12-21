@@ -5,8 +5,7 @@
 
 module Org.Parser.Definitions
   ( module Org.Parser.Definitions
-  , module Org.Types
-  , module Org.Builder
+  , module Org.Types.Variants.ParseInfo
   , module Org.Parser.State
   , module Text.Megaparsec
   , module Text.Megaparsec.Char
@@ -16,9 +15,8 @@ module Org.Parser.Definitions
 where
 
 import Data.Char (isAlphaNum, isAscii, isDigit, isLetter, isPunctuation, isSpace)
-import Org.Builder (OrgElements, OrgObjects)
 import Org.Parser.State
-import Org.Types
+import Org.Types.Variants.ParseInfo
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Debug
@@ -78,14 +76,14 @@ data Marked m a = Marked
   , parser :: m a
   }
 
-instance Functor m => Functor (Marked m) where
+instance (Functor m) => Functor (Marked m) where
   fmap f x@(Marked _ p) = x {parser = fmap f p}
 
-instance Alternative m => Semigroup (Marked m a) where
+instance (Alternative m) => Semigroup (Marked m a) where
   Marked s1 p1 <> Marked s2 p2 =
     Marked (s1 ++ s2) (p1 <|> p2)
 
-instance Alternative m => Monoid (Marked m a) where
+instance (Alternative m) => Monoid (Marked m a) where
   mempty = Marked [] empty
   mconcat ms =
     Marked

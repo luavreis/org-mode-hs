@@ -1,34 +1,51 @@
-module Org.Types.Objects where
+{-# LANGUAGE TemplateHaskell #-}
 
-import Data.Data (Data)
-import Org.Types.StandardProperties (Pos)
+module Org.Types.Data.Object
+  ( -- * Objects
+    OrgObjectData (..)
 
--- * Objects (inline elements)
+    -- ** Links
+  , LinkTarget (..)
+  , Protocol
+  , linkTargetToText
+
+    -- ** LaTeX fragments
+  , FragmentType (..)
+
+    -- ** Citations
+  , Citation (..)
+  , CiteReference (..)
+
+    -- ** Footnote references
+  , FootnoteRefData (..)
+
+    -- * Quotes
+  , QuoteType (..)
+
+    -- * Babel
+  , BabelCall (..)
+  ) where
+
+import Control.Category.Endofunctor (Endofunctor)
+import Control.Category.Natural (type (~>))
+import Data.Ix.Foldable (IFoldable)
+import Data.Ix.Instances
+import Data.Ix.Traversable (ITraversable)
+import Generics.Kind.TH
+import Org.Types.Data.Timestamp (TimestampData)
+import Org.Types.Ix
 
 -- | Objects (inline elements).
-newtype OrgObject = OrgObject {object :: OrgObjectData OrgObject}
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
-  deriving anyclass (NFData)
-
--- | Objects (inline elements).
-data OrgObjectWPos = OrgObjectWPos
-  { pos :: Pos
-  , object :: OrgObjectData OrgObjectWPos
-  }
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
-  deriving anyclass (NFData)
-
--- | Objects (inline elements).
-data OrgObjectData o
+data OrgObjectData k (_i :: OrgIx)
   = Plain Text
   | LineBreak
-  | Italic [o]
-  | Underline [o]
-  | Bold [o]
-  | Strikethrough [o]
-  | Superscript [o]
-  | Subscript [o]
-  | Quoted QuoteType [o]
+  | Italic (k ObjIx)
+  | Underline (k ObjIx)
+  | Bold (k ObjIx)
+  | Strikethrough (k ObjIx)
+  | Superscript (k ObjIx)
+  | Subscript (k ObjIx)
+  | Quoted QuoteType (k ObjIx)
   | Code Text
   | Verbatim Text
   | Timestamp TimestampData
@@ -44,8 +61,8 @@ data OrgObjectData o
       -- | Value (e.g. @\<br/\>@)
       Text
   | -- | Footnote reference.
-    FootnoteRef (FootnoteRefData o)
-  | Cite (Citation o)
+    FootnoteRef (FootnoteRefData (k ObjIx))
+  | Cite (Citation (k ObjIx))
   | InlBabelCall BabelCall
   | -- | Inline source (e.g. @src_html[:foo bar]{\<br/\>}@)
     Src
@@ -55,7 +72,7 @@ data OrgObjectData o
       Text
       -- | Value (e.g. @\<br/\>@)
       Text
-  | Link LinkTarget [o]
+  | Link LinkTarget (k ObjIx)
   | -- | Inline target (e.g. @\<\<\<foo\>\>\>@)
     Target
       -- | Name
@@ -70,8 +87,13 @@ data OrgObjectData o
     StatisticCookie
       -- | Either @[num1/num2]@ or @[percent%]@.
       (Either (Int, Int) Int)
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
-  deriving anyclass (NFData)
+  deriving (Typeable, Generic)
+
+deriving instance (Show (k ObjIx)) => Show (OrgObjectData k ix)
+deriving instance (Read (k ObjIx)) => Read (OrgObjectData k ix)
+deriving instance (Eq (k ObjIx)) => Eq (OrgObjectData k ix)
+deriving instance (Ord (k ObjIx)) => Ord (OrgObjectData k ix)
+deriving instance (NFData (k ObjIx)) => NFData (OrgObjectData k ix)
 
 -- | Data for a footnote reference.
 data FootnoteRefData o
@@ -84,12 +106,12 @@ data FootnoteRefData o
       -- | Label (if present, e.g. @foo@)
       (Maybe Text)
       -- | Content (e.g. @bar@)
-      [o]
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+      o
+  deriving (Show, Eq, Ord, Read, Typeable, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)
 
 data QuoteType = SingleQuote | DoubleQuote
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
   deriving anyclass (NFData)
 
 type Protocol = Text
@@ -103,7 +125,7 @@ extensibility. See also the documentation for 'Target'.
 data LinkTarget
   = URILink Protocol Text
   | UnresolvedLink Text
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Generic)
   deriving anyclass (NFData)
 
 linkTargetToText :: LinkTarget -> Text
@@ -115,7 +137,7 @@ data FragmentType
   = RawFragment
   | InlMathFragment
   | DispMathFragment
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Generic)
   deriving anyclass (NFData)
 
 data Citation o = Citation
@@ -125,7 +147,7 @@ data Citation o = Citation
   , suffix :: o
   , references :: [CiteReference o]
   }
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)
 
 data CiteReference o = CiteReference
@@ -133,35 +155,20 @@ data CiteReference o = CiteReference
   , prefix :: o
   , suffix :: o
   }
-  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+  deriving (Show, Eq, Ord, Read, Typeable, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)
 
-data OrgDate = OrgDate {year :: Int, month :: Int, day :: Int, weekday :: Maybe Text}
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
-  deriving anyclass (NFData)
-
-data OrgTime = OrgTime {hour :: Int, minute :: Int}
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
-  deriving anyclass (NFData)
-
-type TimestampMark = (Text, Int, Char)
-
-type OrgDateTime = (OrgDate, Maybe OrgTime, Maybe TimestampMark, Maybe TimestampMark)
-
--- | An Org timestamp, including repetition marks.
-data TimestampData
-  = TimestampData Bool OrgDateTime
-  | TimestampRange Bool OrgDateTime OrgDateTime
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
-  deriving anyclass (NFData)
-
--- Babel call
-
+-- | Babel call
 data BabelCall = BabelCall
   { name :: Text
   , header1 :: Text
   , header2 :: Text
   , arguments :: Text
   }
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+  deriving (Eq, Ord, Read, Show, Typeable, Generic)
   deriving anyclass (NFData)
+
+$(deriveGenericK ''OrgObjectData)
+deriving via (Generically OrgObjectData) instance (Endofunctor (~>) OrgObjectData)
+deriving via (Generically OrgObjectData) instance (IFoldable OrgObjectData)
+deriving via (Generically OrgObjectData) instance (ITraversable OrgObjectData)

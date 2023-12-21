@@ -8,10 +8,10 @@ import Prelude hiding (State, many, some)
 -- | Read the start of a header line, return the header level
 headingStart :: OrgParser Int
 headingStart =
-  try $
-    (T.length <$> takeWhile1P (Just "heading bullets") (== '*'))
-      <* char ' '
-      <* skipSpaces
+  try
+    $ (T.length <$> takeWhile1P (Just "heading bullets") (== '*'))
+    <* char ' '
+    <* skipSpaces
 
 parseTime :: OrgParser OrgTime
 parseTime = do
@@ -20,20 +20,20 @@ parseTime = do
   pure $ OrgTime hour minute
 
 -- | The same as 'string'', but cheaper (?)
-string'' :: MonadParser m => Text -> m Text
+string'' :: (MonadParser m) => Text -> m Text
 string'' = tokens ((==) `on` T.toLower)
 {-# INLINE string'' #-}
 
-digitIntChar :: MonadParser m => m Int
+digitIntChar :: (MonadParser m) => m Int
 digitIntChar = digitToInt <$> digitChar
 
-digits :: MonadParser m => m Text
+digits :: (MonadParser m) => m Text
 digits = takeWhileP (Just "digits") isDigit
 
-digits1 :: MonadParser m => m Text
+digits1 :: (MonadParser m) => m Text
 digits1 = takeWhile1P (Just "digits") isDigit
 
-integer :: MonadParser m => m Int
+integer :: (MonadParser m) => m Int
 integer = try $ do
   digits' <- reverse <$> some digitIntChar
   let toInt (x : xs) = 10 * toInt xs + x
@@ -54,30 +54,30 @@ number _ = error "Number of digits to parse must be positive!"
 isAsciiAlpha :: Char -> Bool
 isAsciiAlpha c = isAsciiLower c || isAsciiUpper c
 
-upperAscii' :: MonadParser m => m Int
+upperAscii' :: (MonadParser m) => m Int
 upperAscii' = do
   c <- upperAscii
   pure $ ord c - ord 'A' + 1
 
-lowerAscii' :: MonadParser m => m Int
+lowerAscii' :: (MonadParser m) => m Int
 lowerAscii' = do
   c <- lowerAscii
   pure $ ord c - ord 'a' + 1
 
-asciiAlpha' :: MonadParser m => m Int
+asciiAlpha' :: (MonadParser m) => m Int
 asciiAlpha' = lowerAscii' <|> upperAscii'
 
-upperAscii :: MonadParser m => m Char
+upperAscii :: (MonadParser m) => m Char
 upperAscii =
   satisfy isAsciiUpper
     <?> "uppercase A-Z character"
 
-lowerAscii :: MonadParser m => m Char
+lowerAscii :: (MonadParser m) => m Char
 lowerAscii =
   satisfy isAsciiLower
     <?> "lowercase a-z character"
 
-asciiAlpha :: MonadParser m => m Char
+asciiAlpha :: (MonadParser m) => m Char
 asciiAlpha =
   satisfy isAsciiAlpha
     <?> "a-z or A-Z character"
@@ -88,7 +88,7 @@ manyAsciiAlpha =
     (Just "a-z or A-Z characters")
     isAsciiAlpha
 
-someAsciiAlpha :: MonadParser m => m Text
+someAsciiAlpha :: (MonadParser m) => m Text
 someAsciiAlpha =
   takeWhile1P
     (Just "a-z or A-Z characters")
@@ -121,11 +121,11 @@ spacesOrTabs1 = do
   countSpaces tw <$> skipSpaces1
 
 -- | Skips one or more spaces or tabs.
-skipSpaces1 :: MonadParser m => m Text
+skipSpaces1 :: (MonadParser m) => m Text
 skipSpaces1 = takeWhile1P (Just "at least one space or tab whitespace") isSpaceOrTab
 
 -- | Skips zero or more spaces or tabs.
-skipSpaces :: MonadParser m => m Text
+skipSpaces :: (MonadParser m) => m Text
 skipSpaces = takeWhileP (Just "spaces or tabs") isSpaceOrTab
 
 {- | Makes sure a value is Just, else fail with a custom
@@ -136,11 +136,11 @@ guardMaybe _ (Just x) = pure x
 guardMaybe err _ = fail err
 
 -- | Parse a newline or EOF. Consumes no input at EOF!
-newline' :: MonadParser m => m ()
+newline' :: (MonadParser m) => m ()
 newline' = void newline <|> eof
 
 -- | Parse the rest of line, returning the contents without the final newline.
-anyLine :: MonadParser m => m (Tokens Text)
+anyLine :: (MonadParser m) => m (Tokens Text)
 anyLine =
   takeWhileP (Just "rest of line") (/= '\n')
     <* newline
@@ -149,23 +149,23 @@ anyLine =
 {- | Parse the rest of line, returning the contents without the final newline or EOF.
 Consumes no input at EOF!
 -}
-anyLine' :: MonadParser m => m (Tokens Text)
+anyLine' :: (MonadParser m) => m (Tokens Text)
 anyLine' =
   takeWhileP (Just "rest of line") (/= '\n')
     <* newline'
 
 -- | Consumes the rest of input
-takeInput :: MonadParser m => m Text
+takeInput :: (MonadParser m) => m Text
 takeInput = takeWhileP Nothing (const True)
 
 -- | Parse a line with whitespace contents, and consume a newline at the end.
-blankline :: MonadParser m => m ()
+blankline :: (MonadParser m) => m ()
 blankline = try $ hspace <* newline
 
 {- | Parse a line with whitespace contents, line may end with EOF. CAUTION: this
 function may consume NO INPUT! Be mindful of infinite loops!
 -}
-blankline' :: MonadParser m => m ()
+blankline' :: (MonadParser m) => m ()
 blankline' = try $ hspace <* newline'
 
 parseFromText :: FullState -> Text -> OrgParser b -> OrgParser b

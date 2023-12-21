@@ -29,13 +29,14 @@ source-repository head
   location: git://github.com/lucasvreis/org-mode-hs.git
 
 common common-options
-  default-language:   Haskell2010
+  default-language:   GHC2021
   build-depends:
     , aeson               >=2.1.2 && <2.2
     , base                >=4.15  && <4.19
     , containers          >=0.6.5 && <0.7
+    , ix-cat
+    , kind-generics-th
     , megaparsec          >=9.3.0 && <9.4
-    , multiwalk           >=0.3.0 && <0.4
     , relude              >=1.2.0 && <1.3
     , replace-megaparsec  >=1.4.5 && <1.5
     , text                >=1.2.5 && <2.1
@@ -50,10 +51,12 @@ common common-options
     NoFieldSelectors
     BlockArguments
     ConstraintKinds
+    DataKinds
     DeriveAnyClass
     DeriveDataTypeable
     DeriveGeneric
     DerivingStrategies
+    DerivingVia
     DuplicateRecordFields
     FlexibleContexts
     ImportQualifiedPost
@@ -64,24 +67,29 @@ common common-options
     OverloadedStrings
     ScopedTypeVariables
     TupleSections
+    TypeFamilies
     ViewPatterns
 
 library
   import:          common-options
   hs-source-dirs:  src
   exposed-modules:
-    Org.Builder
     Org.Compare
     Org.Data.Entities
     Org.Parser
     Org.Parser.Document
     Org.Parser.Elements
     Org.Parser.Objects
-    Org.Types
-    Org.Types.Elements
-    Org.Types.Objects
+    Org.Types.Aeson
+    Org.Types.Data.Document
+    Org.Types.Data.Element
+    Org.Types.Data.Object
+    Org.Types.Data.Section
+    Org.Types.Data.Timestamp
+    Org.Types.Ix
     Org.Types.StandardProperties
-    Org.Walk
+    Org.Types.Variants.ParseInfo
+    Org.Types.Variants.Plain
 
   other-modules:
     Org.Parser.Common
