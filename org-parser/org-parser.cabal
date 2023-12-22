@@ -50,23 +50,17 @@ common common-options
   default-extensions:
     NoFieldSelectors
     BlockArguments
-    ConstraintKinds
     DataKinds
     DeriveAnyClass
-    DeriveDataTypeable
-    DeriveGeneric
     DerivingStrategies
     DerivingVia
     DuplicateRecordFields
-    FlexibleContexts
-    ImportQualifiedPost
     LambdaCase
     MultiWayIf
     OverloadedLabels
     OverloadedRecordDot
     OverloadedStrings
-    ScopedTypeVariables
-    TupleSections
+    PatternSynonyms
     TypeFamilies
     ViewPatterns
 
@@ -85,9 +79,9 @@ library
     Org.Types.Data.Element
     Org.Types.Data.Object
     Org.Types.Data.Section
+    Org.Types.Data.StandardProperties
     Org.Types.Data.Timestamp
     Org.Types.Ix
-    Org.Types.StandardProperties
     Org.Types.Variants.ParseInfo
     Org.Types.Variants.Plain
 
