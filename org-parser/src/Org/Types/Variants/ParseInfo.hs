@@ -1,4 +1,3 @@
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -18,6 +17,8 @@ module Org.Types.Variants.ParseInfo
   , pattern OrgObject
   , element
   , pattern OrgElement
+  , section
+  , pattern OrgSection
 
     -- * Re-exports
   , module Org.Types.Data.Document
@@ -86,7 +87,7 @@ instance Monoid OrgObjects where
 pattern OrgElement :: Int -> Int -> Int -> Keywords (k ObjIx) -> OrgElementData k ElmIx -> OrgF k ElmIx
 pattern OrgElement {begin, end, postBlank, keywords, datum} = OrgF (StandardProperties {..}) (P.OrgElementF keywords datum)
 
-element :: Int -> Int -> Int -> Keywords OrgObjects -> OrgElementData Org ElmIx -> Org ElmIx
+element :: Int -> Int -> Int -> Keywords OrgObjects -> OrgElementData Org ElmIx -> OrgElements
 element begin end postBlank keywords datum = coerce $ singleton $ OrgElement {..}
 
 type OrgElementD = OrgElementData Org ElmIx
@@ -94,7 +95,17 @@ type OrgElements = Org ElmIx
 deriving newtype instance Semigroup OrgElements
 deriving newtype instance Monoid OrgElements
 
+-- * Sections
+
+pattern OrgSection :: Int -> Int -> OrgSectionData k SecIx -> OrgF k SecIx
+pattern OrgSection {begin, end, datum} = OrgF (StandardProperties {postBlank = 0, ..}) (P.OrgSectionF datum)
+
+section :: Int -> Int -> OrgSectionData Org SecIx -> OrgSections
+section begin end datum = coerce $ singleton $ OrgSection {..}
+
 type OrgSectionD = OrgSectionData Org SecIx
 type OrgSections = Org SecIx
+deriving newtype instance Semigroup OrgSections
+deriving newtype instance Monoid OrgSections
 
 type OrgDocument = OrgDocumentData Org ElmIx

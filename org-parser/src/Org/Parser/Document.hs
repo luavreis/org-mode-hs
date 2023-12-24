@@ -10,7 +10,8 @@ module Org.Parser.Document
 
 import Data.Text qualified as T
 import Org.Parser.Common
-import Org.Parser.Definitions
+import Org.Parser.Definitions hiding (section)
+import Org.Parser.Definitions qualified as D
 import Org.Parser.Elements
 import Org.Parser.MarkupContexts
 import Org.Parser.Objects
@@ -22,19 +23,27 @@ orgDocument = do
   skipMany commentLine
   properties <- option mempty propertyDrawer
   topLevel <- elements
-  sections <- many (section 1)
+  sections' <- sections 1
   eof
-  return $
-    OrgDocument
-      { documentProperties = properties
-      , documentChildren = toList topLevel
-      , documentSections = sections
+  return
+    $ OrgDocumentData
+      { properties = properties
+      , children = topLevel
+      , sections = sections'
       }
+
+sections :: Int -> OrgParser OrgSections
+sections lvl =
+  mconcat <$> many do
+    begin <- getOffset
+    datum <- section lvl
+    end <- getOffset
+    return $ D.section begin end datum
 
 {- | Parse an Org section and its contents. @lvl@ gives the minimum acceptable
    level of the heading.
 -}
-section :: Int -> OrgParser OrgSection
+section :: Int -> OrgParser OrgSectionD
 section lvl = try $ do
   level <- headingStart
   guard (lvl <= level)
@@ -45,27 +54,26 @@ section lvl = try $ do
   planning <- option emptyPlanning planningInfo
   properties <- option mempty propertyDrawer
   contents <- elements
-  children <- many (section (level + 1))
+  children <- sections (level + 1)
   return
-    OrgSection
-      { sectionLevel = level
-      , sectionProperties = properties
-      , sectionTodo = todoKw
-      , sectionIsComment = isComment
-      , sectionPriority = priority
-      , sectionTitle = toList title
-      , sectionRawTitle = titleTxt
-      , sectionAnchor = "" -- Dealt with later
-      , sectionTags = tags
-      , sectionPlanning = planning
-      , sectionChildren = toList contents
-      , sectionSubsections = children
+    OrgSectionData
+      { level = level
+      , properties = properties
+      , todo = todoKw
+      , comment = isComment
+      , priority = priority
+      , title = title
+      , rawTitle = titleTxt
+      , tags = tags
+      , planning = planning
+      , children = contents
+      , subsections = children
       }
   where
     titleObjects :: OrgParser (OrgObjects, [Tag], Text)
     titleObjects =
-      option mempty $
-        withContext__
+      option mempty
+        $ withContext__
           (anySingle *> takeWhileP Nothing (\c -> not (isSpace c || c == ':')))
           endOfTitle
           (plainMarkupContext standardSet)
@@ -85,26 +93,28 @@ section lvl = try $ do
 -- | Parse a to-do keyword that is registered in the state.
 todoKeyword :: OrgParser TodoKeyword
 todoKeyword = try $ do
-  taskStates <- getsO orgTodoKeywords
+  taskStates <- getsO (.orgTodoKeywords)
   choice (map kwParser taskStates)
   where
     kwParser :: TodoKeyword -> OrgParser TodoKeyword
     kwParser tdm =
       -- NOTE to self: space placement - "TO" is subset of "TODOKEY"
-      try (string (todoName tdm) *> hspace1 $> tdm)
+      try (string tdm.name *> hspace1 $> tdm)
 
 -- | Parse a priority cookie like @[#A]@.
 priorityCookie :: OrgParser Priority
 priorityCookie =
-  try $
-    string "[#"
-      *> priorityFromChar
-      <* char ']'
+  try
+    $ string "[#"
+    *> priorityFromChar
+    <* char ']'
   where
     priorityFromChar :: OrgParser Priority
     priorityFromChar =
-      NumericPriority <$> digitIntChar
-        <|> LetterPriority <$> upperAscii
+      NumericPriority
+        <$> digitIntChar
+        <|> LetterPriority
+        <$> upperAscii
 
 orgTagWord :: OrgParser Text
 orgTagWord =
@@ -125,9 +135,9 @@ planningInfo = try $ do
     planningDatum =
       skipSpaces
         *> choice
-          [ updateWith (\s p -> p {planningScheduled = Just s}) "SCHEDULED"
-          , updateWith (\d p -> p {planningDeadline = Just d}) "DEADLINE"
-          , updateWith (\c p -> p {planningClosed = Just c}) "CLOSED"
+          [ updateWith (\s p -> p {scheduled = Just s}) "SCHEDULED"
+          , updateWith (\d p -> p {deadline = Just d}) "DEADLINE"
+          , updateWith (\c p -> p {closed = Just c}) "CLOSED"
           ]
     updateWith fn cs = fn <$> (string cs *> char ':' *> skipSpaces *> parseTimestamp)
 
@@ -142,8 +152,10 @@ propertyDrawer = try $ do
   where
     endOfDrawer :: OrgParser Text
     endOfDrawer =
-      try $
-        hspace *> string' ":end:" <* blankline'
+      try
+        $ hspace
+        *> string' ":end:"
+        <* blankline'
 
     nodeProperty :: OrgParser (Text, Text)
     nodeProperty = try $ liftA2 (,) name value
