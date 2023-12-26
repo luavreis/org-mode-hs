@@ -143,8 +143,8 @@ data FragmentType
 data Citation o = Citation
   { style :: Text
   , variant :: Text
-  , prefix :: o
-  , suffix :: o
+  , prefix :: Maybe o
+  , suffix :: Maybe o
   , references :: [CiteReference o]
   }
   deriving (Show, Eq, Ord, Read, Typeable, Generic, Functor, Foldable, Traversable)
@@ -152,8 +152,8 @@ data Citation o = Citation
 
 data CiteReference o = CiteReference
   { id :: Text
-  , prefix :: o
-  , suffix :: o
+  , prefix :: Maybe o
+  , suffix :: Maybe o
   }
   deriving (Show, Eq, Ord, Read, Typeable, Generic, Functor, Foldable, Traversable)
   deriving anyclass (NFData)

@@ -319,9 +319,9 @@ orgCite = try $ do
   (style, variant) <- citeStyle
   _ <- char ':'
   space
-  globalPrefix <- option mempty (try (citeSuffix <* char ';'))
+  globalPrefix <- optional (try (citeSuffix <* char ';'))
   items <- citeItems
-  globalSuffix <- option mempty (try (char ';' *> citePrefix))
+  globalSuffix <- optional (try (char ';' *> citePrefix))
   space
   eof
   return
@@ -357,9 +357,9 @@ citeItems = citeItem `sepBy1'` char ';'
 
 citeItem :: OrgParser (CiteReference OrgObjects)
 citeItem = do
-  pref <- option mempty citePrefix
+  pref <- optional citePrefix
   itemKey <- orgCiteKey
-  suff <- option mempty citeSuffix
+  suff <- optional citeSuffix
   return
     CiteReference
       { id = itemKey
