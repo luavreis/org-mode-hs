@@ -7,7 +7,6 @@ module Org.Exporters.HTML where
 
 import Data.Map qualified as Map
 import Org.Exporters.Common
-import Org.Types
 
 defBackend :: Monad m => ExportBackend m
 defBackend =

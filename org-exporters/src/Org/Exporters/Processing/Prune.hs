@@ -3,7 +3,7 @@ module Org.Exporters.Processing.Prune where
 import Control.Category.Natural (type (~>) (..))
 import Control.Monad.Trans.Writer.CPS
 import Data.Ix.RecursionSchemes qualified as R
-import Data.Ix.Traversable (isequenceA, itraverse)
+import Data.Ix.Traversable (isequenceA)
 import Data.Set qualified as Set
 import Org.Exporters.Processing.OrgData
 import Org.Types.Variants.Annotated
@@ -39,7 +39,7 @@ pruneSections selTags excTags (coerce -> input) = Compose $ fmap ComposeIx do
     sections = mapMaybe prune input
     prune :: OrgF (PruneT k) ix -> Maybe (PruneM (OrgF k ix))
     prune = \case
-      OrgSection p a d -> do
+      OrgSection' p a d -> do
         res <- coerce $ pruneSection selTags excTags d
         return $ OrgSection p a <$> res
       x -> Just $ coerce $ isequenceA x
@@ -50,10 +50,10 @@ pruneSections selTags excTags (coerce -> input) = Compose $ fmap ComposeIx do
         else return Nothing
 
 -- | Prunes COMMENT, :ARCHIVE: and noexport-tagged sections
-pruneDoc :: OrgDocument -> F OrgDocument
+pruneDoc :: OrgDocument -> M OrgDocument
 pruneDoc doc = do
-  selTags <- asks \d -> d.exporterSettings.orgExportSelectTags
-  excTags <- asks \d -> d.exporterSettings.orgExportExcludeTags
+  selTags <- gets \d -> d.exporterSettings.orgExportSelectTags
+  excTags <- gets \d -> d.exporterSettings.orgExportExcludeTags
   let (prunedSections, coerce -> someSelected) =
         runWriter $ coerce $ R.transverse (NT $ pruneSections selTags excTags) # doc.sections
   return

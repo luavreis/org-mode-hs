@@ -17,6 +17,7 @@ module Org.Types.Variants.Plain
   , module Org.Types.Data.Element
   , module Org.Types.Data.Object
   , module Org.Types.Data.Timestamp
+  , module Org.Types.Ix
   )
 where
 
@@ -32,11 +33,22 @@ import Org.Types.Data.Object
 import Org.Types.Data.Section
 import Org.Types.Data.Timestamp
 import Org.Types.Ix
+import Data.Ix.Foldable (IFoldable)
+import Data.Ix.Traversable (ITraversable)
 
 data OrgF k ix where
   OrgObjectF :: OrgObjectData k ObjIx -> OrgF k ObjIx
   OrgElementF :: Keywords (k ObjIx) -> OrgElementData k ElmIx -> OrgF k ElmIx
   OrgSectionF :: OrgSectionData k SecIx -> OrgF k SecIx
+  deriving (Typeable)
+
+deriving instance (AllOrgIx Eq k) => (Eq (OrgF k a))
+deriving instance (AllOrgIx Ord k) => (Ord (OrgF k a))
+deriving instance (AllOrgIx Show k) => (Show (OrgF k a))
+instance (AllOrgIx NFData k) => NFData (OrgF k a) where
+  rnf (OrgObjectF x) = rnf x
+  rnf (OrgElementF x y) = rnf x `seq` rnf y
+  rnf (OrgSectionF x) = rnf x
 
 instance HasField "datum" (OrgF k ObjIx) (OrgObjectData k ObjIx) where
   getField = \case OrgObjectF x -> x
@@ -52,6 +64,8 @@ instance HasField "datum" (OrgF k SecIx) (OrgSectionData k SecIx) where
 
 $(deriveGenericK ''OrgF)
 deriving via (Generically OrgF) instance (Endofunctor (~>) OrgF)
+deriving via (Generically OrgF) instance (IFoldable OrgF)
+deriving via (Generically OrgF) instance (ITraversable OrgF)
 
 type Org = Fix (ComposeIx [] OrgF)
 

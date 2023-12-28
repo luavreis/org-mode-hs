@@ -20,7 +20,8 @@ module Org.Types.Data.Element
   , Bullet (..)
   , Checkbox (..)
   , listItemType
-  -- * Constructors
+
+    -- * Constructors
   , listItemUnord
   , orderedList
   , descriptiveList
@@ -203,7 +204,13 @@ orderedStyle _ = OrderedAlpha
 {- | One item of a list. Parameters are bullet, counter cookie, checkbox and
 tag.
 -}
-data ListItem k i = ListItem Bullet (Maybe Int) (Maybe Checkbox) (Maybe (k ObjIx)) (k ElmIx)
+data ListItem k (i :: OrgIx) = ListItem
+  { bullet :: Bullet
+  , counter :: Maybe Int
+  , checkbox :: Maybe Checkbox
+  , tag :: Maybe (k ObjIx)
+  , content :: k ElmIx
+  }
   deriving (Typeable, Generic)
 
 deriving instance (Show (k ObjIx), Show (k ElmIx)) => Show (ListItem k ix)

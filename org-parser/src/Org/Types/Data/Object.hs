@@ -7,6 +7,7 @@ module Org.Types.Data.Object
     -- ** Links
   , LinkTarget (..)
   , Protocol
+  , InternalLink (..)
   , linkTargetToText
 
     -- ** LaTeX fragments
@@ -89,11 +90,11 @@ data OrgObjectData k (_i :: OrgIx)
       (Either (Int, Int) Int)
   deriving (Typeable, Generic)
 
-deriving instance (Show (k ObjIx)) => Show (OrgObjectData k ix)
-deriving instance (Read (k ObjIx)) => Read (OrgObjectData k ix)
-deriving instance (Eq (k ObjIx)) => Eq (OrgObjectData k ix)
-deriving instance (Ord (k ObjIx)) => Ord (OrgObjectData k ix)
-deriving instance (NFData (k ObjIx)) => NFData (OrgObjectData k ix)
+deriving instance (AllOrgIx Show k) => Show (OrgObjectData k ix)
+deriving instance (AllOrgIx Read k) => Read (OrgObjectData k ix)
+deriving instance (AllOrgIx Eq k) => Eq (OrgObjectData k ix)
+deriving instance (AllOrgIx Ord k) => Ord (OrgObjectData k ix)
+deriving instance (AllOrgIx NFData k) => NFData (OrgObjectData k ix)
 
 -- | Data for a footnote reference.
 data FootnoteRefData o
@@ -118,20 +119,27 @@ type Protocol = Text
 
 {- | Link target. Note that the parser does not resolve internal links. Instead,
 they should be resolved using the functions in [@org-exporters@
-package](https://github.com/lucasvreis/org-mode-hs). In the near future, the
-'InternalLink' constructor and 'Id' type will be removed in favor of AST
-extensibility. See also the documentation for 'Target'.
+package](https://github.com/lucasvreis/org-mode-hs).
 -}
 data LinkTarget
   = URILink Protocol Text
   | UnresolvedLink Text
+  | AnchorLink Text
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
   deriving anyclass (NFData)
+
+data InternalLink a
+  = CustomId a
+  | Headline a
+  | Named a
+  | Footnote a
+  deriving (Eq, Ord, Show, Typeable, Generic, NFData, Functor)
 
 linkTargetToText :: LinkTarget -> Text
 linkTargetToText = \case
   URILink prot l -> prot <> ":" <> l
   UnresolvedLink l -> l
+  AnchorLink l -> "#" <> l
 
 data FragmentType
   = RawFragment

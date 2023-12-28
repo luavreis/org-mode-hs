@@ -45,7 +45,7 @@ import Org.Types.Data.Timestamp
 import Org.Types.Ix
 import Org.Types.Variants.Plain qualified as P
 
-data OrgF k ix = OrgF {prop :: StandardProperties, datum :: P.OrgF k ix}
+data OrgF k ix = OrgF {props :: StandardProperties, datum :: P.OrgF k ix}
 
 $(deriveGenericK ''OrgF)
 deriving via (Generically OrgF) instance (Endofunctor (~>) OrgF)

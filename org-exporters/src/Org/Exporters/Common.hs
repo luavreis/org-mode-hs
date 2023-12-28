@@ -32,8 +32,6 @@ import Org.Exporters.Processing.SpecialStrings (doSpecialStrings)
 import Org.Parser (OrgOptions, OrgParser, parseOrgMaybe)
 import Org.Parser.Elements (elements)
 import Org.Parser.Objects (plainMarkupContext, standardSet)
-import Org.Types
-import Org.Walk (MWTag, MultiWalk, query)
 import System.FilePath (isRelative, takeExtension, (-<.>))
 
 data ExportBackend m = ExportBackend

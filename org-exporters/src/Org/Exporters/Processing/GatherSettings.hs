@@ -2,8 +2,6 @@ module Org.Exporters.Processing.GatherSettings where
 
 import Data.Text qualified as T
 import Org.Exporters.Processing.OrgData
-import Org.Types (KeywordValue (..), OrgDocument (..), OrgElementData (..))
-import Org.Walk
 
 registerFiletags :: KeywordValue -> M ()
 registerFiletags = \case

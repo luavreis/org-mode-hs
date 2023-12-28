@@ -23,4 +23,4 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/lucasvreis/ix-cat.git
-  tag: 16d69a7187bdaf00cd0b12ffdadfd52f63608e30
+  tag: a1a83cafd2d60acc6bb5c91e954e8288ac6f5dc3

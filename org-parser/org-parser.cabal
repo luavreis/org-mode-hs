@@ -75,8 +75,10 @@ library
     Org.Parser.Elements
     Org.Parser.Objects
     Org.Types.Aeson
+    Org.Types.Data.Cite
     Org.Types.Data.Document
     Org.Types.Data.Element
+    Org.Types.Data.Footnote
     Org.Types.Data.Object
     Org.Types.Data.Section
     Org.Types.Data.StandardProperties

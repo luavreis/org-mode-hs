@@ -10,10 +10,14 @@ module Org.Exporters.Processing.OrgData
   )
 where
 
+import Citeproc.CslJson (CslJson (..))
 import Data.Aeson qualified as Aeson
+import Data.Char (isAlpha)
+import Data.Text qualified as T
 import Org.Parser (OrgOptions, defaultOrgOptions)
-import Org.Types
+import Org.Types.Variants.Annotated
 import System.FilePath (isExtensionOf)
+import Text.Slugify (slugify)
 
 data ExporterSettings = ExporterSettings
   { orgExportHeadlineLevels :: Int
@@ -29,7 +33,7 @@ data ExporterSettings = ExporterSettings
   --
   -- This option can also be set with the OPTIONS keyword,
   -- e.g. "-:nil".
-  , orgExportSelectTags :: [Text]
+  , orgExportSelectTags :: Set Text
   -- ^ Tags that select a tree for export.
   --
   -- If any such tag is found, all trees that do not carry one of these tags
@@ -38,7 +42,7 @@ data ExporterSettings = ExporterSettings
   -- org-export-exclude-tags.
   --
   -- This option can also be set with the SELECT_TAGS keyword.
-  , orgExportExcludeTags :: [Text]
+  , orgExportExcludeTags :: Set Text
   -- ^ Tags that exclude a tree from export.
   --
   -- All trees carrying any of these tags will be excluded from export. This
@@ -60,6 +64,8 @@ data ExporterSettings = ExporterSettings
   -- ^ See <https://orgmode.org/manual/Link-Abbreviations.html>
   , headlineLevelShift :: Int
   -- ^ Global shift of headline levels.
+  , citeproc :: Bool
+  -- ^ Whether to process CSL citations using Citeproc.
   }
   deriving (Eq, Ord, Show, Typeable, Generic, NFData)
 
@@ -81,12 +87,13 @@ defaultExporterSettings =
   ExporterSettings
     { orgExportHeadlineLevels = 3
     , orgExportWithSpecialStrings = True
-    , orgExportSelectTags = ["export"]
-    , orgExportExcludeTags = ["noexport"]
+    , orgExportSelectTags = fromList ["export"]
+    , orgExportExcludeTags = fromList ["noexport"]
     , orgExportWithEntities = True
     , orgInlineImageRules = ["png", "jpeg", "svg", "webp", "gif", "jpg"]
     , orgLinkAbbrevAlist = mempty
     , headlineLevelShift = 0
+    , citeproc = True
     }
 
 -- | FIXME This is not exactly how org figures out if a link is an image.
@@ -94,50 +101,38 @@ isImgTarget :: [FilePath] -> LinkTarget -> Bool
 isImgTarget exts = \case
   (URILink _ x) -> hasImgExtension x
   (UnresolvedLink x) -> hasImgExtension x
-  _ -> False
   where
     hasImgExtension x = any (`isExtensionOf` toString x) exts
 
+-- | Takes a raw title string and produces a suitable anchor.
+sectionTitleToAnchor :: Text -> Text
+sectionTitleToAnchor = T.dropWhile (not . isAlpha) . slugify
+
+internalLinkCanonicalId :: InternalLink Text -> Id
+internalLinkCanonicalId = \case
+  CustomId a -> a
+  Headline a -> sectionTitleToAnchor a
+  Footnote a -> "fn-" <> T.dropWhile (not . isAlpha) a
+  Named a -> T.dropWhile (not . isAlpha) a
+
+type Id = Text
+type ReferrerId = Id
+type FootnoteLabel = Text
+
 -- | Metadata associated with the document
 data OrgData = OrgData
-  { keywords :: Keywords
+  { keywords :: Keywords OrgObjects
   , filetags :: [Text]
   , exporterSettings :: ExporterSettings
   , parserOptions :: OrgOptions
-  , internalTargets :: Map Text (Id, [OrgObject])
-  , footnotes :: Map Text (Either [OrgObject] [OrgElement])
+  , internalTargets :: Map (InternalLink Text) (Id, OrgObjects)
+  , footnotes :: Map FootnoteLabel (Id, Either OrgObjects OrgElements)
+  , bibliography :: [(Text, CslJson Text)]
   }
-  deriving (Eq, Ord, Show, Typeable, Generic, NFData)
+  deriving (Eq, Ord, Show, Typeable, Generic)
 
 initialOrgData :: OrgData
-initialOrgData = OrgData mempty [] defaultExporterSettings defaultOrgOptions mempty mempty
+initialOrgData = OrgData mempty [] defaultExporterSettings defaultOrgOptions mempty mempty []
 
-type F = Reader OrgData
-
-type M = State (ResolveState, F OrgData)
-
--- | State for doing AST post-processing
-data ResolveState = ResolveState
-  { targetDescriptionCtx :: Maybe [OrgObject]
-  , srcLineNumber :: Int
-  , knownAnchors :: Set Id
-  , idStack :: [Id]
-  }
-
-initialResolveState :: ResolveState
-initialResolveState =
-  ResolveState
-    { targetDescriptionCtx = mempty
-    , srcLineNumber = 0
-    , knownAnchors = mempty
-    , idStack = [show i | (i :: Int) <- [1 ..]]
-    }
-
-gets1 :: MonadState (s, t) m => (s -> a) -> m a
-gets1 = gets . (. fst)
-
-modify1 :: MonadState (s, t) m => (s -> s) -> m ()
-modify1 = modify' . first
-
-modify2 :: (OrgData -> F OrgData) -> M ()
-modify2 f = modify' $ second (>>= f)
+type M = State OrgData
+type T = Compose M
