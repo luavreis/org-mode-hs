@@ -50,7 +50,7 @@ renderDoc udirs oo datum doc = do
       then return $ initialState cfg
       else loadTemplates [cfg] dirs
   evalOndimTWith tpls $
-    callTemplateFold @Rendered (O.layout oo)
+    renderTemplateOrError (O.layout oo)
       `binding` documentExp bk datum doc
 
 main :: IO ()
