@@ -1,36 +1,63 @@
 module Org.Exporters.Processing.Prune where
 
+import Control.Category.Natural (type (~>) (..))
+import Control.Monad.Trans.Writer.CPS
+import Data.Ix.RecursionSchemes qualified as R
+import Data.Ix.Traversable (isequenceA, itraverse)
 import Data.Set qualified as Set
 import Org.Exporters.Processing.OrgData
-import Org.Types (OrgSection (..), OrgDocument (..))
+import Org.Types.Variants.Annotated
+
+newtype Selected = Selected Any
+  deriving newtype (Semigroup, Monoid)
+
+type PruneM = Writer Selected
+type PruneT = Compose PruneM
+
+markAsSelected :: PruneM ()
+markAsSelected = tell (Selected (Any True))
 
 -- | Prunes COMMENT, :ARCHIVE: and noexport-tagged sections
-pruneSections :: Set Text -> Set Text -> [OrgSection] -> ([OrgSection], Bool)
-pruneSections selTags excTags = prune . mapMaybe go
+pruneSection :: Set Text -> Set Text -> OrgSectionData (PruneT k) ix -> Maybe (PruneT (OrgSectionData k) ix)
+pruneSection selTags excTags section =
+  if not section.comment && null (Set.intersection tagSet excTags) && Set.notMember "archive" tagSet
+    then Just $ Compose do
+      unless (null $ Set.intersection tagSet selTags) markAsSelected
+      coerce $ isequenceA section
+    else Nothing
   where
-    prune ss =
-      if any snd ss
-        then (map fst $ filter snd ss, True)
-        else (map fst ss, False)
-    go s =
-      if sectionIsComment s || not (null $ Set.intersection tagSet excTags) || Set.member "archive" tagSet
-        then Nothing
-        else
-          let (ss, e) = pruneSections selTags excTags (sectionSubsections s)
-              e' = not (null $ Set.intersection tagSet selTags)
-              s' = s {sectionSubsections = ss}
-           in Just (s', e' || e)
-      where
-        tagSet :: Set Text = fromList $ sectionTags s
+    tagSet = fromList section.tags
+
+-- | Prunes COMMENT, :ARCHIVE: and noexport-tagged sections
+pruneSections :: Set Text -> Set Text -> ComposeIx [] OrgF (PruneT k) ix -> PruneT (ComposeIx [] OrgF k) ix
+pruneSections selTags excTags (coerce -> input) = Compose $ fmap ComposeIx do
+  (sections', someSelected) <- listen $ sequence sections
+  if coerce someSelected
+    then mapMaybeM pruneSel sections
+    else return sections'
+  where
+    sections = mapMaybe prune input
+    prune :: OrgF (PruneT k) ix -> Maybe (PruneM (OrgF k ix))
+    prune = \case
+      OrgSection p a d -> do
+        res <- coerce $ pruneSection selTags excTags d
+        return $ OrgSection p a <$> res
+      x -> Just $ coerce $ isequenceA x
+    pruneSel x = do
+      (x', selected) <- listen x
+      if coerce selected
+        then return (Just x')
+        else return Nothing
 
 -- | Prunes COMMENT, :ARCHIVE: and noexport-tagged sections
 pruneDoc :: OrgDocument -> F OrgDocument
 pruneDoc doc = do
-  selTags <- asks (fromList . orgExportSelectTags . exporterSettings)
-  excTags <- asks (fromList . orgExportExcludeTags . exporterSettings)
-  let (ss, e) = pruneSections selTags excTags (documentSections doc)
-  pure
-    doc
-      { documentChildren = bool (documentChildren doc) [] e,
-        documentSections = ss
+  selTags <- asks \d -> d.exporterSettings.orgExportSelectTags
+  excTags <- asks \d -> d.exporterSettings.orgExportExcludeTags
+  let (prunedSections, coerce -> someSelected) =
+        runWriter $ coerce $ R.transverse (NT $ pruneSections selTags excTags) # doc.sections
+  return
+    $ doc
+      { children = if someSelected then doc.children else mempty
+      , sections = prunedSections
       }
