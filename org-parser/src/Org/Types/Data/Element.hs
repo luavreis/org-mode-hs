@@ -238,7 +238,7 @@ descriptiveList =
 -- Tables
 
 data TableRow o
-  = StandardRow o
+  = StandardRow [o]
   | ColumnPropsRow [Maybe ColumnAlignment]
   | RuleRow
   deriving (Eq, Ord, Read, Show, Typeable, Generic, Functor, Foldable, Traversable)

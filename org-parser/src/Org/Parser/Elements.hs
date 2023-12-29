@@ -329,17 +329,12 @@ table = try do
     standardRow = try do
       hspace
       _ <- char '|'
-      StandardRow . mconcat <$> some cell <* blankline'
+      StandardRow <$> some cell <* blankline'
       where
         cell = do
           hspace
-          char '|'
-            $> mempty
-            <|> withMContext
-              (const True)
-              (\c -> not $ isSpace c || c == '|')
-              end
-              (plainMarkupContext standardSet)
+          char '|' $> mempty
+            <|> withMContext (const True) (\c -> not $ isSpace c || c == '|') end (plainMarkupContext standardSet)
         end = try $ hspace >> void (char '|') <|> lookAhead newline'
 
 -- * Lesser elements
