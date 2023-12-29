@@ -1,8 +1,6 @@
 module Org.Exporters.Processing.SpecialStrings where
 
 import Data.Text qualified as T
-import Org.Types
-import Org.Walk
 
 doSpecialStrings :: Text -> Text
 doSpecialStrings txt =

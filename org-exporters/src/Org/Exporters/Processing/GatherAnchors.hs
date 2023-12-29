@@ -81,22 +81,38 @@ resolveListItems items =
     lift $ withTargetDescription n do
       coerce $ isequenceA item
 
-resolveObjects ::
-  OrgF (GatherT Org) ObjIx ->
-  GatherM (OrgF Org ObjIx)
-resolveObjects (OrgObject p a d) =
-  OrgObject p a <$> do
-    case d of
-      FootnoteRef (FootnoteRefDef label def) -> do
-        label' <- maybe (getUniqueId (CustomId "anon")) pure label
-        let fn = Footnote label'
-        anchor <- getUniqueId fn
-        def' <- getCompose def
-        registerFootnote label' anchor (Left def')
-        return $ FootnoteRef $ FootnoteRefLabel label'
-      Target name -> do
-        anchor <- getUniqueId (Named name)
-        desc <- gets (.targetDescriptionCtx)
-        registerAnchorTarget (Named name) anchor (fromMaybe mempty desc)
-        getCompose $ isequenceA d
-      x -> getCompose (isequenceA x)
+gatherAnchors :: ComposeIx [] OrgF (GatherT Org) ix -> GatherT (ComposeIx [] OrgF Org) ix
+gatherAnchors (ComposeIx x) = Compose $ coerce @(GatherM [_]) do
+  forM x \case
+    OrgElement' p a k (PlainList t i) -> do
+      k' <- mapM (mapM getCompose) k
+      OrgElement p a k' . PlainList t <$> resolveListItems i
+    OrgObject' p a d ->
+      OrgObject p a <$> do
+        case d of
+          FootnoteRef (FootnoteRefDef label def) -> do
+            label' <- maybe (getUniqueId (CustomId "anon")) pure label
+            let fn = Footnote label'
+            anchor <- getUniqueId fn
+            def' <- getCompose def
+            registerFootnote label' anchor (Left def')
+            return $ FootnoteRef $ FootnoteRefLabel label'
+          Target name -> do
+            anchor <- getUniqueId (Named name)
+            desc <- gets (.targetDescriptionCtx)
+            registerAnchorTarget (Named name) anchor (fromMaybe mempty desc)
+            getCompose $ isequenceA d
+          y -> getCompose $ isequenceA y
+    y -> getCompose $ isequenceA y
+
+-- OrgElement' _ _ _ (Keyword k v)
+--   | k == "filetags"
+--   , ValueKeyword tags <- v ->
+--       Ap $ modify' $ #filetags %~ (++ filter (not . T.null) (T.split (== ':') tags))
+--   | k == "select_tags"
+--   , ValueKeyword tags <- v ->
+--       Ap $ modify' $ #exporterSettings % #orgExportSelectTags %~ (<> fromList (filter (not . T.null) $ T.split isSpace tags))
+--   | k == "exclude_tags"
+--   , ValueKeyword tags <- v ->
+--       Ap $ modify' $ #exporterSettings % #orgExportExcludeTags %~ (<> fromList (filter (not . T.null) $ T.split isSpace tags))
+-- y -> ifold y

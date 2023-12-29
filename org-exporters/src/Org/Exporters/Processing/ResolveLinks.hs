@@ -5,13 +5,10 @@ module Org.Exporters.Processing.ResolveLinks where
 
 import Data.Aeson.KeyMap qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
-import Data.Char (isAlpha)
 import Data.Ix.Traversable (isequenceA)
 import Data.Map qualified as Map
-import Data.Set qualified as Set
 import Data.Text qualified as T
 import Network.URI.Encode (encodeText)
-import Optics.Core ((%~), (.~), (?~), (^.), _1, _2, _3)
 import Org.Exporters.Processing.OrgData
 import Org.Types.Variants.Annotated
 
@@ -39,7 +36,7 @@ resolveObjects (OrgObject p a d) = Compose do
                         else repl <> uri
                  in f (UnresolvedLink replaced)
           UnresolvedLink link
-            | Just (anchor, alias) <- targets Map.!? link ->
+            | Just (anchor, alias) <- targets Map.!? unresolvedToInternalLink link ->
                 return (AnchorLink anchor, alias)
           x -> return (x, objs')
       return $ OrgObject p a $ Link target' objs''

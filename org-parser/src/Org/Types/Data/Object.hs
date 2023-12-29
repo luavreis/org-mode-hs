@@ -9,6 +9,7 @@ module Org.Types.Data.Object
   , Protocol
   , InternalLink (..)
   , linkTargetToText
+  , unresolvedToInternalLink
 
     -- ** LaTeX fragments
   , FragmentType (..)
@@ -35,6 +36,7 @@ import Data.Ix.Traversable (ITraversable)
 import Generics.Kind.TH
 import Org.Types.Data.Timestamp (TimestampData)
 import Org.Types.Ix
+import qualified Data.Text as T
 
 -- | Objects (inline elements).
 data OrgObjectData k (_i :: OrgIx)
@@ -127,6 +129,13 @@ data LinkTarget
   | AnchorLink Text
   deriving (Show, Eq, Ord, Read, Typeable, Generic)
   deriving anyclass (NFData)
+
+unresolvedToInternalLink :: Text -> InternalLink Text
+unresolvedToInternalLink t =
+  case T.uncons t of
+    Just ('*', rest) -> Headline (T.strip rest)
+    Just ('#', rest) -> CustomId (T.strip rest)
+    _ -> Named t
 
 data InternalLink a
   = CustomId a
