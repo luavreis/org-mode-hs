@@ -7,10 +7,8 @@ module Org.Types.Data.Element
   , GreaterBlockType (..)
 
     -- ** Source blocks
-  , SrcLine (..)
-  , srcLineContent
+  , SrcLine
   , srcLinesToText
-  , srcLineMap
 
     -- ** Lists
   , ListType (..)
@@ -125,26 +123,10 @@ deriving instance (Eq (k ObjIx), Eq (k ElmIx)) => Eq (OrgElementData k ix)
 deriving instance (Ord (k ObjIx), Ord (k ElmIx)) => Ord (OrgElementData k ix)
 deriving instance (NFData (k ObjIx), NFData (k ElmIx)) => NFData (OrgElementData k ix)
 
-data SrcLine
-  = SrcLine Text
-  | RefLine
-      -- | Reference name (how it appears)
-      Text
-      -- | Line contents
-      Text
-  deriving (Eq, Ord, Read, Show, Typeable, Generic)
-  deriving anyclass (NFData)
-
-srcLineContent :: SrcLine -> Text
-srcLineContent (SrcLine c) = c
-srcLineContent (RefLine _ c) = c
+type SrcLine = Text
 
 srcLinesToText :: [SrcLine] -> Text
-srcLinesToText = T.unlines . map srcLineContent
-
-srcLineMap :: (Text -> Text) -> SrcLine -> SrcLine
-srcLineMap f (SrcLine c) = SrcLine (f c)
-srcLineMap f (RefLine i c) = RefLine i (f c)
+srcLinesToText = T.unlines
 
 -- Keywords
 

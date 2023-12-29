@@ -29,7 +29,6 @@ import Org.Parser.Definitions
 import Org.Parser.MarkupContexts
 import Org.Parser.Objects
 import Relude.Extra hiding (elems, next)
-import Replace.Megaparsec
 import Prelude hiding (many, some)
 
 withPos' :: OrgParser a -> OrgParser (Int, Int, Int, a)
@@ -361,12 +360,12 @@ exampleBlock = try do
 -- | Parse a fixed width block.
 fixedWidth :: OrgParser OrgElementD
 fixedWidth = try do
-  contents <- SrcLine <<$>> some (hspace *> string ": " *> anyLine')
+  contents <- some (hspace *> string ": " *> anyLine')
   tabWidth <- getsO (.orgSrcTabWidth)
   preserveIndent <- getsO (.orgSrcPreserveIndentation)
   let lines' =
         if preserveIndent
-          then map (srcLineMap (tabsToSpaces tabWidth)) contents
+          then map (tabsToSpaces tabWidth) contents
           else indentContents tabWidth contents
   pure $ ExampleBlock mempty lines'
 
@@ -419,10 +418,10 @@ exportBlock = try do
     end = try $ hspace *> string'' "#+end_export" <* blankline'
 
 indentContents :: Int -> [SrcLine] -> [SrcLine]
-indentContents tabWidth (map (srcLineMap $ tabsToSpaces tabWidth) -> lins) =
-  map (srcLineMap $ T.drop minIndent) lins
+indentContents tabWidth (map (tabsToSpaces tabWidth) -> lins) =
+  map (T.drop minIndent) lins
   where
-    minIndent = maybe 0 minimum1 (nonEmpty $ map (indentSize . srcLineContent) lins)
+    minIndent = maybe 0 minimum1 (nonEmpty $ map indentSize lins)
     indentSize = T.length . T.takeWhile (== ' ')
 
 tabsToSpaces :: Int -> Text -> Text
@@ -438,12 +437,12 @@ tabsToSpaces tabWidth txt =
 
 rawBlockContents :: OrgParser void -> Map Text Text -> OrgParser [SrcLine]
 rawBlockContents end switches = do
-  contents <- manyTill (rawBlockLine switches) end
+  contents <- manyTill (try quotedLine) end
   tabWidth <- getsO (.orgSrcTabWidth)
   preserveIndent <- getsO (.orgSrcPreserveIndentation)
   pure
     $ if preserveIndent || "-i" `member` switches
-      then map (srcLineMap (tabsToSpaces tabWidth)) contents
+      then map (tabsToSpaces tabWidth) contents
       else indentContents tabWidth contents
 
 quotedLine :: OrgParser Text
@@ -451,27 +450,6 @@ quotedLine = do
   (<>)
     <$> option "" (try $ char ',' *> (string "*" <|> string "#+"))
     <*> anyLine
-
-rawBlockLine :: Map Text Text -> OrgParser SrcLine
-rawBlockLine switches =
-  try $ applyRef =<< quotedLine
-  where
-    (refpre, refpos) =
-      maybe
-        ("(ref:", ")")
-        (second (T.drop 2) . T.breakOn "%s")
-        $ lookup "-l" switches
-    applyRef txt
-      | Just (content, ref, _) <- breakCap refCookie txt =
-          pure $ RefLine ref content
-      | otherwise = pure $ SrcLine txt
-    refCookie :: Parser Text
-    refCookie = do
-      space1 <* string refpre
-      toText
-        <$> someTill
-          (satisfy $ \c -> isAsciiAlpha c || isDigit c || c == '-' || c == ' ')
-          (string refpos)
 
 blockSwitches :: OrgParser (Map Text Text)
 blockSwitches = fromList <$> many (linum <|> switch <|> fmt)
