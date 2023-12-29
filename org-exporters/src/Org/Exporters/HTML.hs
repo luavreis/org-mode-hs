@@ -7,6 +7,7 @@ module Org.Exporters.HTML where
 
 import Data.Map qualified as Map
 import Org.Exporters.Common
+import Org.Types.Variants.Annotated
 
 defBackend :: Monad m => ExportBackend m
 defBackend =
@@ -21,6 +22,5 @@ defBackend =
       srcPretty _ _ _ = namespace pass
       babelCall _ = namespace pass
       macro _ _ = namespace pass
-      customElement _ _ _ = Nothing
-      customObject _ _ _ = Nothing
+      customExp _ _ _ = Nothing
    in ExportBackend {..}

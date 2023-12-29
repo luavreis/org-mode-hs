@@ -23,8 +23,11 @@ where
 
 import Control.Category.Endofunctor (Endofunctor)
 import Control.Category.Natural (type (~>))
+import Data.Ix.Foldable (IFoldable)
 import Data.Ix.Instances
 import Data.Ix.RecursionSchemes (Fix)
+import Data.Ix.Traversable (ITraversable)
+import Data.Type.Equality ((:~:) (..))
 import GHC.Records (HasField (..))
 import Generics.Kind.TH (deriveGenericK)
 import Org.Types.Data.Document
@@ -33,14 +36,17 @@ import Org.Types.Data.Object
 import Org.Types.Data.Section
 import Org.Types.Data.Timestamp
 import Org.Types.Ix
-import Data.Ix.Foldable (IFoldable)
-import Data.Ix.Traversable (ITraversable)
 
 data OrgF k ix where
   OrgObjectF :: OrgObjectData k ObjIx -> OrgF k ObjIx
   OrgElementF :: Keywords (k ObjIx) -> OrgElementData k ElmIx -> OrgF k ElmIx
   OrgSectionF :: OrgSectionData k SecIx -> OrgF k SecIx
-  deriving (Typeable)
+
+instance TestIxEq (OrgF k) where
+  testIxEq SObjIx OrgObjectF {} = Just Refl
+  testIxEq SElmIx OrgElementF {} = Just Refl
+  testIxEq SSecIx OrgSectionF {} = Just Refl
+  testIxEq _ _ = Nothing
 
 deriving instance (AllOrgIx Eq k) => (Eq (OrgF k a))
 deriving instance (AllOrgIx Ord k) => (Ord (OrgF k a))

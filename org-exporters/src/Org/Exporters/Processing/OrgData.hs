@@ -101,6 +101,7 @@ isImgTarget :: [FilePath] -> LinkTarget -> Bool
 isImgTarget exts = \case
   (URILink _ x) -> hasImgExtension x
   (UnresolvedLink x) -> hasImgExtension x
+  AnchorLink {} -> False
   where
     hasImgExtension x = any (`isExtensionOf` toString x) exts
 

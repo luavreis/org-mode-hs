@@ -1,4 +1,4 @@
-module Org.Exporters.Processing.Prune where
+module Org.Exporters.Processing.Prune (pruneDoc) where
 
 import Control.Category.Natural (type (~>) (..))
 import Control.Monad.Trans.Writer.CPS
@@ -19,14 +19,14 @@ markAsSelected = tell (Selected (Any True))
 
 -- | Prunes COMMENT, :ARCHIVE: and noexport-tagged sections
 pruneSection :: Set Text -> Set Text -> OrgSectionData (PruneT k) ix -> Maybe (PruneT (OrgSectionData k) ix)
-pruneSection selTags excTags section =
-  if not section.comment && null (Set.intersection tagSet excTags) && Set.notMember "archive" tagSet
+pruneSection selTags excTags sec =
+  if not sec.comment && null (Set.intersection tagSet excTags) && Set.notMember "archive" tagSet
     then Just $ Compose do
       unless (null $ Set.intersection tagSet selTags) markAsSelected
-      coerce $ isequenceA section
+      coerce $ isequenceA sec
     else Nothing
   where
-    tagSet = fromList section.tags
+    tagSet = fromList sec.tags
 
 -- | Prunes COMMENT, :ARCHIVE: and noexport-tagged sections
 pruneSections :: Set Text -> Set Text -> ComposeIx [] OrgF (PruneT k) ix -> PruneT (ComposeIx [] OrgF k) ix

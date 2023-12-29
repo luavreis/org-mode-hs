@@ -1,4 +1,4 @@
-module Org.Exporters.Processing.GatherSettings where
+module Org.Exporters.Processing.GatherSettings (gatherSettings) where
 
 import Control.Category.Natural (type (~>) (..))
 import Data.Ix.Foldable (IFoldable (ifoldMap), ifold)

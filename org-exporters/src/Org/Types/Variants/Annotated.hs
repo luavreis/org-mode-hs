@@ -20,6 +20,7 @@ module Org.Types.Variants.Annotated
   , element
   , pattern OrgElement
   , pattern OrgElement'
+  , section
   , pattern OrgSection
   , pattern OrgSection'
 
@@ -53,6 +54,9 @@ import Org.Types.Variants.Plain qualified as P
 data OrgF k ix = OrgF {props :: StandardProperties, annotations :: Object, datum :: P.OrgF k ix}
   deriving (Typeable, Generic)
 
+instance TestIxEq (OrgF k) where
+  testIxEq x y = testIxEq x y.datum
+
 deriving instance (Eq (P.OrgF k a)) => (Eq (OrgF k a))
 deriving instance (Ord (P.OrgF k a)) => (Ord (OrgF k a))
 deriving instance (Show (P.OrgF k a)) => (Show (OrgF k a))
@@ -64,6 +68,8 @@ deriving via (Generically OrgF) instance (IFoldable OrgF)
 deriving via (Generically OrgF) instance (ITraversable OrgF)
 
 type Org = Fix (ComposeIx [] OrgF)
+deriving newtype instance Semigroup (Org ix)
+deriving newtype instance Monoid (Org ix)
 
 -- * Objects
 
@@ -79,8 +85,6 @@ object props annotations datum = coerce $ (: []) $ OrgObject props annotations d
 
 type OrgObjectD = OrgObjectData Org ObjIx
 type OrgObjects = Org ObjIx
-deriving newtype instance Semigroup OrgObjects
-deriving newtype instance Monoid OrgObjects
 
 -- * Elements
 
@@ -96,8 +100,6 @@ element props annotations keywords datum = coerce $ (: []) $ OrgElement props an
 
 type OrgElementD = OrgElementData Org ElmIx
 type OrgElements = Org ElmIx
-deriving newtype instance Semigroup OrgElements
-deriving newtype instance Monoid OrgElements
 
 -- * Sections
 
@@ -108,9 +110,10 @@ pattern OrgSection props annotations datum = OrgF props annotations (P.OrgSectio
 pattern OrgSection' :: () => (ix ~ 'SecIx) => StandardProperties -> Object -> OrgSectionData k 'SecIx -> OrgF k ix
 pattern OrgSection' props annotations datum = OrgF props annotations (P.OrgSectionF datum)
 
+section :: StandardProperties -> Object -> OrgSectionD -> Org SecIx
+section props annotations datum = coerce $ (: []) $ OrgSection props annotations datum
+
 type OrgSectionD = OrgSectionData Org SecIx
 type OrgSections = Org SecIx
-deriving newtype instance Semigroup OrgSections
-deriving newtype instance Monoid OrgSections
 
 type OrgDocument = OrgDocumentData Org ElmIx

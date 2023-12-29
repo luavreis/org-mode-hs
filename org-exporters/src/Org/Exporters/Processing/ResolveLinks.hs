@@ -1,10 +1,13 @@
 {-# LANGUAGE RankNTypes #-}
 
 -- | This module deals with internal link resolution.
-module Org.Exporters.Processing.ResolveLinks where
+module Org.Exporters.Processing.ResolveLinks (resolveLinks) where
 
+import Control.Category.Natural (type (~>) (..))
+import Control.Category.RecursionSchemes qualified as R
 import Data.Aeson.KeyMap qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
+import Data.Ix.RecursionSchemes (Fix (..))
 import Data.Ix.Traversable (isequenceA)
 import Data.Map qualified as Map
 import Data.Text qualified as T
@@ -14,8 +17,8 @@ import Org.Types.Variants.Annotated
 
 resolveObjects ::
   OrgF (T Org) ObjIx ->
-  T (OrgF Org) ObjIx
-resolveObjects (OrgObject p a d) = Compose do
+  M (OrgF Org ObjIx)
+resolveObjects (OrgObject p a d) = do
   case d of
     FootnoteRef (FootnoteRefLabel label) -> do
       targets <- gets (.footnotes)
@@ -42,26 +45,12 @@ resolveObjects (OrgObject p a d) = Compose do
       return $ OrgObject p a $ Link target' objs''
     x -> OrgObject p a <$> coerce (isequenceA x)
 
--- resolveElements ::
---   OrgElementData (T k) ix ->
---   T (OrgElementData k) ix
--- resolveElements r f = \case
---   fd@(FootnoteDef label stuff) ->
---     Compose $ do
---       stuff' <- getCompose $ traverse r stuff
---       registerFootnote label (Right <$> stuff') $> pure fd
---   (PlainList t i) -> PlainList t <$> resolveListItems i
---   kw@(Keyword k _) -> do
---     Compose $ do
---       kw' <- getCompose $ f kw
---       let val = keywordValue <$> kw'
---       registerKeyword k val
---       return kw'
---   obj -> f obj
-
--- resolveLinks :: WalkM (Compose M F)
--- resolveLinks = buildMultiW \f l ->
---   l
---     .> resolveSection resolveLinks
---     .> resolveObjects resolveLinks f
---     .> resolveElements resolveLinks f
+resolveLinks :: Org ix -> M (Org ix)
+resolveLinks = getCompose . (R.fold (NT go) #)
+  where
+    go :: ComposeIx [] OrgF (T Org) ix -> T Org ix
+    go (ComposeIx x) =
+      Compose $ Fix <$> coerce @(M [_]) do
+        forM x \case
+          o@OrgObject' {} -> resolveObjects o
+          y -> getCompose $ isequenceA y
