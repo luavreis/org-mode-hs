@@ -46,6 +46,12 @@ import Org.Types.Ix
 import Org.Types.Variants.Plain qualified as P
 
 data OrgF k ix = OrgF {props :: StandardProperties, datum :: P.OrgF k ix}
+  deriving (Generic)
+
+deriving instance (AllOrgIx Eq k) => (Eq (OrgF k a))
+deriving instance (AllOrgIx Ord k) => (Ord (OrgF k a))
+deriving instance (AllOrgIx Show k) => (Show (OrgF k a))
+deriving instance (AllOrgIx NFData k) => (NFData (OrgF k ix))
 
 $(deriveGenericK ''OrgF)
 deriving via (Generically OrgF) instance (Endofunctor (~>) OrgF)

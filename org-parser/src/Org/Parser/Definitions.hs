@@ -71,17 +71,20 @@ getsO f = asks (f . (.options))
 
 -- * Marked parsers
 
-data Marked a = Marked
+data Marked m a = Marked
   { marks :: String
-  , parser :: a
+  , parser :: m a
   }
   deriving (Functor)
 
-instance (Alternative m) => Semigroup (Marked (m a)) where
+mapMarkedP :: (m a -> n b) -> Marked m a -> Marked n b
+mapMarkedP f m = m { parser = f m.parser }
+
+instance (Alternative m) => Semigroup (Marked m a) where
   Marked s1 p1 <> Marked s2 p2 =
     Marked (s1 ++ s2) (p1 <|> p2)
 
-instance (Alternative m) => Monoid (Marked (m a)) where
+instance (Alternative m) => Monoid (Marked m a) where
   mempty = Marked [] empty
   mconcat ms =
     Marked

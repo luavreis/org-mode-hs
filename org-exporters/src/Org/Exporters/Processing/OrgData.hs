@@ -130,7 +130,11 @@ data OrgData = OrgData
   , footnotes :: Map FootnoteLabel (Id, Either OrgObjects OrgElements)
   , bibliography :: [(Text, CslJson Text)]
   }
-  deriving (Eq, Ord, Show, Typeable, Generic)
+  deriving (Eq, Ord, Show, Typeable, Generic, NFData)
+
+-- FIXME upstream
+deriving instance (Generic (CslJson Text))
+deriving instance (NFData (CslJson Text))
 
 initialOrgData :: OrgData
 initialOrgData = OrgData mempty [] defaultExporterSettings defaultOrgOptions mempty mempty []

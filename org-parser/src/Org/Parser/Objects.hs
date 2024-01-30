@@ -8,6 +8,7 @@ module Org.Parser.Objects
   , Marked (..)
   , markupContext
   , plainMarkupContext
+  , mapMarkedP
 
     -- * General purpose parsers
   , markup
@@ -42,6 +43,7 @@ module Org.Parser.Objects
     -- * Auxiliary
   , linkToTarget
   , parseTimestamp
+  , withPos
   )
 where
 
@@ -62,10 +64,10 @@ withPos p = do
 
 -- * Sets of objects
 
-minimalSet :: Marked (OrgParser OrgObjects)
+minimalSet :: Marked OrgParser OrgObjects
 minimalSet =
-  withPos
-    <$> mconcat
+  mapMarkedP withPos
+    $ mconcat
       [ endline
       , code
       , verbatim
@@ -83,11 +85,11 @@ minimalSet =
       , macro
       ]
 
-standardSet :: Marked (OrgParser OrgObjects)
+standardSet :: Marked OrgParser OrgObjects
 standardSet =
   (minimalSet <>)
-    $ withPos
-    <$> mconcat
+    . mapMarkedP withPos
+    $ mconcat
       [ regularLink
       , footnoteReference
       , timestamp
@@ -107,7 +109,7 @@ standardSet =
 'plainMarkupContext' = 'markupContext' 'B.plain'
 @
 -}
-plainMarkupContext :: Marked (OrgParser OrgObjects) -> OrgParser OrgObjects
+plainMarkupContext :: Marked OrgParser OrgObjects -> OrgParser OrgObjects
 plainMarkupContext = markupContext (\s e t -> object s e (Plain t))
 
 newlineAndClear :: OrgParser Char
@@ -149,7 +151,7 @@ emphasisSkip s = try $ do
 markup ::
   (OrgObjects -> OrgObjectD) ->
   Char ->
-  Marked (OrgParser OrgObjectD)
+  Marked OrgParser OrgObjectD
 markup f c = Marked [c] $ try do
   emphasisPre c
   st <- getFullState
@@ -160,53 +162,53 @@ markup f c = Marked [c] $ try do
 rawMarkup ::
   (Text -> OrgObjectData Org ObjIx) ->
   Char ->
-  Marked (OrgParser OrgObjectD)
+  Marked OrgParser OrgObjectD
 rawMarkup f d = Marked [d] $ try do
   emphasisPre d
   f . fst <$> skipManyTill' (emphasisSkip d) (emphasisPost d)
 
 -- | Parse a code object.
-code :: Marked (OrgParser OrgObjectD)
+code :: Marked OrgParser OrgObjectD
 code = rawMarkup Code '~'
 
 -- | Parse a verbatim object.
-verbatim :: Marked (OrgParser OrgObjectD)
+verbatim :: Marked OrgParser OrgObjectD
 verbatim = rawMarkup Verbatim '='
 
 -- | Parse an italic object.
-italic :: Marked (OrgParser OrgObjectD)
+italic :: Marked OrgParser OrgObjectD
 italic = markup Italic '/'
 
 -- | Parse an underline object.
-underline :: Marked (OrgParser OrgObjectD)
+underline :: Marked OrgParser OrgObjectD
 underline = markup Underline '_'
 
 -- | Parse a bold object.
-bold :: Marked (OrgParser OrgObjectD)
+bold :: Marked OrgParser OrgObjectD
 bold = markup Bold '*'
 
 -- | Parse a strikethrough object.
-strikethrough :: Marked (OrgParser OrgObjectD)
+strikethrough :: Marked OrgParser OrgObjectD
 strikethrough = markup Strikethrough '+'
 
 -- | Parse a single-quoted object.
-singleQuoted :: Marked (OrgParser OrgObjectD)
+singleQuoted :: Marked OrgParser OrgObjectD
 singleQuoted = markup (Quoted SingleQuote) '\''
 
 -- | Parse a double-quoted object.
-doubleQuoted :: Marked (OrgParser OrgObjectD)
+doubleQuoted :: Marked OrgParser OrgObjectD
 doubleQuoted = markup (Quoted DoubleQuote) '"'
 
 -- TODO why is this parsed? can't it live inside plain??
 
 -- | An endline character that can be treated as a space, not a line break.
-endline :: Marked (OrgParser OrgObjectD)
+endline :: Marked OrgParser OrgObjectD
 endline = Marked "\n" $ try $ newlineAndClear *> hspace $> Plain "\n"
 
 -- * Entities and LaTeX fragments
 
 -- | Parse an entity object.
-entity :: Marked (OrgParser OrgObjectD)
+entity :: Marked OrgParser OrgObjectD
 entity = Marked "\\" $ try do
   _ <- char '\\'
   name <- choice (map string defaultEntitiesNames)
@@ -214,7 +216,7 @@ entity = Marked "\\" $ try do
   pure $ Entity name
 
 -- | Parse a LaTeX fragment object.
-latexFragment :: Marked (OrgParser OrgObjectD)
+latexFragment :: Marked OrgParser OrgObjectD
 latexFragment = Marked "\\" $ try do
   _ <- char '\\'
   mathFragment <|> rawFragment
@@ -247,7 +249,7 @@ latexFragment = Marked "\\" $ try do
       pure $ open `T.cons` str `T.snoc` close
 
 -- | Parse a TeX math fragment object.
-texMathFragment :: Marked (OrgParser OrgObjectD)
+texMathFragment :: Marked OrgParser OrgObjectD
 texMathFragment = Marked "$" $ try $ display <|> inline
   where
     display = try $ do
@@ -293,7 +295,7 @@ texMathFragment = Marked "$" $ try $ display <|> inline
 -- * Export snippets
 
 -- | Parse an export snippet object.
-exportSnippet :: Marked (OrgParser OrgObjectD)
+exportSnippet :: Marked OrgParser OrgObjectD
 exportSnippet = Marked "@" $ try do
   _ <- string "@@"
   backend <-
@@ -308,7 +310,7 @@ exportSnippet = Marked "@" $ try do
 -- The following code for org-cite citations was adapted and improved upon pandoc's.
 
 -- | Parse a citation object.
-citation :: Marked (OrgParser OrgObjectD)
+citation :: Marked OrgParser OrgObjectD
 citation = Marked "[" do
   Cite <$> withBalancedContext '[' ']' (const True) orgCite
 
@@ -395,7 +397,7 @@ orgCiteKeyChar c =
 -- * Inline Babel calls
 
 -- | Parse an inline babel call object.
-inlBabel :: Marked (OrgParser OrgObjectD)
+inlBabel :: Marked OrgParser OrgObjectD
 inlBabel = Marked "c" $ try do
   _ <- string "call_"
   name <-
@@ -413,7 +415,7 @@ inlBabel = Marked "c" $ try do
 -- * Inline source blocks
 
 -- | Parse an inline source object.
-inlSrc :: Marked (OrgParser OrgObjectD)
+inlSrc :: Marked OrgParser OrgObjectD
 inlSrc = Marked "s" $ try do
   _ <- string "src_"
   name <-
@@ -429,14 +431,14 @@ inlSrc = Marked "s" $ try do
 -- * Line breaks
 
 -- | Parse a linebreak object.
-linebreak :: Marked (OrgParser OrgObjectD)
+linebreak :: Marked OrgParser OrgObjectD
 linebreak = Marked "\\" $ try do
   LineBreak <$ string "\\\\" <* blankline' <* clearLastChar
 
 -- * Links
 
 -- | Parse a angle link object.
-angleLink :: Marked (OrgParser OrgObjectD)
+angleLink :: Marked OrgParser OrgObjectD
 angleLink = Marked "<" $ try do
   _ <- char '<'
   s <- getOffset
@@ -452,7 +454,7 @@ angleLink = Marked "<" $ try do
   return $ Link (URILink protocol tgt) (object s (e - 1) $ Plain $ protocol <> ":" <> tgt)
 
 -- | Parse a regular link object.
-regularLink :: Marked (OrgParser OrgObjectD)
+regularLink :: Marked OrgParser OrgObjectD
 regularLink = Marked "[" $ try do
   _ <- string "[["
   str <- linkTarget
@@ -498,7 +500,7 @@ linkToTarget link
 -- * Targets and radio targets
 
 -- | Parse a target object.
-target :: Marked (OrgParser OrgObjectD)
+target :: Marked OrgParser OrgObjectD
 target = Marked "<" $ try do
   _ <- string "<<"
   str <- takeWhile1P (Just "dedicated target") (\c -> c /= '<' && c /= '>' && c /= '\n')
@@ -510,7 +512,7 @@ target = Marked "<" $ try do
 -- * Subscripts and superscripts
 
 -- | Parse a subscript or a superscript object.
-suscript :: Marked (OrgParser OrgObjectD)
+suscript :: Marked OrgParser OrgObjectD
 suscript = Marked "_^" $ try do
   lchar <- gets (.lastChar)
   for_ lchar $ guard . not . isSpace
@@ -532,7 +534,7 @@ suscript = Marked "_^" $ try do
     plain =
       liftA2 (<>) sign
         $ withMContext (const True) isAlphaNum plainEnd
-        $ plainMarkupContext (withPos <$> entity <> latexFragment)
+        $ plainMarkupContext (mapMarkedP withPos $ entity <> latexFragment)
 
     plainEnd :: OrgParser ()
     plainEnd = try do
@@ -544,7 +546,7 @@ suscript = Marked "_^" $ try do
 -- * Macros
 
 -- | Parse a macro object.
-macro :: Marked (OrgParser OrgObjectD)
+macro :: Marked OrgParser OrgObjectD
 macro = Marked "{" $ try do
   _ <- string "{{{"
   _ <- lookAhead $ satisfy isAsciiAlpha
@@ -561,7 +563,7 @@ macro = Marked "{" $ try do
 -- * Footnote references
 
 -- | Parse a footnote reference object.
-footnoteReference :: Marked (OrgParser OrgObjectD)
+footnoteReference :: Marked OrgParser OrgObjectD
 footnoteReference = Marked "[" $ withBalancedContext '[' ']' (const True) do
   _ <- string "fn:"
   lbl <-
@@ -583,7 +585,7 @@ footnoteReference = Marked "[" $ withBalancedContext '[' ']' (const True) do
 -- * Timestamps
 
 -- | Parse a timestamp object.
-timestamp :: Marked (OrgParser OrgObjectD)
+timestamp :: Marked OrgParser OrgObjectD
 timestamp = Marked "<[" $ Timestamp <$> parseTimestamp
 
 -- | Parse a timestamp.
@@ -640,7 +642,7 @@ parseTimestamp = try $ do
 -- * Statistic Cookies
 
 -- | Parse a statistic cookie object.
-statisticCookie :: Marked (OrgParser OrgObjectD)
+statisticCookie :: Marked OrgParser OrgObjectD
 statisticCookie = Marked "[" $ try do
   _ <- char '['
   res <- Left <$> fra <|> Right <$> pct

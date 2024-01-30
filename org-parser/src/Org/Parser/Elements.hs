@@ -132,9 +132,9 @@ paraIndented begin minI kws =
 
     end :: OrgParser (Int, Int, OrgElements)
     end =
-      eofEnd <|> do
+      eofEnd <|> try do
         _ <- newline
-        postBlank <- length <$> many blankline
+        postBlank <- length <$> lookAhead (many blankline)
         liftA2 (,postBlank,) getOffset do
           ((blanklineEnd <|> indentEnd <|> headingEnd) $> mempty)
             <|> elementIndented minI True

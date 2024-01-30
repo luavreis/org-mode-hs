@@ -57,10 +57,10 @@ data OrgF k ix = OrgF {props :: StandardProperties, annotations :: Object, datum
 instance TestIxEq (OrgF k) where
   testIxEq x y = testIxEq x y.datum
 
-deriving instance (Eq (P.OrgF k a)) => (Eq (OrgF k a))
-deriving instance (Ord (P.OrgF k a)) => (Ord (OrgF k a))
-deriving instance (Show (P.OrgF k a)) => (Show (OrgF k a))
-deriving instance (NFData (P.OrgF k a)) => (NFData (OrgF k a))
+deriving instance (AllOrgIx Eq k) => (Eq (OrgF k a))
+deriving instance (AllOrgIx Ord k) => (Ord (OrgF k a))
+deriving instance (AllOrgIx Show k) => (Show (OrgF k a))
+deriving instance (AllOrgIx NFData k) => (NFData (OrgF k ix))
 
 $(deriveGenericK ''OrgF)
 deriving via (Generically OrgF) instance (Endofunctor (~>) OrgF)

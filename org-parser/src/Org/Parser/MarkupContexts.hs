@@ -120,7 +120,7 @@ withBalancedContext lchar rchar allowed p = try do
 markupContext ::
   Monoid k =>
   (Int -> Int -> Text -> k) ->
-  Marked (OrgParser k) ->
+  Marked OrgParser k ->
   OrgParser k
 markupContext f elems = go
   where

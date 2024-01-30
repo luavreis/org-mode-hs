@@ -1,0 +1,60 @@
+Right
+  [
+    OrgF {
+      props = StandardProperties {
+        begin = 0,
+        end = 10,
+        postBlank = 0},
+      datum = OrgElement {
+        affiliated = Map.fromList [],
+        data = PlainList
+          (Unordered '-')
+          [
+            ListItem {
+              bullet = Bullet '-',
+              counter = Nothing,
+              checkbox = Nothing,
+              tag = Nothing,
+              content = [
+                OrgF {
+                  props = StandardProperties {
+                    begin = 2,
+                    end = 10,
+                    postBlank = 0},
+                  datum = OrgElement {
+                    affiliated = Map.fromList [],
+                    data = Paragraph
+                      [
+                        OrgF {
+                          props = StandardProperties {
+                            begin = 2,
+                            end = 9,
+                            postBlank = 0},
+                          datum = Plain
+                            "foo bar"}]}}]}]}},
+    OrgF {
+      props = StandardProperties {
+        begin = 10,
+        end = 31,
+        postBlank = 0},
+      datum = OrgElement {
+        affiliated = Map.fromList
+          [
+            _×_
+              "caption"
+              (ParsedKeyword
+                [
+                  OrgF {
+                    props = StandardProperties {
+                      begin = 25,
+                      end = 28,
+                      postBlank = 0},
+                    datum = Plain "foo"}])],
+        data = Paragraph
+          [
+            OrgF {
+              props = StandardProperties {
+                begin = 27,
+                end = 30,
+                postBlank = 0},
+              datum = Plain "bla"}]}}]
