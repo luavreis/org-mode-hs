@@ -119,31 +119,34 @@ withBalancedContext lchar rchar allowed p = try do
 -}
 markupContext ::
   Monoid k =>
-  (Text -> k) ->
+  (Int -> Int -> Text -> k) ->
   Marked OrgParser k ->
   OrgParser k
 markupContext f elems = go
   where
     go = try $ do
-      let specials :: Set Char = fromList $ getMarks elems
+      let specials :: Set Char = fromList elems.marks
+      s <- getOffset
       str <-
         optional $
           takeWhile1P
             Nothing
             (`notMember` specials)
+      e <- getOffset
       -- traceM $ "consumed: " ++ show str
-      let self = maybe mempty f str
+      let self = maybe mempty (f s e) str
       setLastChar (T.last <$> str)
       (self <>) <$> (finishSelf <|> anotherEl <|> nextChar)
       where
         finishSelf = eof $> mempty
         anotherEl = try $ do
-          el <- getParser elems
+          el <- elems.parser
           rest <- go
           pure $ el <> rest
         nextChar = try $ do
+          s <- getOffset
           c <- anySingle
           -- traceM $ "parsed char: " ++ show c
           putLastChar c
           rest <- go
-          pure $ f (one c) <> rest
+          pure $ f s s (T.singleton c) <> rest

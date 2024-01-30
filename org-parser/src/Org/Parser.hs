@@ -29,11 +29,12 @@ parseOrg :: OrgOptions -> OrgParser a -> FilePath -> Text -> Either OrgParseErro
 parseOrg opt (OrgParser x) =
   parse $
     x
-      `runReaderT` defaultEnv {orgEnvOptions = opt}
+      `runReaderT` defaultEnv {options = opt}
       `evalStateT` defaultState
 
 newtype OrgParserException = OrgParserException String
-  deriving (Show, Exception)
+  deriving (Show)
+  deriving anyclass (Exception)
 
 -- | Parse an Org document fully, with given options, and a filepath for error messages.
 parseOrgDoc :: OrgOptions -> FilePath -> Text -> OrgDocument

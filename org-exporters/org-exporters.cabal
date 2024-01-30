@@ -52,16 +52,19 @@ flag syntect
     Build with the experimental syntect syntax highlighting backend (requires a library).
 
 common common-options
-  default-language:   Haskell2010
+  default-language:   GHC2021
   build-depends:
     , aeson
-    , base        >=4.15   && <4.19
-    , bytestring  >=0.11.4 && <0.12
-    , filepath    >=1.4.2  && <1.5
+    , base          >=4.15   && <4.19
+    , bytestring    >=0.11.4 && <0.12
+    , filepath      >=1.4.2  && <1.5
+    , ix-cat
     , ondim
+    , optics-core
     , org-parser
     , relude
     , text
+    , transformers
 
   mixins:
     base hiding (Prelude),
@@ -70,16 +73,20 @@ common common-options
 
   ghc-options:        -Wall
   default-extensions:
+    NoFieldSelectors
     BlockArguments
-    ConstraintKinds
-    DeriveGeneric
-    FlexibleContexts
-    ImportQualifiedPost
+    DataKinds
+    DeriveAnyClass
+    DerivingStrategies
+    DerivingVia
+    DuplicateRecordFields
     LambdaCase
     MultiWayIf
+    OverloadedLabels
+    OverloadedRecordDot
     OverloadedStrings
-    ScopedTypeVariables
-    TupleSections
+    PatternSynonyms
+    TypeFamilies
     ViewPatterns
 
 library
@@ -91,24 +98,26 @@ library
     Org.Exporters.Data.Templates
     Org.Exporters.HTML
     Org.Exporters.Processing
+    Org.Exporters.Processing.GatherAnchors
     Org.Exporters.Processing.GatherSettings
-    Org.Exporters.Processing.InternalLinks
     Org.Exporters.Processing.OrgData
     Org.Exporters.Processing.Prune
+    Org.Exporters.Processing.ResolveLinks
     Org.Exporters.Processing.SpecialStrings
+    Org.Types.Variants.Annotated
 
   other-modules:   Paths_org_exporters
   autogen-modules: Paths_org_exporters
   build-depends:
-    , citeproc    >=0.8.1  && <0.9
+    , citeproc          >=0.8.1  && <0.9
     , containers
     , file-embed
+    , kind-generics-th
     , megaparsec
-    , multiwalk
-    , slugify     >=0.1.0  && <0.2
-    , time        >=1.11.1 && <1.13
-    , uri-encode  >=1.5.0  && <1.6
-    , xmlhtml     >=0.2.5  && <0.3
+    , slugify           >=0.1.0  && <0.2
+    , time              >=1.11.1 && <1.13
+    , uri-encode        >=1.5.0  && <1.6
+    , xmlhtml           >=0.2.5  && <0.3
 
   if flag(latex)
     exposed-modules: Org.Exporters.LaTeX

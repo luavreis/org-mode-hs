@@ -1,8 +1,9 @@
-module Org.Exporters.Processing.SpecialStrings where
+module Org.Exporters.Processing.SpecialStrings (doSpecialStrings, processSpecialStrings) where
 
 import Data.Text qualified as T
-import Org.Types
-import Org.Walk
+import Org.Types.Variants.Annotated
+import qualified Data.Ix.RecursionSchemes as R
+import Control.Category.Natural (type (~>) (..))
 
 doSpecialStrings :: Text -> Text
 doSpecialStrings txt =
@@ -13,9 +14,8 @@ doSpecialStrings txt =
     & T.replace "\\-" "\173"
     & T.replace "'" "’"
 
-processSpecialStrings :: MultiWalk MWTag a => a -> a
-processSpecialStrings = walk process
+processSpecialStrings :: Org ix -> Org ix
+processSpecialStrings = (#) $ R.fold $ NT \(ComposeIx x) -> coerce $ map process x
   where
-    process :: OrgObject -> OrgObject
-    process (Plain txt) = Plain $ doSpecialStrings txt
+    process (OrgObject' p a (Plain txt)) = OrgObject p a $ Plain $ doSpecialStrings txt
     process x = x

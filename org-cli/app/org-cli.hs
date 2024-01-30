@@ -19,7 +19,7 @@ import Org.Exporters.LaTeX qualified as L
 import Org.Exporters.Pandoc qualified as P
 import Org.Exporters.Processing (OrgData, processAll)
 import Org.Parser
-import Org.Types (OrgDocument)
+import Org.Types.Variants.Annotated (OrgDocument)
 import System.Directory qualified as D
 import System.FilePath (isDrive, takeDirectory, (</>))
 import Text.Pretty.Simple
