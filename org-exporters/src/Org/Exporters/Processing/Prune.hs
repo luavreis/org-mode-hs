@@ -58,6 +58,6 @@ pruneDoc doc = do
         runWriter $ coerce $ R.transverse (NT $ pruneSections selTags excTags) # doc.sections
   return
     $ doc
-      { children = if someSelected then doc.children else mempty
+      { children = if someSelected then mempty else doc.children
       , sections = prunedSections
       }
