@@ -8,7 +8,7 @@ package *
 source-repository-package
   type: git
   location: https://github.com/lucasvreis/lvar.git
-  tag: b5c16f1f48a784bdb0578a663c3bb0d355fe0fc6
+  tag: b92b8c3d804b83c0b516f23f2b4486d119a24a50
 
 source-repository-package
   type: git
