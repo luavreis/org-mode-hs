@@ -55,7 +55,7 @@ common common-options
   default-language:   GHC2021
   build-depends:
     , aeson
-    , base          >=4.15   && <4.19
+    , base          >=4.17.2 && <4.19
     , bytestring    >=0.11.4 && <0.12
     , citeproc      >=0.8.1  && <0.9
     , filepath      >=1.4.2  && <1.5
