@@ -40,7 +40,7 @@ resolveObjects (OrgObject p a d) = do
                  in f (UnresolvedLink replaced)
           UnresolvedLink link
             | Just (anchor, alias) <- targets Map.!? unresolvedToInternalLink link ->
-                return (AnchorLink anchor, alias)
+                return (AnchorLink anchor, if mempty == objs' then alias else objs')
           x -> return (x, objs')
       return $ OrgObject p a $ Link target' objs''
     x -> OrgObject p a <$> coerce (isequenceA x)

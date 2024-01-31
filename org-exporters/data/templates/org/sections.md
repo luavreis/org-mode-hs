@@ -1,22 +1,22 @@
 ::: {.e:bind #heading}
 ::::{.e:match #sections.level}
 :::{.e:case #1}
-# []{.e:org.element.headline} {id=!(this.anchor)}
+# []{.e:org.element.headline} {id=!(this.id)}
 :::
 :::{.e:case #2}
-## []{.e:org.element.headline} {id=!(this.anchor)}
+## []{.e:org.element.headline} {id=!(this.id)}
 :::
 :::{.e:case #3}
-### []{.e:org.element.headline} {id=!(this.anchor)}
+### []{.e:org.element.headline} {id=!(this.id)}
 :::
 :::{.e:case #4}
-#### []{.e:org.element.headline} {id=!(this.anchor)}
+#### []{.e:org.element.headline} {id=!(this.id)}
 :::
 :::{.e:case #5}
-##### []{.e:org.element.headline} {id=!(this.anchor)}
+##### []{.e:org.element.headline} {id=!(this.id)}
 :::
 :::{.e:case #6}
-###### []{.e:org.element.headline} {id=!(this.anchor)}
+###### []{.e:org.element.headline} {id=!(this.id)}
 :::
 ::::
 :::

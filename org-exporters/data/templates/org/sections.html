@@ -33,7 +33,7 @@
   <e:match sections.type>
     <e:case normal>
       <e:sections:list>
-        <section id="${this.anchor}">
+        <section id="${this.id}">
           <e:my_hlevel><e:org.element.headline/></e:my_hlevel>
           <e:my_planning/>
           <e:this:children/>
@@ -45,7 +45,7 @@
     <e:case over-level>
       <ol>
         <e:sections:list>
-          <li id="${this.anchor}">
+          <li id="${this.id}">
             <p><b><e:org.element.headline/></b></p>
             <e:this:children/>
             <e:this:subsections/>

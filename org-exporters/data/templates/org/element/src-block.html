@@ -1,15 +1,7 @@
-
-  <div class="org-src-container" e:this.affiliated>
-    <pre class="src src-${this.language}">
-      <e:this.lines:list as=line>
-        <e:match line.type>
-          <e:case plain>
-            <e:line.content/><br />
-          </e:case>
-          <e:case ref>
-            <span id="${line.id}" class="coderef-target"><e:line.content/><br /><span class="coderef">(<e:line.ref/>)</span></span>
-          </e:case>
-        </e:match>
-      </e:this.lines:list>
-    </pre>
-  </div>
+<div class="org-src-container" e:this.affiliated>
+  <pre class="src src-${this.language}">
+    <e:this.lines:list as=line>
+      <e:line.content/><br />
+    </e:this.lines:list>
+  </pre>
+</div>
