@@ -64,28 +64,13 @@ Right
             OrgF {
               props = StandardProperties {
                 begin = 52,
-                end = 60,
-                postBlank = 0},
-              datum = Plain " but not~"},
-            OrgF {
-              props = StandardProperties {
-                begin = 61,
-                end = 65,
-                postBlank = 0},
-              datum = Plain "here~"},
-            OrgF {
-              props = StandardProperties {
-                begin = 66,
-                end = 75,
-                postBlank = 0},
-              datum = Plain
-                (T.concat [" and\n", "not _"])},
-            OrgF {
-              props = StandardProperties {
-                begin = 76,
                 end = 80,
                 postBlank = 0},
-              datum = Plain "here"},
+              datum = Plain
+                (T.concat
+                  [
+                    " but not~here~ and\n",
+                    "not _here"])},
             OrgF {
               props = StandardProperties {
                 begin = 80,
