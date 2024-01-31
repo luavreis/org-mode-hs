@@ -35,7 +35,6 @@ executable horg
     , org-exporters
     , org-parser
     , pandoc
-    , pretty-simple         >=4.1
     , relude
 
   ghc-options:        -Wall -threaded

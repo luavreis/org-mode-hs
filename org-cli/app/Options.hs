@@ -16,7 +16,7 @@ data AppOptions = AppOptions
   }
 
 data BackendOptions
-  = AST {pretty :: Bool}
+  = AST
   | Ondim {ondimOptions :: OndimOptions}
 
 data OndimFormat
@@ -92,7 +92,7 @@ backend' =
         <> command "pandoc" (info pandoc (progDesc "Export to Pandoc JSON using Ondim."))
     )
   where
-    ast = AST . not <$> switch (long "no-pretty" <> help "Disable pretty-printing of the parsed AST")
+    ast = pure AST
     html = Ondim <$> ondimOptions' HTML
     latex = Ondim <$> ondimOptions' LaTeX
     pandoc = Ondim <$> ondimOptions' Pandoc

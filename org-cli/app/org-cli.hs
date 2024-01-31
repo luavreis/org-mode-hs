@@ -22,7 +22,6 @@ import Org.Parser
 import Org.Types.Variants.Annotated (OrgDocument)
 import System.Directory qualified as D
 import System.FilePath (isDrive, takeDirectory, (</>))
-import Text.Pretty.Simple
 
 loadPandoc :: forall m. Monad m => LoadConfig m
 loadPandoc = (P.loadPandocMd @m) {initialState = templatesEmbed [P.loadPandocMd]}
@@ -86,8 +85,7 @@ main = do
           (processed, datum) = processAll parsed
       out <- try
         case O.backend opts of
-          O.AST False -> return $ Right $ show processed
-          O.AST True -> return $ Right $ encodeUtf8 $ pShowNoColor processed
+          O.AST -> return $ Right $ show processed
           O.Ondim oo -> renderDoc udirs oo datum processed
       case out of
         Right (Right out') -> case O.output opts of
