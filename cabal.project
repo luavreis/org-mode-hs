@@ -13,7 +13,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/lucasvreis/unionmount.git
-  tag: 5fef2d328b5c15b9feec7ca0dd71d2d403c39941
+  tag: cd3d6b404046dbfb803677c3e5be4139251e8f94
 
 source-repository-package
   type: git
