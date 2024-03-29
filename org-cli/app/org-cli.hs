@@ -5,8 +5,9 @@ module Main where
 import Control.Exception (try)
 import Data.Text.IO qualified as T
 import Ondim
+import Ondim.Debug (OndimException)
 import Ondim.Extra.Exceptions (prettyException)
-import Ondim.Extra.Loading (LoadConfig (..), TemplateLoadingError (..), loadTemplates)
+import Ondim.Loading (LoadConfig (..), TemplateLoadingException (..), loadTemplates)
 import Ondim.Targets.HTML qualified as H
 import Ondim.Targets.LaTeX qualified as L
 import Ondim.Targets.Pandoc qualified as P
@@ -23,13 +24,13 @@ import Org.Types.Variants.Annotated (OrgDocument)
 import System.Directory qualified as D
 import System.FilePath (isDrive, takeDirectory, (</>))
 
-loadPandoc :: forall m. Monad m => LoadConfig m
+loadPandoc :: forall m. (Monad m) => LoadConfig m
 loadPandoc = (P.loadPandocMd @m) {initialState = templatesEmbed [P.loadPandocMd]}
 
-loadHtml :: forall m. Monad m => LoadConfig m
+loadHtml :: forall m. (Monad m) => LoadConfig m
 loadHtml = (H.loadHtml @m) {initialState = templatesEmbed [H.loadHtml]}
 
-loadLaTeX :: forall m. Monad m => LoadConfig m
+loadLaTeX :: forall m. (Monad m) => LoadConfig m
 loadLaTeX = (L.loadLaTeX @m) {initialState = templatesEmbed [L.loadLaTeX]}
 
 renderDoc ::
@@ -48,7 +49,7 @@ renderDoc udirs oo datum doc = do
     if null dirs
       then return $ initialState cfg
       else loadTemplates [cfg] dirs
-  evalOndimTWith tpls $
+  evalOndimWith tpls $
     renderTemplateOrError (O.layout oo)
       `binding` documentExp bk datum doc
 

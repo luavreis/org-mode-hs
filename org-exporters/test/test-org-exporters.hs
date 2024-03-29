@@ -11,7 +11,7 @@ import Data.TreeDiff.Class (ToExpr (..))
 import Data.TreeDiff.Expr (Expr (..))
 import Data.TreeDiff.Golden (ediffGolden)
 import Data.TreeDiff.OMap qualified as OM
-import Ondim (OndimNode, OndimState, binding, callTemplate, evalOndimTWith)
+import Ondim (OndimNode, OndimState, binding, callTemplate, evalOndimWith)
 import Ondim.Extra.Exceptions (prettyException)
 import Ondim.Targets.HTML qualified as H
 import Ondim.Targets.LaTeX qualified as L
@@ -79,7 +79,7 @@ benchsFor tpls ext out bk bundle pf =
     expanded = do
       (doc, datum) <- bundle
       toRight
-        $ evalOndimTWith tpls
+        $ evalOndimWith tpls
         $ callTemplate @a ("document." <> ext)
         `binding` documentExp bk datum doc
     f = fromJust renderNode

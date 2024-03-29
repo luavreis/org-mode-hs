@@ -3,7 +3,7 @@
 module Org.Exporters.Data.Templates where
 
 import Data.FileEmbed (embedDir)
-import Ondim.Extra.Loading (LoadConfig, loadTemplatesEmbed)
+import Ondim.Loading (LoadConfig, loadTemplatesEmbed)
 import Org.Exporters.Common (OndimState)
 import Paths_org_exporters (getDataDir)
 import System.FilePath ((</>))
