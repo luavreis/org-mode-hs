@@ -13,7 +13,7 @@ import Generics.Kind.TH (deriveGenericK)
 import Org.Types.Data.Section (Properties)
 import Org.Types.Ix
 
-data OrgDocumentData k _i = OrgDocumentData
+data OrgDocumentData k (_i :: OrgIx) = OrgDocumentData
   { properties :: Properties
   , children :: k ElmIx
   , sections :: k SecIx

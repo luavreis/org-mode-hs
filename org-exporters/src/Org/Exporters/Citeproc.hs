@@ -1,4 +1,6 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Org.Exporters.Citeproc where
 
@@ -6,21 +8,35 @@ import Citeproc hiding (Citation, toText)
 import Citeproc qualified as C
 import Citeproc.CslJson
 import Control.Category.Natural (type (~>) (..))
-import Control.Category.RecursionSchemes qualified as R
 import Data.Aeson (decode)
 import Data.Ix.Foldable qualified as R
+import Generics.Kind.TH (deriveGenericK)
 import Optics.Core ((%), (%~), _head, _last)
-import Org.Data.Entities (defaultEntitiesMap, utf8Replacement)
+import Org.Data.Entities qualified as E
 import Org.Types.Variants.Plain
 import Relude.Extra (lookup)
+import Data.Ix.Instances (Generically (..))
+import Control.Category.Endofunctor (Endofunctor)
+import Data.Ix.Foldable (IFoldable)
+import Data.Ix.Traversable (ITraversable)
+import Org.Types.Walk (query)
+import Data.Ix.Functor (IFunctor)
 
-toCslJson :: Org ObjIx -> CslJson Text
-toCslJson = getConst . (R.fold to #)
+data CiteW k i where
+  ResolvedCite :: CiteW k ObjIx
+  Other :: k i -> CiteW k i
+
+$(deriveGenericK ''CiteW)
+deriving via (Generically CiteW) instance (Endofunctor (~>) CiteW)
+deriving via (Generically CiteW) instance (IFoldable CiteW)
+deriving via (Generically CiteW) instance (ITraversable CiteW)
+
+toCslJson :: (IFunctor f, IFoldable f) => Org f ObjIx -> CslJson Text
+toCslJson = query to
   where
-    to :: ComposeIx [] OrgF (Const (CslJson Text)) ~> Const (CslJson Text)
-    to = NT $ \(ComposeIx l) ->
-      (`foldMap` l) \case
-        OrgObjectF d -> Const $ toObj d
+    to :: OrgF (Const (CslJson Text)) ix -> CslJson Text
+    to = \case
+        OrgObjectF d -> toObj d
         OrgElementF {} -> mempty
         OrgSectionF {} -> mempty
 
@@ -39,7 +55,7 @@ toCslJson = getConst . (R.fold to #)
       (Code t) -> CslNoDecoration $ CslText t
       (Src _ _ t) -> CslNoDecoration $ CslText t
       (Entity e)
-        | Just t <- lookup e defaultEntitiesMap -> CslText t.utf8Replacement
+        | Just t <- lookup e E.defaultEntitiesMap -> CslText t.utf8Replacement
         | otherwise -> CslEmpty
       (LaTeXFragment InlMathFragment m) -> CslDiv "math inline" $ CslText $ "\\(" <> m <> "\\)"
       (LaTeXFragment DispMathFragment m) -> CslDiv "math display" $ CslText $ "\\[" <> m <> "\\]"
@@ -76,14 +92,13 @@ getCiteStyle cit = style cit.style
 -- FIXME upstream
 deriving instance (Generic (CitationItem a))
 
-citeToCiteproc :: Citation (Org ObjIx) -> C.Citation (CslJson Text)
+citeToCiteproc :: (IFunctor f, IFoldable f) => Citation (Org f ObjIx) -> C.Citation (CslJson Text)
 citeToCiteproc cite =
-  C.Citation Nothing Nothing
-    $ foldMap refToItem cite.references
-    & (_head % #citationItemPrefix %~ ((toCslJson <$> cite.prefix) <>))
-    & (_last % #citationItemPrefix %~ (<> (toCslJson <$> cite.suffix)))
+  C.Citation Nothing Nothing $
+    foldMap refToItem cite.references
+      & (_head % #citationItemPrefix %~ ((toCslJson <$> cite.prefix) <>))
+      & (_last % #citationItemPrefix %~ (<> (toCslJson <$> cite.suffix)))
   where
-    refToItem :: CiteReference (Org ObjIx) -> [C.CitationItem (CslJson Text)]
     refToItem ref = case getCiteStyle cite of
       Text ->
         [ (citeConstr AuthorOnly) {citationItemSuffix = Nothing}

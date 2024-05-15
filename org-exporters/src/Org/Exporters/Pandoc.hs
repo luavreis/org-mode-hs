@@ -7,7 +7,7 @@ module Org.Exporters.Pandoc where
 
 import Org.Exporters.Common
 
-defBackend :: Monad m => ExportBackend m
+defBackend :: ExportBackend s
 defBackend =
   let affiliatedMap _ = pure ()
       customExp _ _ _ = Nothing

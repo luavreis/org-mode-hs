@@ -112,7 +112,7 @@ elementIndented minI paraEnd = do
       postBlank <- length <$> many blankline
       return $ element begin end postBlank kws el
 
-paraIndented :: Int -> Int -> Keywords (Org ObjIx) -> OrgParser OrgElements
+paraIndented :: Int -> Int -> Keywords (OrgParsed ObjIx) -> OrgParser OrgElements
 paraIndented begin minI kws =
   blankline' $> mempty <|> do
     (inls, (e, postBlank, next)) <- withContext_ skip end (plainMarkupContext standardSet)
@@ -153,7 +153,7 @@ paraIndented begin minI kws =
 -- ** Lists
 
 -- | Parse a plain list.
-plainList :: OrgParser (OrgElementData Org ElmIx)
+plainList :: OrgParser OrgElementD
 plainList = try do
   fstItem <- listItem
   rest <- many itemIndented
@@ -168,7 +168,7 @@ plainList = try do
       guard (j == i)
       listItem
 
-listItem :: OrgParser (ListItem Org ElmIx)
+listItem :: OrgParser (ListItem OrgParsed ElmIx)
 listItem = try do
   indent <- asks (.indentLevel)
   bullet <- unorderedBullet <|> counterBullet
@@ -297,7 +297,7 @@ table = try do
   rows <- some tableRow
   return $ Table rows
   where
-    tableRow :: OrgParser (TableRow (Org ObjIx))
+    tableRow :: OrgParser (TableRow (OrgParsed ObjIx))
     tableRow = ruleRow <|> columnPropRow <|> standardRow
 
     ruleRow = try $ RuleRow <$ (hspace >> string "|-" >> anyLine')
@@ -502,7 +502,7 @@ latexEnvironment = try do
 
 -- ** Keywords
 
-affiliatedKeyword :: OrgParser (Text, KeywordValue (Org ObjIx))
+affiliatedKeyword :: OrgParser (Text, KeywordValue (OrgParsed ObjIx))
 affiliatedKeyword = try do
   v <- keywordData
   let name = fst v
@@ -515,7 +515,7 @@ affiliatedKeyword = try do
 keyword :: OrgParser OrgElementD
 keyword = uncurry Keyword <$> keywordData
 
-keywordData :: OrgParser (Text, KeywordValue (Org ObjIx))
+keywordData :: OrgParser (Text, KeywordValue (OrgParsed ObjIx))
 keywordData = try do
   _ <- string "#+"
   -- This is one of the places where it is convoluted to replicate org-element

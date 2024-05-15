@@ -50,7 +50,7 @@ pruneSections selTags excTags (coerce -> input) = Compose $ fmap ComposeIx do
         else return Nothing
 
 -- | Prunes COMMENT, :ARCHIVE: and noexport-tagged sections
-pruneDoc :: OrgDocument -> M OrgDocument
+pruneDoc :: OrgDocumentData Org ix -> M (OrgDocumentData Org ix)
 pruneDoc doc = do
   selTags <- gets \d -> d.exporterSettings.orgExportSelectTags
   excTags <- gets \d -> d.exporterSettings.orgExportExcludeTags

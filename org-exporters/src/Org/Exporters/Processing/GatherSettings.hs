@@ -1,31 +1,24 @@
 module Org.Exporters.Processing.GatherSettings (gatherSettings) where
 
-import Control.Category.Natural (type (~>) (..))
 import Data.Char (isSpace)
-import Data.Ix.Foldable (ifoldMap, ifold)
-import Data.Ix.RecursionSchemes qualified as R
+import Data.Ix.Foldable (IFoldable (..))
+import Data.Ix.Functor (IFunctor)
 import Data.Text qualified as T
 import Optics.Core ((%), (%~))
-import Org.Exporters.Processing.OrgData
-import Org.Types.Variants.Annotated
+import Org.Exporters.Settings (ExporterSettings)
+import Org.Types.Variants.Basic
+import Org.Types.Walk (queryTopDown)
 
-getKeywordSetting :: ComposeIx [] OrgF (Const (Ap M ())) ix -> Ap M ()
-getKeywordSetting (ComposeIx x) =
-  (`foldMap` x) \case
-    (OrgElement' _ _ _ (Keyword k v)) -> Ap $ case k of
-      "filetags"
-        | ValueKeyword tags <- v ->
-            modify' $ #filetags %~ (++ filter (not . T.null) (T.split (== ':') tags))
-      "select_tags"
-        | ValueKeyword tags <- v ->
-            modify' $ #exporterSettings % #orgExportSelectTags %~ (<> fromList (filter (not . T.null) $ T.split isSpace tags))
-      "exclude_tags"
-        | ValueKeyword tags <- v ->
-            modify' $ #exporterSettings % #orgExportExcludeTags %~ (<> fromList (filter (not . T.null) $ T.split isSpace tags))
-      _ -> pass
-    y -> ifold y
+getKeywordSetting :: OrgF k ix -> Endo ExporterSettings
+getKeywordSetting =
+  Endo . \case
+    (OrgElementF _ (Keyword k (ValueKeyword tags)))
+      | k == "filetags" -> #filetags %~ (++ splitOpts (== ':') tags)
+      | k == "select_tags" -> #orgExportSelectTags %~ (fromList (splitOpts isSpace tags) <>)
+      | k == "exclude_tags" -> #orgExportExcludeTags %~ (fromList (splitOpts isSpace tags) <>)
+    _other -> id
+  where
+    splitOpts p str = filter (not . T.null) $ T.split p str
 
--- Keyword "options" _ -> error "todo"
-
-gatherSettings :: OrgDocument -> M ()
-gatherSettings = getAp . ifoldMap (getConst . (R.fold (NT $ Const . getKeywordSetting) #))
+gatherSettings :: (IFoldable f, IFunctor f) => OrgDocumentData (Org f) i -> Endo ExporterSettings
+gatherSettings = ifoldMap (queryTopDown getKeywordSetting)

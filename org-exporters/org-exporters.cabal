@@ -13,7 +13,7 @@ bug-reports:        https://github.com/lucasvreis/org-mode-hs/issues
 copyright:          (c) 2022 lucasvreis
 category:           Text
 build-type:         Simple
-tested-with:        GHC ==9.2 || ==9.4
+tested-with:        GHC ==9.8
 data-dir:           data
 data-files:
   **/*.html
@@ -55,16 +55,12 @@ common common-options
   default-language:   GHC2021
   build-depends:
     , aeson
-    , base          >=4.17.2 && <4.19
-    , bytestring    >=0.11.4 && <0.12
-    , citeproc      >=0.8.1  && <0.9
-    , filepath      >=1.4.2  && <1.5
+    , base                                                >=4.19.0 && <4.20
+    , bytestring                                          >=0.11.4 && <0.12
+    , citeproc                                            >=0.8.1  && <0.9
+    , filepath                                            >=1.4.2  && <1.5
     , ix-cat
-    , ondim
-    , ondim-html
-    , ondim-json
-    , ondim-latex
-    , ondim-pandoc
+    , ondim:{ondim, ondim-html, ondim-json, ondim-latex}
     , optics-core
     , org-parser
     , relude
@@ -103,18 +99,19 @@ library
     Org.Exporters.Data.Templates
     Org.Exporters.HTML
     Org.Exporters.Processing
-    Org.Exporters.Processing.GatherAnchors
+    Org.Exporters.Processing.GatherLinks
     Org.Exporters.Processing.GatherSettings
     Org.Exporters.Processing.OrgData
     Org.Exporters.Processing.Prune
-    Org.Exporters.Processing.ResolveLinks
+    Org.Exporters.Processing.ResolveAnchors
     Org.Exporters.Processing.SpecialStrings
-    Org.Types.Variants.Annotated
+    Org.Exporters.Settings
 
   other-modules:   Paths_org_exporters
   autogen-modules: Paths_org_exporters
   build-depends:
     , containers
+    , deepseq           >=1.5.0  && <1.6
     , file-embed
     , kind-generics-th
     , megaparsec
@@ -126,9 +123,9 @@ library
   if flag(latex)
     exposed-modules: Org.Exporters.LaTeX
 
-  if flag(pandoc)
-    build-depends:   pandoc
-    exposed-modules: Org.Exporters.Pandoc
+  -- if flag(pandoc)
+  --   build-depends:   pandoc
+  --   exposed-modules: Org.Exporters.Pandoc
 
   if flag(skylighting)
     build-depends:

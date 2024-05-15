@@ -1,5 +1,3 @@
-{-# LANGUAGE QuantifiedConstraints #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Org.Exporters.Common
@@ -36,28 +34,26 @@ import Org.Types.Variants.Annotated
 import Org.Types.Variants.ParseInfo qualified as PI
 import System.FilePath (isRelative, takeExtension, (-<.>))
 
-data ExportBackend m = ExportBackend
-  { affiliatedMap :: Keywords OrgObjects -> NamespaceMap m
-  , macro :: Text -> [Text] -> NamespaceItem m
-  , babelCall :: BabelCall -> NamespaceItem m
-  , srcPretty :: Keywords OrgObjects -> Text -> Text -> NamespaceItem m
-  , customExp :: forall ix. ExportBackend m -> OrgData -> OrgF Org ix -> Maybe (NamespaceMap m)
+data ExportBackend s = ExportBackend
+  { affiliatedMap :: Keywords OrgObjects -> NamespaceMap s
+  , macro :: Text -> [Text] -> NamespaceItem s
+  , babelCall :: BabelCall -> NamespaceItem s
+  , srcPretty :: Keywords OrgObjects -> Text -> Text -> NamespaceItem s
+  , customExp :: forall ix. ExportBackend s -> OrgData -> OrgF Org ix -> Maybe (NamespaceMap s)
   }
 
 keywordsMap ::
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   Keywords OrgObjects ->
-  NamespaceMap m
+  NamespaceMap s
 keywordsMap bk odata = mapExp (kwValueExp bk odata)
 
 kwValueExp ::
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   KeywordValue OrgObjects ->
-  NamespaceItem m
+  NamespaceItem s
 kwValueExp bk odata = \case
   ParsedKeyword t -> namespace $ objectsExp bk odata t
   ValueKeyword t -> textData t
@@ -65,9 +61,8 @@ kwValueExp bk odata = \case
 
 -- | Text expansion for link target.
 linkTarget ::
-  (Monad m) =>
   LinkTarget ->
-  NamespaceMap m
+  NamespaceMap s
 linkTarget tgt = do
   "target" #@ case tgt of
     URILink "file" (changeExtension -> file)
@@ -89,11 +84,10 @@ linkTarget tgt = do
         else file
 
 parserExp ::
-  (Monad m) =>
   OrgData ->
   OrgParser (PI.Org ix) ->
-  (Org ix -> NamespaceMap m) ->
-  PolyExpansion m
+  (Org ix -> NamespaceMap s) ->
+  PolyExpansion s
 parserExp odata parser expand self = do
   txt <- fromMaybe "" <$> lookupAttr "text" self
   case parseOrgMaybe odata.parserOptions parser txt of
@@ -104,38 +98,37 @@ parserExp odata parser expand self = do
     Nothing -> throwTemplateError $ "Could not parse " <> show txt
 
 parserExpObjs ::
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
-  PolyExpansion m
+  PolyExpansion s
 parserExpObjs bk odata =
   parserExp odata (plainMarkupContext standardSet) (objectsExp bk odata)
 
 parserExpElms ::
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
-  PolyExpansion m
+  PolyExpansion s
 parserExpElms bk odata =
   parserExp odata elements (elementsExp bk odata)
 
 -- type GeneralizeQuery a = forall m. Monoid m => Generalize (Org ~> Const m) (a -> m) :: Constraint
 
 queryExp ::
-  forall sx m a.
-  ( Monad m
-  , SingI sx
+  forall sx s a.
+  ( SingI sx
   , GeneralizeQuery Org a
   ) =>
   -- | How to render the query results.
-  (Org sx -> NamespaceMap m) ->
+  (Org sx -> NamespaceMap s) ->
   -- | How to select the results (the attributes are from the caller's node).
   ([Attribute] -> OrgF Org sx -> Bool) ->
   -- | Data to query for results.
   a ->
-  PolyExpansion m
+  PolyExpansion s
 queryExp g f thing self = do
   attrs <- attributes self
   let queryf :: forall jx. Org jx -> Org sx
-      queryf = coerce $ mapMaybe (getsIx (const Nothing) (sing @sx) (guarded (f attrs)))
+      queryf = coerce $ mapMaybe (getsIx (const Nothing) (guarded (f attrs)))
       query =
         if any ((== "bottom-up") . fst) attrs
           then queryBottomUp
@@ -146,13 +139,12 @@ queryExp g f thing self = do
       "result" #. g result
 
 queryExpObjs ::
-  ( Monad m
-  , GeneralizeQuery Org a
+  ( GeneralizeQuery Org a
   ) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   a ->
-  PolyExpansion m
+  PolyExpansion s
 queryExpObjs bk odata =
   queryExp (objectsExp bk odata) \attrs (OrgObject props ann d) ->
     case L.lookup "type" attrs of
@@ -161,13 +153,12 @@ queryExpObjs bk odata =
       _ -> False
 
 queryExpElms ::
-  ( Monad m
-  , GeneralizeQuery Org a
+  ( GeneralizeQuery Org a
   ) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   a ->
-  PolyExpansion m
+  PolyExpansion s
 queryExpElms bk odata =
   queryExp (elementsExp bk odata) \attrs (OrgElement props ann kws _) ->
     let go (x, y) = (,y) <$> T.stripPrefix "kw:" x
@@ -176,13 +167,12 @@ queryExpElms bk odata =
      in foldr gop True kwFils
 
 queryExpSecs ::
-  ( Monad m
-  , GeneralizeQuery Org a
+  ( GeneralizeQuery Org a
   ) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   a ->
-  PolyExpansion m
+  PolyExpansion s
 queryExpSecs bk odata =
   queryExp (sectionsExp bk odata) \attrs (OrgSection props ann s@OrgSectionData {}) ->
     let go (x, y) = (,y) <$> T.stripPrefix "prop:" x
@@ -195,7 +185,7 @@ queryExpSecs bk odata =
         gop (x, y) p = (Just y == Map.lookup x s.properties) && p
      in foldr gop True kwFils && todoNm && todoSt && level
 
-queryExps :: (Monad m, GeneralizeQuery Org a) => ExportBackend m -> OrgData -> a -> NamespaceMap m
+queryExps :: (GeneralizeQuery Org a) => ExportBackend s -> OrgData -> a -> NamespaceMap s
 queryExps bk odata x =
   "query" #. do
     "sections" #* queryExpSecs bk odata x
@@ -220,7 +210,7 @@ objectTag OrgData {..} = \case
   Subscript {} -> "subscript"
   Quoted {} -> "quoted"
   Verbatim {} -> "verbatim"
-  Link tgt (coerce -> [] @(OrgF Org _))
+  Link tgt (Org [])
     | isImgTarget exporterSettings.orgInlineImageRules tgt -> "image"
   Link {} -> "link"
   Timestamp {} -> "timestamp"
@@ -231,27 +221,24 @@ objectTag OrgData {..} = \case
   InlBabelCall {} -> "babel-call"
 
 objectsExp ::
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   OrgObjects ->
-  NamespaceMap m
-objectsExp bk odata objs = do
+  NamespaceMap s
+objectsExp bk odata objs@(Org o) = do
   queryExps bk odata objs
-  listExp (namespace . objectExp bk odata) (coerce objs)
+  listExp (namespace . objectExp bk odata) o
   "" #* \inner ->
-    join <$> forM (coerce objs) \obj ->
+    join <$> forM o \obj ->
       callExpansion "org:objects" inner
         `binding` do
           "this" #. objectExp bk odata obj
 
 objectExp ::
-  forall m.
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   OrgF Org ObjIx ->
-  NamespaceMap m
+  NamespaceMap s
 objectExp bk odata obj@(OrgObject props ann objdata) = do
   -- (`fromMaybe` customElement bk odata el) do
   queryExps bk odata obj
@@ -259,12 +246,10 @@ objectExp bk odata obj@(OrgObject props ann objdata) = do
   objectDataExp bk odata objdata
 
 objectDataExp ::
-  forall m.
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   OrgObjectData Org ObjIx ->
-  NamespaceMap m
+  NamespaceMap s
 objectDataExp bk@ExportBackend {..} odata@OrgData {..} obj = do
   "tag" #@ objectTag odata obj
   case obj of
@@ -309,7 +294,7 @@ objectDataExp bk@ExportBackend {..} odata@OrgData {..} obj = do
         SingleQuote -> "single"
         DoubleQuote -> "double"
     Verbatim txt -> content #@ txt
-    Link tgt (coerce -> [] @(OrgF Org _))
+    Link tgt (Org [])
       | isImgTarget exporterSettings.orgInlineImageRules tgt -> do
           linkTarget tgt
       | otherwise -> objectDataExp bk odata (Link tgt (object (StandardProperties 0 0 0) mempty (Plain $ linkTargetToText tgt)))
@@ -348,27 +333,24 @@ objectDataExp bk@ExportBackend {..} odata@OrgData {..} obj = do
     expEls = elementsExp bk odata
 
 elementsExp ::
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   OrgElements ->
-  NamespaceMap m
-elementsExp bk odata els = do
+  NamespaceMap s
+elementsExp bk odata els@(Org e) = do
   queryExps bk odata els
-  listExp (namespace . elementExp bk odata) (coerce els)
+  listExp (namespace . elementExp bk odata) e
   "" #* \inner ->
-    join <$> forM (coerce els) \el ->
+    join <$> forM e \el ->
       callExpansion "org:elements" inner
         `binding` do
           "this" #. elementExp bk odata el
 
 elementExp ::
-  forall m.
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   OrgF Org ElmIx ->
-  NamespaceMap m
+  NamespaceMap s
 elementExp bk@ExportBackend {..} odata el@(OrgElement props anns aff eldata) = do
   -- (`fromMaybe` customElement bk odata el) do
   queryExps bk odata el
@@ -378,19 +360,17 @@ elementExp bk@ExportBackend {..} odata el@(OrgElement props anns aff eldata) = d
   "akw" #. keywordsMap bk odata aff
 
 elementDataExp ::
-  forall m.
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   OrgElementData Org ElmIx ->
-  NamespaceMap m
+  NamespaceMap s
 elementDataExp bk odata@OrgData {..} = \case
   (Clock td t) -> do
     tag #@ "clock"
     "timestamp" #. timestamp td
     whenJust t \t' ->
       "duration" #* tsTime t'
-  (Paragraph (coerce -> [l@(OrgObject _ _ (Link tgt desc))]))
+  (Paragraph (Org [l@(OrgObject _ _ (Link tgt desc))]))
     | desc == mempty
     , isImgTarget exporterSettings.orgInlineImageRules tgt -> do
         objectExp bk odata l
@@ -454,13 +434,11 @@ elementDataExp bk odata@OrgData {..} = \case
     expEls = elementsExp bk odata
 
 sectionsExp ::
-  forall m.
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   OrgSections ->
-  NamespaceMap m
-sectionsExp bk odata secs@(coerce -> sections) = do
+  NamespaceMap s
+sectionsExp bk odata secs@(Org sections) = do
   queryExps bk odata secs
   let sections' = groupByLevel sections
   listExp (namespace . sameLevel) sections'
@@ -480,28 +458,27 @@ sectionsExp bk odata secs@(coerce -> sections) = do
     groupByLevel :: [OrgF Org SecIx] -> [(Int, [OrgF Org SecIx])]
     groupByLevel = foldr go []
       where
-        go s [] = [(s.datum.datum.level, [s])]
-        go s l@((i, ss) : ls)
-          | s.datum.datum.level == i = (i, s : ss) : ls
-          | otherwise = (s.datum.datum.level, [s]) : l
+        go :: OrgF Org SecIx -> [(Int, [OrgF Org SecIx])] -> [(Int, [OrgF Org SecIx])]
+        go s@(OrgF d) [] = [(d.get.datum.level, [s])]
+        go s@(OrgF d) l@((i, ss) : ls)
+          | d.get.datum.level == i = (i, s : ss) : ls
+          | otherwise = (d.get.datum.level, [s]) : l
 
 sectionExp ::
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   OrgF Org SecIx ->
-  NamespaceMap m
+  NamespaceMap s
 sectionExp bk odata s@(OrgSection props anns datum) = do
   queryExps bk odata s
   sectionDataExp bk odata datum
   O.objectExp anns
 
 sectionDataExp ::
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   OrgData ->
   OrgSectionData Org SecIx ->
-  NamespaceMap m
+  NamespaceMap s
 sectionDataExp bk odata s = do
   "title" #. objectsExp bk odata s.title
   "tags" #. listExp textData s.tags
@@ -533,13 +510,11 @@ sectionDataExp bk odata s = do
        in "planning" #. assocsExp renderTs assocs
 
 documentExp ::
-  forall m.
-  (Monad m) =>
-  ExportBackend m ->
+  ExportBackend s ->
   -- | Prefix for expansion names
   OrgData ->
-  OrgDocument ->
-  NamespaceMap m
+  OrgDocumentData Org ix ->
+  NamespaceMap s
 documentExp bk odata doc = do
   "doc" #. do
     "kw" #. keywordsMap bk odata odata.keywords
@@ -559,12 +534,11 @@ documentExp bk odata doc = do
         . either (element (StandardProperties 0 0 0) mempty mempty . Paragraph) id
 
 table ::
-  forall m.
-  (Monad m) =>
-  ExportBackend m ->
+  forall s.
+  ExportBackend s ->
   OrgData ->
   [TableRow OrgObjects] ->
-  NamespaceMap m
+  NamespaceMap s
 table bk odata rows = do
   "head" #. tableRows tableHead
   "bodies" #. tableBodies
@@ -586,7 +560,7 @@ table bk odata rows = do
     tableRows = listExp (namespace . tableRow)
     tableRow = listExp (namespace . tableCell) . zip alignment
 
-    tableCell :: (Maybe ColumnAlignment, Org ObjIx) -> NamespaceMap m
+    tableCell :: (Maybe ColumnAlignment, Org ObjIx) -> NamespaceMap s
     tableCell (alig, cell) = do
       "content" #. objectsExp bk odata cell
       for_ alig \a ->
@@ -601,13 +575,12 @@ table bk odata rows = do
           listToMaybe props
 
 plainList ::
-  forall m.
-  (Monad m) =>
-  ExportBackend m ->
+  forall s.
+  ExportBackend s ->
   OrgData ->
   ListType ->
   [ListItem Org ElmIx] ->
-  NamespaceMap m
+  NamespaceMap s
 plainList bk odata kind items = do
   "items" #. listExp (namespace . listItemExp) items
   case kind of
@@ -618,14 +591,14 @@ plainList bk odata kind items = do
       "type" #@ "unordered"
       "bullet" #@ one b
   where
-    listItemExp :: ListItem Org ElmIx -> NamespaceMap m
-    listItemExp (ListItem _ i cbox t c) = do
+    listItemExp :: ListItem Org ElmIx -> NamespaceMap s
+    listItemExp (ListItem _ i cbox t c@(Org cs)) = do
       for_ i \i' -> "counter-set" #@ show i'
       for_ cbox \cbox' -> "checkbox" #@ checkbox cbox'
       whenJust t \t' ->
         "descriptive-tag" #. objectsExp bk odata t'
       "content" #. elementsExp bk odata c
-      case coerce c of
+      case cs of
         [OrgElement _ _ _ (Paragraph o)] -> do
           "plain" #. objectsExp bk odata o
         _ -> pass
@@ -636,10 +609,8 @@ plainList bk odata kind items = do
         checkbox PartialBox = "partial"
 
 srcOrExample ::
-  forall m.
-  (Monad m) =>
   [SrcLine] ->
-  NamespaceMap m
+  NamespaceMap s
 srcOrExample lins = do
   "lines" #. runLines
   "content" #@ srcLinesToText lins
@@ -648,10 +619,8 @@ srcOrExample lins = do
     runLines = listExp (\x -> namespace ("content" #@ x)) lins
 
 timestamp ::
-  forall m.
-  (Monad m) =>
   TimestampData ->
-  NamespaceMap m
+  NamespaceMap s
 timestamp ts =
   case ts of
     TimestampData a dt -> do
@@ -693,7 +662,7 @@ timestamp ts =
         locale = defaultTimeLocale -- TODO
         day = fromGregorian (toInteger date.year) date.month date.day
 
-tsTime :: OrgTime -> PolyExpansion m
+tsTime :: OrgTime -> PolyExpansion s
 tsTime time input = do
   format <- toString <$> lookupAttr' "format" input
   return $

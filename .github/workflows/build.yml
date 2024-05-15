@@ -13,10 +13,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macOS-latest]
-        ghc: ['9.4', '9.6']
+        ghc: ['9.8']
         cabal: ['3.10']
         include:
-          - ghc: '9.4'
+          - ghc: '9.8'
             executable: true
     steps:
       - uses: actions/checkout@v3

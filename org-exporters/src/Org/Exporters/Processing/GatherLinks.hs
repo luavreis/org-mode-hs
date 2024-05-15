@@ -1,16 +1,42 @@
-module Org.Exporters.Processing.GatherAnchors (gatherAnchors) where
+{-|
 
-import Control.Category.Natural (type (~>) (..))
-import Control.Category.RecursionSchemes qualified as R
+  gatherLinks ─────┬──► resolveAnchors
+                   │
+  External links ──┘
+
+-}
+
+module Org.Exporters.Processing.GatherLinks (gatherLinks) where
+
 import Data.Aeson.KeyMap qualified as Aeson
 import Data.Aeson.Types qualified as Aeson
-import Data.Ix.RecursionSchemes (Fix (..))
 import Data.Ix.Traversable (isequenceA)
 import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Optics.Core ((%~), (.~), (?~))
 import Org.Exporters.Processing.OrgData
-import Org.Types.Variants.Annotated
+import Org.Types.Variants.Basic
+import Org.Types.Walk (walkF)
+
+-- | Transform the link text into a link target.
+linkToTarget :: Text -> LinkTarget
+linkToTarget link
+  | any (`T.isPrefixOf` link) ["/", "./", "../"] =
+      let link' = toText (toString link)
+       in URILink "file" link'
+  | (prot, rest) <- T.break (== ':') link
+  , Just (_, uri) <- T.uncons rest =
+      URILink prot uri
+  | otherwise = UnresolvedLink link
+
+-- | FIXME This is not exactly how Org figures out if a link is an image.
+isImgTarget :: [FilePath] -> LinkTarget -> Bool
+isImgTarget exts = \case
+  (URILink _ x) -> hasImgExtension x
+  (UnresolvedLink x) -> hasImgExtension x
+  AnchorLink {} -> False
+  where
+    hasImgExtension x = any (`isExtensionOf` toString x) exts
 
 type GatherM = StateT ResolveState M
 type GatherT = Compose GatherM
@@ -19,15 +45,15 @@ modifyData :: (OrgData -> OrgData) -> GatherM ()
 modifyData = lift . modify'
 
 -- | State for resolving links
-data ResolveState = ResolveState
-  { targetDescriptionCtx :: Maybe OrgObjects
+data ResolveState f = ResolveState
+  { targetDescriptionCtx :: Maybe (Org f ObjIx)
   , srcLineNumber :: Int
   , knownIds :: Set Id
   , idGen :: [Id]
   }
   deriving (Generic)
 
-initialResolveState :: ResolveState
+initialResolveState :: ResolveState f
 initialResolveState =
   ResolveState
     { targetDescriptionCtx = mempty
@@ -42,9 +68,9 @@ getUniqueId (internalLinkCanonicalId -> a) = do
   pure
     if a `Set.member` anchors
       then
-        fromMaybe a
-          $ find (`Set.notMember` anchors)
-          $ map (\n -> a <> "-" <> show (n :: Int)) [1 ..]
+        fromMaybe a $
+          find (`Set.notMember` anchors) $
+            map (\n -> a <> "-" <> show (n :: Int)) [1 ..]
       else a
 
 registerFootnote :: FootnoteLabel -> Id -> Either OrgObjects OrgElements -> GatherM ()
@@ -93,7 +119,7 @@ resolveListItems items =
     lift $ withTargetDescription n do
       coerce $ isequenceA item
 
-resolveKws :: Keywords (GatherT Org ObjIx) -> GatherM (Keywords OrgObjects)
+resolveKws :: Keywords (GatherT Org ObjIx) -> GatherM (Keywords (Org f ObjIx))
 resolveKws k = do
   k' <- mapM (mapM getCompose) k
   whenJust (do ValueKeyword n <- k' Map.!? "name"; pure n) \name -> do
@@ -103,11 +129,11 @@ resolveKws k = do
   return k'
 
 gatherAnchors :: Org ix -> M (Org ix)
-gatherAnchors = (`evalStateT` initialResolveState) . getCompose . (R.fold (NT go) #)
+gatherAnchors = (`evalStateT` initialResolveState) . walkF go
   where
-    go :: ComposeIx [] OrgF (GatherT Org) ix -> GatherT Org ix
+    go :: forall ix. Base Org (GatherT Org) ix -> GatherT Org ix
     go (ComposeIx x) =
-      Compose $ Fix <$> coerce @(GatherM [_]) do
+      Compose $ fmap Org do
         forM x \case
           s@OrgSection' {} -> resolveSection s
           OrgElement' p a k d -> do

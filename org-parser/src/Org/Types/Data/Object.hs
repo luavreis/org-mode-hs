@@ -5,11 +5,7 @@ module Org.Types.Data.Object
     OrgObjectData (..)
 
     -- ** Links
-  , LinkTarget (..)
   , Protocol
-  , InternalLink (..)
-  , linkTargetToText
-  , unresolvedToInternalLink
 
     -- ** LaTeX fragments
   , FragmentType (..)
@@ -36,7 +32,6 @@ import Data.Ix.Traversable (ITraversable)
 import Generics.Kind.TH
 import Org.Types.Data.Timestamp (TimestampData)
 import Org.Types.Ix
-import qualified Data.Text as T
 
 -- | Objects (inline elements).
 data OrgObjectData k (_i :: OrgIx)
@@ -75,7 +70,7 @@ data OrgObjectData k (_i :: OrgIx)
       Text
       -- | Value (e.g. @\<br/\>@)
       Text
-  | Link LinkTarget (k ObjIx)
+  | UnresolvedLink Text (k ObjIx)
   | -- | Inline target (e.g. @\<\<\<foo\>\>\>@)
     Target
       -- | Name
@@ -119,36 +114,7 @@ data QuoteType = SingleQuote | DoubleQuote
 
 type Protocol = Text
 
-{- | Link target. Note that the parser does not resolve internal links. Instead,
-they should be resolved using the functions in [@org-exporters@
-package](https://github.com/lucasvreis/org-mode-hs).
--}
-data LinkTarget
-  = URILink Protocol Text
-  | UnresolvedLink Text
-  | AnchorLink Text
-  deriving (Show, Eq, Ord, Read, Typeable, Generic)
-  deriving anyclass (NFData)
-
-unresolvedToInternalLink :: Text -> InternalLink Text
-unresolvedToInternalLink t =
-  case T.uncons t of
-    Just ('*', rest) -> Headline (T.strip rest)
-    Just ('#', rest) -> CustomId (T.strip rest)
-    _ -> Named t
-
-data InternalLink a
-  = CustomId a
-  | Headline a
-  | Named a
-  | Footnote a
-  deriving (Eq, Ord, Show, Typeable, Generic, NFData, Functor)
-
-linkTargetToText :: LinkTarget -> Text
-linkTargetToText = \case
-  URILink prot l -> prot <> ":" <> l
-  UnresolvedLink l -> l
-  AnchorLink l -> "#" <> l
+-- * Links
 
 data FragmentType
   = RawFragment

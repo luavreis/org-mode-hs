@@ -34,9 +34,9 @@ convert = (R.fold (embed . NT (coerce f)) #)
   where
     f :: Seq (P.OrgF A.Org ix) -> [A.OrgF A.Org ix]
     f x = g <$> toList x
-    g (P.OrgF {..}) = A.OrgF {annotations = mempty, ..}
+    g u = ComposeIx $ Compose (A.AnnW mempty u)
 
-processAll :: P.OrgDocument -> (A.OrgDocument, OrgData)
+processAll :: P.OrgDocumentData P.Org ix -> (A.OrgDocumentData A.Org ix, OrgData)
 processAll doc =
   (`runState` initialOrgData) do
     pruned <- pruneDoc doc'

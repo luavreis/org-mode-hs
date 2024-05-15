@@ -18,15 +18,15 @@ import Org.Parser.Objects
 import Prelude hiding (many, some)
 
 -- | Parse an Org document.
-orgDocument :: OrgParser OrgDocument
+orgDocument :: OrgParser (OrgDocumentData OrgParsed i)
 orgDocument = do
   skipMany commentLine
   properties <- option mempty propertyDrawer
   topLevel <- elements
   sections' <- sections 1
   eof
-  return
-    $ OrgDocumentData
+  return $
+    OrgDocumentData
       { properties = properties
       , children = topLevel
       , sections = sections'
@@ -72,8 +72,8 @@ section lvl = try $ do
   where
     titleObjects :: OrgParser (OrgObjects, [Tag], Text)
     titleObjects =
-      option mempty
-        $ withContext__
+      option mempty $
+        withContext__
           (anySingle *> takeWhileP Nothing (\c -> not (isSpace c || c == ':')))
           endOfTitle
           (plainMarkupContext standardSet)
@@ -104,16 +104,16 @@ todoKeyword = try $ do
 -- | Parse a priority cookie like @[#A]@.
 priorityCookie :: OrgParser Priority
 priorityCookie =
-  try
-    $ string "[#"
-    *> priorityFromChar
-    <* char ']'
+  try $
+    string "[#"
+      *> priorityFromChar
+      <* char ']'
   where
     priorityFromChar :: OrgParser Priority
     priorityFromChar =
       NumericPriority
         <$> digitIntChar
-        <|> LetterPriority
+          <|> LetterPriority
         <$> upperAscii
 
 orgTagWord :: OrgParser Text
@@ -152,10 +152,10 @@ propertyDrawer = try $ do
   where
     endOfDrawer :: OrgParser Text
     endOfDrawer =
-      try
-        $ hspace
-        *> string' ":end:"
-        <* blankline'
+      try $
+        hspace
+          *> string' ":end:"
+          <* blankline'
 
     nodeProperty :: OrgParser (Text, Text)
     nodeProperty = try $ liftA2 (,) name value
@@ -165,9 +165,9 @@ propertyDrawer = try $ do
       skipSpaces
         *> char ':'
         *> takeWhile1P (Just "node property name") (not . isSpace)
-        <&> T.stripSuffix ":"
+          <&> T.stripSuffix ":"
         >>= guardMaybe "expecting ':' at end of node property name"
-        <&> T.toLower
+          <&> T.toLower
 
     value :: OrgParser Text
     value =

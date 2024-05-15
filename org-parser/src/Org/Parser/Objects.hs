@@ -41,7 +41,6 @@ module Org.Parser.Objects
   , statisticCookie
 
     -- * Auxiliary
-  , linkToTarget
   , parseTimestamp
   , withPos
   )
@@ -160,7 +159,7 @@ markup f c = Marked [c] $ try do
   f <$> parseFromText st (T.cons s t) (plainMarkupContext standardSet)
 
 rawMarkup ::
-  (Text -> OrgObjectData Org ObjIx) ->
+  (Text -> OrgObjectData OrgParsed ObjIx) ->
   Char ->
   Marked OrgParser OrgObjectD
 rawMarkup f d = Marked [d] $ try do
@@ -451,7 +450,7 @@ angleLink = Marked "<" $ try do
         (\c -> c /= '\n' && c /= '>')
     char '>' $> partial <|> newline *> hspace *> ((T.stripEnd partial <>) <$> search)
   e <- getOffset
-  return $ Link (URILink protocol tgt) (object s (e - 1) $ Plain $ protocol <> ":" <> tgt)
+  return $ UnresolvedLink (protocol <> ":" <> tgt) (object s (e - 1) $ Plain $ protocol <> ":" <> tgt)
 
 -- | Parse a regular link object.
 regularLink :: Marked OrgParser OrgObjectD
@@ -460,7 +459,7 @@ regularLink = Marked "[" $ try do
   str <- linkTarget
   descr <- linkDescr <|> char ']' $> mempty
   putLastChar ']'
-  return $ Link (linkToTarget str) descr
+  return $ UnresolvedLink str descr
   where
     linkTarget :: (MonadParser m) => m Text
     linkTarget = fix $ \rest -> do
@@ -483,19 +482,6 @@ regularLink = Marked "[" $ try do
       withContext skip (string "]]") (plainMarkupContext standardSet)
       where
         skip = anySingle >> takeWhileP Nothing (/= ']')
-
--- TODO this will probably be replaced by the AST annotations.
-
--- | Transform the link text into a link target.
-linkToTarget :: Text -> LinkTarget
-linkToTarget link
-  | any (`T.isPrefixOf` link) ["/", "./", "../"] =
-      let link' = toText (toString link)
-       in URILink "file" link'
-  | (prot, rest) <- T.break (== ':') link
-  , Just (_, uri) <- T.uncons rest =
-      URILink prot uri
-  | otherwise = UnresolvedLink link
 
 -- * Targets and radio targets
 

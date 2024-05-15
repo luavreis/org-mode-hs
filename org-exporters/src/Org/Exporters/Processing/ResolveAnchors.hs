@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 
 -- | This module deals with internal link resolution.
-module Org.Exporters.Processing.ResolveLinks (resolveLinks) where
+module Org.Exporters.Processing.ResolveAnchors (resolveAnchors) where
 
 import Control.Category.Natural (type (~>) (..))
 import Control.Category.RecursionSchemes qualified as R
@@ -40,7 +40,7 @@ resolveObjects (OrgObject p a d) = do
                  in f (UnresolvedLink replaced)
           UnresolvedLink link
             | Just (anchor, alias) <- targets Map.!? unresolvedToInternalLink link ->
-                return (AnchorLink anchor, if mempty == objs' then alias else objs')
+                return (AnchorLink anchor, if objs' == mempty then alias else objs')
           x -> return (x, objs')
       return $ OrgObject p a $ Link target' objs''
     x -> OrgObject p a <$> coerce (isequenceA x)
@@ -48,9 +48,16 @@ resolveObjects (OrgObject p a d) = do
 resolveLinks :: Org ix -> M (Org ix)
 resolveLinks = getCompose . (R.fold (NT go) #)
   where
-    go :: ComposeIx [] OrgF (T Org) ix -> T Org ix
+    go :: Base Org (T Org) ix -> T Org ix
     go (ComposeIx x) =
       Compose $ Fix <$> coerce @(M [_]) do
         forM x \case
           o@OrgObject' {} -> resolveObjects o
           y -> getCompose $ isequenceA y
+
+unresolvedToInternalLink :: Text -> InternalLink Text
+unresolvedToInternalLink t =
+  case T.uncons t of
+    Just ('*', rest) -> Headline (T.strip rest)
+    Just ('#', rest) -> CustomId (T.strip rest)
+    _another -> Named t

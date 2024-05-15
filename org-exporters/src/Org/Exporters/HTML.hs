@@ -9,9 +9,9 @@ import Data.Map qualified as Map
 import Org.Exporters.Common
 import Org.Types.Variants.Annotated
 
-defBackend :: Monad m => ExportBackend m
+defBackend :: ExportBackend s
 defBackend =
-  let affiliatedMap kws =
+  let affiliatedMap kws = do
         "affiliated" #% affAttrs
         where
           affAttrs :: [(Text, Text)]

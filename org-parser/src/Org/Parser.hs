@@ -37,14 +37,14 @@ newtype OrgParserException = OrgParserException String
   deriving anyclass (Exception)
 
 -- | Parse an Org document fully, with given options, and a filepath for error messages.
-parseOrgDoc :: OrgOptions -> FilePath -> Text -> OrgDocument
+parseOrgDoc :: OrgOptions -> FilePath -> Text -> OrgDocumentData OrgParsed i
 parseOrgDoc opt fp txt =
   case parseOrg opt orgDocument fp txt of
     Left e -> throw $ OrgParserException (errorBundlePretty e)
     Right d -> d
 
 -- | Parse an Org document in a UTF8 file, with given options.
-parseOrgDocIO :: MonadIO m => OrgOptions -> FilePath -> m OrgDocument
+parseOrgDocIO :: MonadIO m => OrgOptions -> FilePath -> m (OrgDocumentData OrgParsed i)
 parseOrgDocIO opt fp = do
   text <- readFileBS fp
   return $ parseOrgDoc opt fp $ decodeUtf8 text
