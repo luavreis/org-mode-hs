@@ -36,11 +36,11 @@ data OrgSectionData k (_i :: OrgIx) = OrgSectionData
   }
   deriving (Typeable, Generic)
 
-deriving instance (Show (k ObjIx), Show (k ElmIx), Show (k SecIx)) => Show (OrgSectionData k ix)
-deriving instance (Read (k ObjIx), Read (k ElmIx), Read (k SecIx)) => Read (OrgSectionData k ix)
-deriving instance (Eq (k ObjIx), Eq (k ElmIx), Eq (k SecIx)) => Eq (OrgSectionData k ix)
-deriving instance (Ord (k ObjIx), Ord (k ElmIx), Ord (k SecIx)) => Ord (OrgSectionData k ix)
-deriving instance (NFData (k ObjIx), NFData (k ElmIx), NFData (k SecIx)) => NFData (OrgSectionData k ix)
+deriving instance (AllOrgIx Show k) => Show (OrgSectionData k ix)
+deriving instance (AllOrgIx Read k) => Read (OrgSectionData k ix)
+deriving instance (AllOrgIx Eq k) => Eq (OrgSectionData k ix)
+deriving instance (AllOrgIx Ord k) => Ord (OrgSectionData k ix)
+deriving instance (AllOrgIx NFData k) => NFData (OrgSectionData k ix)
 
 type Tag = Text
 

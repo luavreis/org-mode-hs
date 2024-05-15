@@ -117,11 +117,11 @@ data OrgElementData k (_i :: OrgIx)
   | Comment
   deriving (Typeable, Generic)
 
-deriving instance (Show (k ObjIx), Show (k ElmIx)) => Show (OrgElementData k ix)
-deriving instance (Read (k ObjIx), Read (k ElmIx)) => Read (OrgElementData k ix)
-deriving instance (Eq (k ObjIx), Eq (k ElmIx)) => Eq (OrgElementData k ix)
-deriving instance (Ord (k ObjIx), Ord (k ElmIx)) => Ord (OrgElementData k ix)
-deriving instance (NFData (k ObjIx), NFData (k ElmIx)) => NFData (OrgElementData k ix)
+deriving instance (AllOrgIx Show k) => Show (OrgElementData k ix)
+deriving instance (AllOrgIx Read k) => Read (OrgElementData k ix)
+deriving instance (AllOrgIx Eq k) => Eq (OrgElementData k ix)
+deriving instance (AllOrgIx Ord k) => Ord (OrgElementData k ix)
+deriving instance (AllOrgIx NFData k) => NFData (OrgElementData k ix)
 
 type SrcLine = Text
 
@@ -195,11 +195,11 @@ data ListItem k (i :: OrgIx) = ListItem
   }
   deriving (Typeable, Generic)
 
-deriving instance (Show (k ObjIx), Show (k ElmIx)) => Show (ListItem k ix)
-deriving instance (Read (k ObjIx), Read (k ElmIx)) => Read (ListItem k ix)
-deriving instance (Eq (k ObjIx), Eq (k ElmIx)) => Eq (ListItem k ix)
-deriving instance (Ord (k ObjIx), Ord (k ElmIx)) => Ord (ListItem k ix)
-deriving instance (NFData (k ObjIx), NFData (k ElmIx)) => NFData (ListItem k ix)
+deriving instance (AllOrgIx Show k) => Show (ListItem k ix)
+deriving instance (AllOrgIx Read k) => Read (ListItem k ix)
+deriving instance (AllOrgIx Eq k) => Eq (ListItem k ix)
+deriving instance (AllOrgIx Ord k) => Ord (ListItem k ix)
+deriving instance (AllOrgIx NFData k) => NFData (ListItem k ix)
 
 data Bullet = Bullet Char | Counter Text Char
   deriving (Eq, Ord, Read, Show, Typeable, Generic)

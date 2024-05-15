@@ -20,11 +20,11 @@ data OrgDocumentData k _i = OrgDocumentData
   }
   deriving (Typeable, Generic)
 
-deriving instance (Show (k ElmIx), Show (k SecIx)) => Show (OrgDocumentData k ix)
-deriving instance (Read (k ElmIx), Read (k SecIx)) => Read (OrgDocumentData k ix)
-deriving instance (Eq (k ElmIx), Eq (k SecIx)) => Eq (OrgDocumentData k ix)
-deriving instance (Ord (k ElmIx), Ord (k SecIx)) => Ord (OrgDocumentData k ix)
-deriving instance (NFData (k ElmIx), NFData (k SecIx)) => NFData (OrgDocumentData k ix)
+deriving instance (AllOrgIx Show k) => Show (OrgDocumentData k ix)
+deriving instance (AllOrgIx Read k) => Read (OrgDocumentData k ix)
+deriving instance (AllOrgIx Eq k) => Eq (OrgDocumentData k ix)
+deriving instance (AllOrgIx Ord k) => Ord (OrgDocumentData k ix)
+deriving instance (AllOrgIx NFData k) => NFData (OrgDocumentData k ix)
 
 $(deriveGenericK ''OrgDocumentData)
 deriving via (Generically OrgDocumentData) instance (Endofunctor (~>) OrgDocumentData)
